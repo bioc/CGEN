@@ -1,0 +1,208 @@
+%\VignetteIndexEntry{CGEN Vignette}
+%\VignettePackage{CGEN}
+%\VigetteDepends{CGEN}
+
+\documentclass[a4paper]{article}
+
+
+\begin{document}
+
+\title{CGEN(Case-control.GENetics) Package}
+\maketitle
+
+<<start>>=
+library(CGEN)
+@
+
+\section*{Example of snp.logistic}
+
+
+Load the ovarian cancer data and print the first 5 rows.
+<<load data>>=
+data(Xdata, package="CGEN")
+Xdata[1:5, ]
+@
+
+For this analysis, the main effects will be "age.group", "n.children", and "oral.years". We will let "age.group" be
+a categorical variable in the model and we will create dummy variables for it. The dummy variables will be
+called "age.group\_1", "age.group\_2", $\ldots$ "age.group\_5".
+<<dummy vars>>=
+for (a in unique(Xdata[, "age.group"])) {
+  dummyVar <- paste("age.group_", a, sep="")
+  Xdata[, dummyVar] <- 0
+  temp <- Xdata[, "age.group"] == a
+  if (any(temp)) Xdata[temp, dummyVar] <- 1
+}
+@
+To determine the baseline category, and if any categories need to be combined, 
+get the frequency counts for the age.group variable by case-control status.
+<<table>>=
+table(Xdata[, "case.control"], Xdata[, "age.group"], exclude=NULL)
+@
+We will let "age.group\_4" will be the reference category, "case.control" be the response variable and "BRCA.status" be
+  the SNP variable. Let the variables "oral.years" and "n.children" also interact with the SNP variable.
+Also let the stratification variable for the constrained maximum likelihood method (CML) be "ethnic.group".
+<<snp.logistic>>=
+mainVars <- c("oral.years", "n.children", "age.group_1",
+              "age.group_2", "age.group_3", "age.group_5")
+fit <- snp.logistic(Xdata, "case.control", "BRCA.status",
+                     main.vars=mainVars, 
+                     int.vars=c("oral.years", "n.children"), 
+                     strata.var="ethnic.group")
+@
+
+Compute a summary table for the models.
+<<summary table>>=
+getSummary(fit)
+@
+Compute Wald tests for the main effect of the SNP and interactions.
+<<Wald test>>=
+getWaldTest(fit, c("BRCA.status", "BRCA.status:oral.years", "BRCA.status:n.children"))
+@
+
+\section*{Example of snp.scan.logistic}
+
+The \texttt{snp.scan.logistic} function is used for computing many single SNP analyses. 
+Unlike the \texttt{snp.logistic} function where the data must exist in memory when calling the function,
+the \texttt{snp.scan.logistic} function requires that the data be
+in separate external files.
+One file is for the genotype data and the other is for the phenotype data.
+Both files must contain subject ids in in order to link the two together.
+For this example, the sample genotype data file is delimited by a vertical bar ("|") and the first row contains the subject ids.
+Starting from the second row is the SNP name followed by the genotypes for each subject.
+Missing genotypes are denoted by "NA".
+Get the path to the genotype data and define the snp.list input argument.
+<<snp.list>>=
+g <- system.file("sampleData", "SNPdata.rda", package="CGEN")
+snp.list <- list(file=g, file.type=1, delimiter="|", in.miss="NA")
+@
+
+Define the pheno.list argument. Use the ovarian cancer data.
+<<pheno.list>>=
+f <- system.file("sampleData", "Xdata.txt", package="CGEN")
+pheno.list <- list(file=f, id.var="id", file.type=3, delimiter="\t",
+              response.var="case.control", strata.var="ethnic.group",
+              main.vars=c("oral.years", "n.children"),
+              int.vars="oral.years")
+@
+
+Define the output file and options list. 
+<<options list>>=
+out.file <- "snp.scan.logistic.output.file_h5jb47j.txt"
+op <- list(out.file=out.file)
+@
+
+Call the scan function. Since the "cc.var" option was not specified in pheno.list, 
+the minor allele for each SNP will be determined from using all subjects instead of
+using only the controls, and
+a note will be printed stating that "cc.var" was not specified
+in pheno.list. 
+<<snp.scan.logistic>>=
+ret <- snp.scan.logistic(snp.list, pheno.list, op=op)
+@
+
+Read in the output file and print the first 5 rows.
+<<read data>>=
+x <- read.table(out.file, sep="\t", header=TRUE)
+x[1:5, ]
+@
+
+Create a QQ-plot of the unconstrained p-values.
+<<qq plot>>=
+ret <- QQ.plot(x[, "UML.omnibus.pvalue"])
+@
+
+Get the path to the locus map file which contains the chromosome and location
+of each SNP.
+<<system.file>>=
+map <- system.file("sampleData", "LocusMapData.txt", package="CGEN")
+@
+
+Display the first 5 lines of this file and define the list for the locus map data.
+<<locus map list>>=
+read.table(map, sep="\t", header=1, nrows=5)
+lmap.list <- list(file=map, file.type=3, header=1, delimiter="\t",
+                 snp.var="SNP", chrm.var="CHROMOSOME", loc.var="LOCATION")
+@
+
+Define the vector of p-value variables to be plotted and the options list for
+the chromosome.plot function.
+<<plot setup>>=
+plot.vars <- c("UML.omnibus.pvalue", "CML.omnibus.pvalue", "EB.omnibus.pvalue")
+op <- list(pch=c(21, 22, 23), alt.colors=1)
+#plot.new()
+@
+
+Create a chromosome plot of the p-values from all methods.
+<<chromosome.plot>>=
+ret <- chromosome.plot(out.file, plot.vars, lmap.list, op=op)
+@
+
+Get the top 10 hits of the scan based on the unconstrained maximum likelihood method.
+<<top hits>>=
+temp <- sort(x[, "UML.omnibus.pvalue"], index.return=TRUE)$ix
+topHits <- x[temp, ][1:10,]
+topHits
+@
+
+
+
+\section*{Example of snp.matched}
+
+First let us use "age.group1", "gynSurgery.history" and "BRCA.history" to match the subjects finely into small
+sets. We will perform the matching only within each ethnic group. We check the case control distribution within ethnic
+groups.
+<<print table>>=
+table(Xdata$case.control, Xdata$ethnic.group)
+@
+
+Thus, allowing matched sets of size 3 should be enough to match all the subjects in each ethnic group. For illustration,
+let us use maximum matched set size of 4 for ethnic groups 1 and 2 and that of 3 for ethnic group 3. Let us use daisy to compute 
+the distance matrix, which automatically chooses Gower's distance if there are one or more categorical variables.
+
+<<getMatchedSets>>=
+library("cluster")
+size <- ifelse(Xdata$ethnic.group == 3, 3, 4)
+d <- daisy(Xdata[,c("age.group_1","gynSurgery.history","BRCA.history")])
+mx <- getMatchedSets(d, CC=TRUE, NN=TRUE, ccs.var = Xdata$case.control, 
+	  strata.var = Xdata$ethnic.group, size = size, fixed = FALSE)
+@
+
+The return object mx contains vectors corresponding to CC and NN matching as well as corresponding summary matrices tblCC and tblNN.
+Summaries can be inspected to see how many matched sets of each size were created (along rows) for each of the ethnic groups (along columns).
+The strata vectors are then appended to the data.frame, before calling the analysis function snp.matched.
+<<Xdata>>=
+mx$CC[1:10]
+mx$tblCC
+Xdata <- cbind(Xdata, CCStrat = mx$CC, NNStrat = mx$NN)
+Xdata[1:5,]
+@
+
+We will look at the interaction of BRCA.status with oral.years and n.children using formulas.
+<<snp.matched>>=
+
+intVars <- ~ oral.years + n.children
+snpVars <- ~ BRCA.status
+fit <- snp.matched(Xdata, "case.control", snp.vars=snpVars,
+                     main.vars=intVars, int.vars=intVars, 
+                     cc.var="CCStrat", nn.var="NNStrat") 
+@
+
+Compute a summary table for the fitted CLR and CCL models.
+<<summary table 2>>=
+getSummary(fit, method = c("CLR", "CCL"))
+@
+
+Compute Wald tests for the omnibus effect of BRCA.status for the HCL method.
+<<Wald test 2>>=
+getWaldTest(fit$HCL, c( "BRCA.status" , "BRCA.status:oral.years" , "BRCA.status:n.children"))
+@
+
+\section*{Session Information}
+<<sessionInfo>>=
+sessionInfo()
+@ 
+
+\end{document}
+
+

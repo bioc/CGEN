@@ -1,0 +1,16 @@
+CHANGES IN VERSION 1.1
+----------------------
+
+USER VISIBLE CHANGES
+
+    o Initial release of the CGEN package.
+
+BUG FIXES
+
+    o None.
+
+PLANS
+
+    o The next release will have new features for snp.logistic and
+      snp.matched, along with some new functions.
+
