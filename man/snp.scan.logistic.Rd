@@ -77,7 +77,7 @@ snp.scan.logistic(snp.list, pheno.list, op=NULL)
       \item \code{var.levels} (Only for continuous \code{var}). Numeric vector of the 
                  levels to be used in the calculation.
                  The default is 0.
-      \item \code{var.base}}{ (Only for continuous \code{var}). Baseline level.
+      \item \code{var.base} (Only for continuous \code{var}). Baseline level.
                  The default is 0.
       \item \code{snp.levels} A vector containing any of the values 0, 1, 2 to use
                                as the levels of each SNP.

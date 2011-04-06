@@ -1,32 +1,33 @@
 % --- Source file: snp.list.Rd ---
 \name{snp.list}
 \alias{snp.list}
-%\docType{package}
+\docType{data}
 \title{
  List to describe the genotype data
 }
 \description{
  The list to describe the genotype data for \code{\link{snp.scan.logistic}}
 }
-\usage{
-snp.list <- list(dir=, file=, file.type=2, delimiter="\\t", in.miss="  ", 
-                 heter.codes=NULL, id.var=, sas.list=NULL)
+\format{
+      The format is: List of 7
+       \describe{
+           \item{file}{File to use. No default. }
+           \item{file.type}{ 1-8 (see details). The default is 2.}
+           \item{delimiter}{ The delimiter used in \code{file}. The default is "\\t" (a tab).}
+           \item{in.miss}{Vector of values to denote the missing values in \code{file}.
+                          The default is "  " (2 blank spaces). }
+           \item{heter.codes}{ Vector of codes used for the heterozygous genotype.
+                             If NULL, then it is assumed that the heterozygous genotype 
+                             is of the form "AB", "Aa", "CT", ... etc, ie a 2-character
+                             string with different characters (case sensitive).
+                             The default is NULL.}
+           \item{id.var}{   (Only for \code{file.type} = 3, 4, 6, 8) The subject id variable.
+                             No default.}
+           \item{sas.list}{  See \code{\link{sas.list}}. The default is NULL.}
+       }
 }
-\arguments{
-  \item{file}{File to use. No default. }
-  \item{file.type}{ 1-8 (see details). The default is 2.}
-  \item{delimiter}{ The delimiter used in \code{file}. The default is "\\t" (a tab).}
-  \item{in.miss}{Vector of values to denote the missing values in \code{file}.
-                 The default is "  " (2 blank spaces). }
-  \item{heter.codes}{ Vector of codes used for the heterozygous genotype.
-                    If NULL, then it is assumed that the heterozygous genotype 
-                    is of the form "AB", "Aa", "CT", ... etc, ie a 2-character
-                    string with different characters (case sensitive).
-                    The default is NULL.}
-  \item{id.var}{   (Only for \code{file.type} = 3, 4, 6, 8) The subject id variable.
-                    No default.}
-  \item{sas.list}{  See \code{\link{sas.list}}. The default is NULL.}
-}
+
+
 \details{ In this list, \code{file} must be specified. 
          If the SNPs are coded in the standard (0,1,2) coding, then
          set \code{heter.codes} to 1 (the heterozygous genotype).
@@ -68,8 +69,10 @@ snp.list <- list(dir=, file=, file.type=2, delimiter="\\t", in.miss="  ",
 # Suppose the genotype data is a tab-delimited, type 2 file: c:/temp/data/geno1.txt.
 #  Also assume the data has the trend coding 0, 1, 2 with NA as missing values.
 # The below list is for processing the file.
+\dontrun{
 snp.list <- list(file="C:/temp/data/geno1.txt", delimiter="\t", file.type=2, 
                  heter.codes=1, in.miss=NA)
+}
 }
 \keyword{misc}
 
