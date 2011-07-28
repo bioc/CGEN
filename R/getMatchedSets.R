@@ -304,7 +304,8 @@ ccmatch <- function(d, cc, size, ratio, strat, fixed = FALSE, miss = FALSE)
 			ns <- min(ncase[i], ncntl[i])
 			if(ncntl[i] > 0) flm[ord[pos[i]+(1:ncntl[i])]] <- (0: (ncntl[i]-1)) %% max(ns, 1) + 1 + cur
 			if(ncase[i] > 0) flm[ord[pos[i]+ncntl[i]+(1:ncase[i])]] <- (0: (ncase[i] - 1)) %% max(ns, 1) + 1 + cur
-			cur <- cur + 1 + ns
+			#cur <- cur + 1 + ns
+                cur <- cur + ns
 		}
 		flm
 	}

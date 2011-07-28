@@ -198,7 +198,7 @@ snp.hcl.main <- function(D, X.snp, X.main=NULL, X.int=NULL, nn.strat, op=NULL)
 	res <- try(.C("hcl_optim" , BETA = as.double(beta.init) , MAXIT = as.integer(op$maxiter) , TOL = as.double(op$reltol) , NSUB = as.integer(nsub) , D = as.integer(D) , XSNP = as.double(X.snp) , 
 			  NSNP = as.integer(psnp) , XMAIN = as.double(X.main) , NMAIN = as.integer(pmain) , XINT = as.double(X.int) , NINT = as.integer(pint) ,
 			  NUMSZ = as.integer(numsz) , MNSZ = as.integer(mnsz) , USZ = as.integer(usz) , NSZ = as.integer(nsz) , CNSZ = as.integer(cnsz) , OSX = as.integer(osx - 1) , 
-			  LOGLIKE = as.double(length = 1) , HESS = as.double(diag(1 , p)) , CONV = as.integer(length = 1) , ITER = as.integer(length = 1),
+			  LOGLIKE = double(length = 1) , HESS = as.double(diag(1 , p)) , CONV = integer(length = 1) , ITER = integer(length = 1),
 			  PACKAGE = "CGEN"))
 #	Retrieve relevant information from the returned list
 
@@ -292,7 +292,7 @@ snp.ccl.main <- function(D, X.snp, X.main=NULL, X.int=NULL, cc.strat, op=NULL)
 				  D = as.integer(D) , XSNP = as.double(X.snp) , NSNP = as.integer(psnp) , XMAIN = as.double(X.main) , NMAIN = as.integer(pmain) , 
 				  XINT = as.double(X.int) , NINT = as.integer(pint) , NUMSZ = as.integer(numsz) , MNSZ = as.integer(mnsz) , USZ = as.integer(usz) , 
 				  MDX = as.integer(mdx) , NSZ = as.integer(nsz) , CNSZ = as.integer(cnsz) , OSX = as.integer(osx - 1) , NDX = as.integer(ndx) ,
-				  LOGLIKE = as.double(length = 1) , HESS = as.double(diag(1 , p)) , CONV = as.integer(length = 1) , ITER = as.integer(length = 1), 
+				  LOGLIKE = double(length = 1) , HESS = as.double(diag(1 , p)) , CONV = integer(length = 1) , ITER = integer(length = 1), 
 				  PACKAGE = "CGEN"))
 
 #	Retrieve relevant information from the returned list
