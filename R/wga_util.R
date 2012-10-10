@@ -179,6 +179,23 @@
 #          Mar 04 2010 Add normVarNames function
 #          Mar 05 2010 Update getIdsFromFile to call loadData.table
 #          Mar 14 2010 Check vector length in recode.geno
+#          Mar 18 2010 Fix bug in genfile.list with an empty list
+#          Apr 13 2010 Update mergePhenoGeno for imputed data
+#          Apr 15 2010 Add allele option to mergePhenoGeno
+#          Apr 27 2010 Add new pheno.list options for duplicated ids
+#          May 04 2010 No changes
+#          Jun 14 2010 Add return option to getColsFromCharVec
+#          Jul 02 2010 Add option to return snp names in mergePhenoGeno
+#                      Update writeTable function
+#          Jul 22 2010 Update addColumn
+#          Jan 04 2011 Update check.file.list with getFileHeader function
+#          Jan 06 2011 Update extractByStr to allow for exact matching
+#          Jan 12 2011 Remove extended option in grep, gsub
+#          Jan 25 2011 Add changeGenotypes function
+#                      Add getSnpNames function
+#          Jan 31 2011 Allow snp.list and pheno.list to be file names instead of lists
+#                      Remove all calls to getListName
+#          Jul 12 2011 Add function to return a unique variable name
 
 # Function to pull apart each string from the data object
 getVecFromStr <- function(string, delimiter="|") {
@@ -450,6 +467,7 @@ getListName <- function(inList, name) {
 check.snp.list <- function(snp.list) {
 
   if (is.null(snp.list)) stop("ERROR: snp.list must be specified")
+  if (is.character(snp.list)) snp.list <- list(file=snp.list)
 
   # Check the names in the list
   snp.list <- default.list(snp.list, 
@@ -494,7 +512,8 @@ check.snp.list <- function(snp.list) {
   
   # Check for id variable for type 3 and 4
   if (snp.list$file.type %in% c(3, 4)) {
-    if (is.null(snp.list$id.var)) stop("snp.list$id.var is not specified")
+    #if (is.null(snp.list$id.var)) stop("snp.list$id.var is not specified")
+    if (is.null(snp.list$id.var)) snp.list$id.var <- 1
   }
 
   # Check for sas.list
@@ -525,7 +544,7 @@ check.snp.list <- function(snp.list) {
   # Check file.type
   temp <- snp.list$file.type
   if (is.numeric(temp)) {
-    if (!(temp %in% 1:8)) {
+    if (!(temp %in% 1:10)) {
       temp <- paste("ERROR:", temp, "is not a valid value for snp.list$file.type")
       stop(temp) 
     }
@@ -557,6 +576,8 @@ check.snp.list <- function(snp.list) {
     snp.list$snpNames.list <- temp
   }
 
+  if (snp.list$file.type %in% c(9, 10)) snp.list$out.delimiter <- "\t"
+
   snp.list$alreadyChecked <- 1
 
   snp.list
@@ -567,12 +588,13 @@ check.snp.list <- function(snp.list) {
 check.pheno.list <- function(pheno.list) {
 
   if (is.null(pheno.list)) stop("ERROR: pheno.list must be specified")
+  if (is.character(pheno.list)) pheno.list <- list(file=pheno.list, id.var="GWAS_ID", header=1)
 
   pheno.list <- default.list(pheno.list, 
    c("file", "id.var", "header", "remove.miss", "alreadyChecked", 
-     "is.the.data", "in.miss"),
-        list("ERROR", "ERROR", 1, 0, 0, 0, c(NA, "NA", NaN, "NaN", ".")), 
-               error=c(1, 1, 0, 0, 0, 0, 0))
+     "is.the.data", "in.miss", "orig.id.var", "unique.ids"),
+        list("ERROR", "ERROR", 1, 0, 0, 0, c(NA, "NA", NaN, "NaN", "."), "origID5uh23gx25l6eq", 0), 
+               error=c(1, 1, 0, 0, 0, 0, 0, 0, 0))
 
   if (pheno.list$alreadyChecked == 1) return(pheno.list)
 
@@ -596,7 +618,7 @@ check.pheno.list <- function(pheno.list) {
   temp <- pheno.list[["keep.ids.list", exact=TRUE]]
   if (!is.null(temp)) {
     pheno.list$keep.ids <- getIdsFromFile(temp, 
-                           id.vec=getListName(pheno.list, "keep.ids"))
+                           id.vec=pheno.list[["keep.ids", exact=TRUE]])
     pheno.list$keep.ids.list <- NULL
   }
 
@@ -604,7 +626,7 @@ check.pheno.list <- function(pheno.list) {
   temp <- pheno.list[["remove.ids.list", exact=TRUE]]
   if (!is.null(temp)) {
     pheno.list$remove.ids <- getIdsFromFile(temp, 
-                           id.vec=getListName(pheno.list, "remove.ids"))
+                           id.vec=pheno.list[["remove.ids", exact=TRUE]])
     pheno.list$remove.ids.list <- NULL
   }
 
@@ -635,7 +657,7 @@ check.locusMap.list <- function(locusMap.list) {
 
   if (locusMap.list$alreadyChecked == 1) return(locusMap.list)
 
-  locusMap.list$dir <- checkForSep(getListName(locusMap.list, "dir"))
+  locusMap.list$dir <- checkForSep(locusMap.list[["dir", exact=TRUE]])
   temp <- paste(locusMap.list$dir, locusMap.list$file, sep="")
   if (check.files(temp)) stop("ERROR: in check.locusMap.list") 
 
@@ -1025,7 +1047,6 @@ getIdsFromFile <- function(file.list, id.vec=NULL) {
   if (!is.null(file.list)) {
     file.list <- check.file.list(file.list)
     file.list <- default.list(file.list, c("id.var"), list(1))
-
     if (file.list$id.var == -1) {
       fid  <- getFID(file.list$file, file.list)
       temp <- scan(file=file.list$file, what="character", 
@@ -1039,6 +1060,7 @@ getIdsFromFile <- function(file.list, id.vec=NULL) {
     }
   }
   id.vec <- unique(id.vec)
+  id.vec <- removeWhiteSpace(id.vec)
   if (!length(id.vec)) stop(paste("No ids in file", file.list$file))
 
   id.vec
@@ -1667,9 +1689,10 @@ genfile.list <- function(inList, listName, fid) {
   # put it in quotes and set the comment to "FUNCTION".
 
   names <- names(inList)
+  llen  <- length(inList)
   if (is.null(names)) {
-    flag  <- 1
-    names <- 1:length(inList)
+    flag  <- 1   
+    names <- 1:llen
     str1  <- '[['
     str2  <- ']] <- '
   } else {
@@ -1679,6 +1702,8 @@ genfile.list <- function(inList, listName, fid) {
   }
   temp  <- paste("\n ", listName, " <- list() \n", sep="")
   cat(temp, file=fid)
+
+  if (!llen) return(NULL)
   for (name in names) {
     temp <- inList[[name]]
     cmm  <- comment(temp)
@@ -1717,6 +1742,8 @@ genfile.list <- function(inList, listName, fid) {
     }  
   }
 
+  NULL
+
 } # END: genfile.list
 
 # Function to define a vector in swarm generator files
@@ -1742,6 +1769,8 @@ genfile.vec <- function(vec, name, fid) {
     k <- k + 1
   }
   
+  NULL
+
 } # END: genfile.vec
 
 # Function to sort a matrix or data frame by a column
@@ -1771,26 +1800,26 @@ update.snp.list <- function(snp.list, where=0) {
   # where    Integer specifying where in the program
 
   if (where == 1) {
-    stream <- getListName(snp.list, "stream")
-    type   <- getListName(snp.list, "file.type")
+    stream <- snp.list[["stream", exact=TRUE]]
+    type   <- snp.list[["file.type", exact=TRUE]]
     if (stream) {
       if (type != 2) {
-        n <- length(getListName(snp.list, "file"))
+        n <- length(snp.list[["file", exact=TRUE]])
         snp.list$start.vec <- rep(1, times=n)
         snp.list$stop.vec  <- rep(-1, times=n)
       }
     }
   }
 
-  temp <- getListName(snp.list, "snpNames.list")
+  temp <- snp.list[["snpNames.list", exact=TRUE]]
   if (!is.null(temp)) {
     snp.list$snpNames <- getIdsFromFile(temp, 
-                           id.vec=getListName(snp.list, "snpNames"))
+                           id.vec=snp.list[["snpNames", exact=TRUE]])
     snp.list$snpNames <- unique(snp.list$snpNames)
     snp.list$snpNames.list <- NULL
   }
 
-  temp <- getListName(snp.list, "snpNames")
+  temp <- snp.list[["snpNames", exact=TRUE]]
   if (!is.null(temp)) {
     #n <- length(snp.list$file)
     #snp.list$start.vec <- rep(1, times=n)
@@ -1826,6 +1855,12 @@ extractByStr <- function(dat, search, op=NULL) {
   #               The default is NULL.
   #  keep         0 or 1 to remove or keep matched strings
   #               The default is 1
+  #  exact        0 or 1 for exact matching
+  #               The default is 0
+  #  delimiter    Delimiter in dat (used for exact matching)
+  #               
+  #  removeWhiteSpace 0 or 1 for exact matching
+  #                   The default is 0
 
   # Define a local function to search for character strings
   f1 <- function(str) {
@@ -1834,26 +1869,49 @@ extractByStr <- function(dat, search, op=NULL) {
 
   } # END: f1
 
-  op <- default.list(op, c("include.row1", "keep"), list(1, 1))
+  op <- default.list(op, c("include.row1", "keep", "exact", "removeWhiteSpace"), 
+             list(1, 1, 0, 0))
 
-  sub.vec <- getListName(op, "substr.vec")
+  sep <- op[["delimiter", exact=TRUE]]
+  if ((is.null(sep)) && (op$exact)) sep <- getFileDelim(dat) 
+  keep <- op$keep
+
+  sub.vec <- op[["substr.vec", exact=TRUE]]
   if (!is.null(sub.vec)) {
     subFlag <- 1
     a       <- sub.vec[1]
     b       <- sub.vec[2]
     save    <- dat
-    dat     <- substr(dat, a, b)
     if (is.na(b)) b <- Inf
+    dat     <- substr(dat, a, b)
   } else {
     subFlag <- 0
   }
 
   # Get the rows by searching for the snp names
   rows <- unlist(lapply(search, f1))
-
+  nr   <- length(rows)
+  if (!nr) return(NULL)
+ 
   # Get a logical vector of rows to keep or drop
   temp <- (1:length(dat)) %in% rows
-  keep <- op$keep
+  n    <- length(temp)
+
+  # For exact matching
+  if ((op$exact) && (n > 1)) {
+    id <- character(n)
+    for (i in 2:n) {
+      if (temp[i]) id[i] <- getVecFromStr(dat[i], delimiter=sep)[1] 
+    }
+    if (op$removeWhiteSpace) {
+      search <- removeWhiteSpace(search)
+      id     <- removeWhiteSpace(id)
+    }
+    temp <- temp & (id %in% search)
+    rm(id)
+    gc()
+  }
+
   if (keep == 0) temp <- !temp 
 
   # Add the first row if needed
@@ -1862,7 +1920,7 @@ extractByStr <- function(dat, search, op=NULL) {
   } else {
     temp[1] <- FALSE
   }
- 
+
   # Get the subset
   if (subFlag) {
     return(save[temp])
@@ -2045,7 +2103,7 @@ subsetData.list <- function(data, slist, returnRows=0) {
     tlist    <- default.list(tlist, 
                   c("var", "operator", "value", "which", "logic.op", "na.value", "last.which"), 
                   list("ERROR", "ERROR", "ERROR", 1, "&", FALSE, 1), error=c(1,1,1,0,0,0,0))
-    var      <- getListName(tlist, "var")
+    var      <- tlist[["var", exact=TRUE]]
     if ((cflag) && (is.character(var))) {
       if (!(var %in% cnames)) {
         temp <- paste("ERROR in subsetData.list: ", var, " not in data", sep="")
@@ -2053,18 +2111,18 @@ subsetData.list <- function(data, slist, returnRows=0) {
         stop()
       }
     }
-    operator <- getListName(tlist, "operator")
-    value    <- getListName(tlist, "value")
-    which    <- getListName(tlist, "which")
-    last     <- getListName(tlist, "last.which")
+    operator <- tlist[["operator", exact=TRUE]]
+    value    <- tlist[["value", exact=TRUE]]
+    which    <- tlist[["which", exact=TRUE]]
+    last     <- tlist[["last.which", exact=TRUE]]
     wvec[i]  <- which
-    na.value <- getListName(tlist, "na.value")
+    na.value <- tlist[["na.value", exact=TRUE]]
     temp     <- subsetData.var(data, var, operator, value, returnRows=1, na.value=na.value)
     if (which == -1) temp <- !temp
     if (i == 1) {
       rows <- temp
     } else {
-      logic.op <- getListName(tlist, "logic.op")
+      logic.op <- tlist[["logic.op", exact=TRUE]]
       callStr  <- paste("rows ", logic.op, " temp", sep="") 
       rows     <- eval(parse(text=callStr))      
     }
@@ -2284,7 +2342,7 @@ callOS <- function(command, intern=FALSE) {
 
 # Function to get columns from a character vector
 getColsFromCharVec <- function(vec, cols, delimiter="\t", colNames=NULL,
-                        fun=as.numeric) {
+                        fun=as.numeric, ret.type=3) {
 
   # vec
   # cols        Numeric or character vector of columns 
@@ -2297,13 +2355,27 @@ getColsFromCharVec <- function(vec, cols, delimiter="\t", colNames=NULL,
   if (is.character(cols)) {
     cols <- match(cols, colNames)
   }
-
   n <- length(vec)
-  ret <- matrix(data=NA, nrow=n, ncol=length(cols))
-  if (cnamesFlag) colnames(ret) <- colNames[cols] 
-  for (i in 1:n) {
-    temp <- getVecFromStr(vec[i], delimiter=delimiter)
-    ret[i, ] <- fun(temp[cols])
+
+  if (ret.type == 2) {
+    ret <- vec
+    for (i in 1:n) {
+      temp   <- getVecFromStr(vec[i], delimiter=delimiter)
+      ret[i] <- paste(temp[cols], collapse=delimiter, sep="")
+    }
+  } else {
+    if (n == 1) {
+      temp <- getVecFromStr(vec, delimiter=delimiter)
+      ret  <- fun(temp[cols])
+      if (cnamesFlag) names(ret) <- colNames[cols] 
+    } else {
+      ret <- matrix(data=NA, nrow=n, ncol=length(cols))
+      if (cnamesFlag) colnames(ret) <- colNames[cols] 
+      for (i in 1:n) {
+        temp     <- getVecFromStr(vec[i], delimiter=delimiter)
+        ret[i, ] <- fun(temp[cols])
+      }
+    }
   }
 
   ret
@@ -2449,10 +2521,55 @@ changeAlleles <- function(data, alleleVars, rows=NULL, newVars=NULL) {
 
 } # END: changeAlleles
 
-# Function to write a table
-writeTable <- function(x, outfile) {
+# Function to change the genotypes in a data frame
+changeGenotypes <- function(data, genoVars, rows=NULL, newVars=NULL) {
 
-  write.table(x, file=outfile, sep="\t", row.names=FALSE, quote=FALSE)
+  # data
+  # genoVars     Must be coded as "AA", "GG", "CT" etc
+  # rows         Logical vector of length = nrow(data) or NULL
+  #              The default is NULL, so that all rows will be changed
+  # newVars      New variable names. If NULL, then allelVars will be used
+  #              The order of newVars must match alleleVars.
+  #              The default is NULL.
+
+  if (is.null(rows)) rows <- rep(TRUE, times=nrow(data))
+  if (is.null(newVars)) newVars <- genoVars
+
+  all  <- c("AA", "CC", "GG", "TT", 
+           "AC", "CA", "AG", "GA", "AT", "TA",
+           "CG", "GC", "CT", "TC",
+           "GT", "TG")
+  all2 <- c("TT", "GG", "CC", "AA", 
+           "TG", "GT", "TC", "CT", "TA", "AT",
+           "GC", "CG", "GA", "AG",
+           "CA", "AC")
+
+  index <- 1
+  for (var in genoVars) {
+    x     <- makeVector(data[, var])
+    genos <- unique(x[rows])
+    ngeno <- length(genos)
+    temp  <- all %in% genos
+    if (sum(temp) != ngeno) next
+    a0    <- all[temp]
+    a2    <- all2[temp]
+
+    nv    <- newVars[index]
+    for (i in 1:ngeno) {
+      temp <- (x %in% a0[i]) & rows
+      data[temp, nv] <- a2[i]
+    }
+    index <- index + 1
+   
+  }
+  data
+
+} # END: changeGenotypes
+
+# Function to write a table
+writeTable <- function(x, outfile, delimiter="\t") {
+
+  write.table(x, file=outfile, sep=delimiter, row.names=FALSE, quote=FALSE)
 
 } # END: writeTable
 
@@ -2470,25 +2587,25 @@ crossTab <- function(snp.list, pheno.list, varlist, op=NULL) {
   #  temp.list
 
   snpFlag <- !is.null(snp.list)
-  if ((!snpFlag) && (is.null(getListName(pheno.list, "id.var")))) {
+  if ((!snpFlag) && (is.null(pheno.list[["id.var", exact=TRUE]]))) {
     pheno.list$id.var <- 1
   }
 
   # Check the input lists
   pheno.list <- check.pheno.list(pheno.list)
 
-  outfile <- getListName(op, "outfile")
+  outfile <- op[["outfile", exact=TRUE]]
   outflag <- !is.null(outfile)
-  by.var  <- getListName(op, "by.var")
+  by.var  <- op[["by.var", exact=TRUE]]
   byflag  <- !is.null(by.var)
 
   if (snpFlag) {
     snp.list  <- check.snp.list(snp.list)
-    temp.list <- getListName(op, "temp.list")
+    temp.list <- op[["temp.list", exact=TRUE]]
   
     pheno.list$remove.miss <- 0
     pheno.list$make.dummy  <- 0
-    temp <- getListName(pheno.list, "keep.vars")
+    temp <- pheno.list[["keep.vars", exact=TRUE]]
     if (!is.null(temp)) {
       pheno.list$keep.vars <- c(pheno.list$id.var, temp, by.var)
     }
@@ -2529,7 +2646,7 @@ crossTab <- function(snp.list, pheno.list, varlist, op=NULL) {
 
   len <- length(varlist)
   n   <- nrow(x)
-  exclude <- getListName(op, "exclude")
+  exclude <- op[["exclude", exact=TRUE]]
   if (is.null(exclude)) exclude <- "NULL"
   suffix <- paste(", exclude=", exclude, ")", sep="") 
 
@@ -2560,22 +2677,34 @@ crossTab <- function(snp.list, pheno.list, varlist, op=NULL) {
 # Function to merge the phenotype and genotype data
 mergePhenoGeno <- function(snp.list, pheno.list, temp.list=NULL, op=NULL) {
 
+  # Returns a list with names data and geno.vars
+
   # snp.list
   # pheno.list
   # temp.list
   # op
   #   outfile
-  #   which    0-2  0=0-1-2 coding, 1=original coding, 2=both
+  #   which    Vector of 0-2.  0=expected genotype count, 1=original coding, 
+  #            2=dummy vars with NAs in the dummy vars
   #            Then default is 0
+  #   alleles  (For snp.list$file.type = 9 or 10)
+  #            0 or 1 to add alleles (major/minor) for each SNP
+  #            The default is 0
 
-  op <- default.list(op, c("which"), list(0))
+  op <- default.list(op, c("which", "alleles"), list(0, 0))
 
   # Check the input lists
   snp.list   <- check.snp.list(snp.list)
   pheno.list <- check.pheno.list(pheno.list)
 
-  which <- op$which
-  if (which) snp.list$recode <- 0
+  imputeFlag <- snp.list$file.type %in% c(9, 10)
+  snp.list$recode <- 0
+  snp.list$genetic.model <- 3
+  flag0 <- 0 %in% op$which
+  flag1 <- 1 %in% op$which
+  flag2 <- 2 %in% op$which
+  aflag <- 0
+  if ((imputeFlag) && (op$alleles)) aflag <- 1
 
   # Get the data vector of snps
   tlist <- list(include.row1=0, include.snps=0, return.type=1,
@@ -2590,15 +2719,16 @@ mergePhenoGeno <- function(snp.list, pheno.list, temp.list=NULL, op=NULL) {
 
   snpData   <- temp$data
   snpNames  <- temp$snpNames
-  delimiter <- getDelimiter(snp.list)
+  delimiter <- getDelimiter(snp.list, output=1)
   nsnps     <- length(snpData)
+  if (aflag) alleles <- temp$alleles
 
   # Get the phenotype data
   phenoData.list <- temp$phenoData.list
   phenoData0     <- phenoData.list$data
 
   # Determine if cc.var was specified
-  ccVar <- getListName(pheno.list, "cc.var")
+  ccVar <- pheno.list[["cc.var", exact=TRUE]]
   if (!is.null(ccVar)) {
     subset <- phenoData0[, ccVar] == 0
     subset[is.na(subset)] <- FALSE
@@ -2606,20 +2736,59 @@ mergePhenoGeno <- function(snp.list, pheno.list, temp.list=NULL, op=NULL) {
     subset <- rep(TRUE, times=nrow(phenoData0))
   }
 
-  for (i in 1:nsnps) {
-    new <- snpNames[i]
-    if (which == 2) new <- paste(new, "_GENO", sep="")
-    phenoData0[, new] <- getVecFromStr(snpData[i], delimiter=delimiter)
+  hcodes <- snp.list$heter.codes
+  nc     <- ncol(phenoData0)
 
-    if (which == 2) {
-      phenoData0[, snpNames[i]] <- recode.geno(phenoData0[, new], in.miss="NA", subset=subset)$vec
+  for (i in 1:nsnps) {
+    snp.v <- snpNames[i]
+    snp   <- getVecFromStr(snpData[i], delimiter=delimiter)
+
+    if ((!imputeFlag) && (any(op$which %in% c(0, 2)))) {
+      exsnp <- as.integer(recode.geno(snp, in.miss="NA", subset=subset, heter.codes=hcodes)$vec)
+    } else if (imputeFlag) {
+      temp <- as.numeric(unlist(strsplit(snp, "|", fixed=TRUE)))
+      mat  <- matrix(temp, byrow=TRUE, ncol=3)
+    }
+
+    if (flag0) {
+      # Expected genotype counts
+      if (!imputeFlag) {
+        temp <- exsnp
+      } else {
+        temp <- mat[, 2] + 2*mat[, 3]
+      }
+      phenoData0[, snp.v] <- temp
+    }
+    if (flag1) {
+      # Original
+      new <- paste(snp.v, "_GENO", sep="")
+      phenoData0[, new] <- snp
+    }
+
+    if (flag2) {
+      if (imputeFlag) {
+        phenoData0[, paste(snp.v, "_0", sep="")] <- mat[, 1]
+        phenoData0[, paste(snp.v, "_1", sep="")] <- mat[, 2]
+        phenoData0[, paste(snp.v, "_2", sep="")] <- mat[, 3]
+      } else {
+        phenoData0[, paste(snp.v, "_0", sep="")] <- as.numeric(exsnp == 0)
+        phenoData0[, paste(snp.v, "_1", sep="")] <- as.numeric(exsnp == 1)
+        phenoData0[, paste(snp.v, "_2", sep="")] <- as.numeric(exsnp == 2)
+      }
+    }
+    if (aflag) {
+      new <- paste(snp.v, "_ALLELES", sep="")
+      phenoData0[, new] <- alleles[i]
     }
   }
 
-  out <- getListName(op, "outfile")
+  out <- op[["outfile", exact=TRUE]]
   if (!is.null(out)) writeTable(phenoData0, out)
 
-  phenoData0
+  newnc  <- ncol(phenoData0)
+  gnames <- colnames(phenoData0)[(nc+1):newnc]
+
+  list(data=phenoData0, geno.vars=gnames)
 
 } # END: mergePhenoGeno
 
@@ -2644,7 +2813,7 @@ parse.vec <- function(vec.len, vec.prefix="", vec.suffix="",
 # Function to replace strings in levels of a categorical variable
 replaceStr.var <- function(data, var, str=" ", newStr="") {
 
-  data[, var] <- gsub(str, newStr, data[, var])
+  data[, var] <- gsub(str, newStr, data[, var], fixed=TRUE)
 
   data
 
@@ -2657,7 +2826,7 @@ replaceStr.list <- function(data, varlist) {
     tlist <- varlist[[i]]
     tlist <- default.list(tlist, c("var", "str", "newStr"),
                           list("ERROR", " ", ""), error=c(1, 0, 0))
-    data[, tlist$var] <- gsub(tlist$str, tlist$newStr, data[, tlist$var])
+    data[, tlist$var] <- gsub(tlist$str, tlist$newStr, data[, tlist$var], fixed=TRUE)
   }
   data
 
@@ -2692,14 +2861,15 @@ addColumn <- function(data, id.var, file.list, op=NULL) {
   op <- default.list(op, c("leading0", "initValue", "replace"), list(0, NA, 1))
 
   file.list <- default.list(file.list,
-               c("file", "file.type", "delimiter", "header",
-                 "id.var", "vars"), 
-               list("ERROR", 3, "\t", 1, "ERROR", "ERROR"), 
-               error=c(1, 0, 0, 0, 1, 1))
+               c("file", "id.var", "vars"), 
+               list("ERROR", "ERROR", "ERROR"), 
+               error=c(1, 1, 1))
+  temp <- list(vars=c(file.list$id.var, file.list$vars))
+  file.list <- check.file.list(file.list, op=temp)
 
   check.vec(id.var, "id.var", list(checkList=colnames(data), maxValue=ncol(data), minValue=1))
 
-  type  <- getListName(file.list, "type")
+  type  <- file.list[["type", exact=TRUE]]
   vars  <- file.list$vars
   id    <- file.list$id.var
   names <- file.list$names
@@ -3032,16 +3202,20 @@ check.file.list <- function(flist, op=NULL) {
   # op          List with names 
   #  exist
   #  vars
- 
-  flist <- default.list(flist, c("file", "header"), list("ERROR", 1), 
-                        error=c(1, 0))
+
+  if (!is.list(flist)) flist <- list(file=flist)
+  flist <- default.list(flist, c("file"), list("ERROR"), 
+                        error=c(1))
   if (is.null(flist[["file.type", exact=TRUE]])) {
     flist$file.type <- getFileType(flist$file)
   }
   if (is.null(flist[["delimiter", exact=TRUE]])) {
     flist$delimiter <- getFileDelim(flist$file, type=flist$file.type)
   }
-
+  if (is.null(flist[["header", exact=TRUE]])) {
+    flist$header <- getFileHeader(flist)
+  }
+ 
   op <- default.list(op, c("exist"), list(1)) 
   if (op$exist) {
     if (check.files(flist$file)) stop()
@@ -3106,3 +3280,31 @@ normVarNames <- function(cvec, op=NULL) {
 
 } # END: normVarNames
 
+# Function to get the SNP names from a matrix or data frame
+getSnpNames <- function(obj, str="^rs[0-9]+$") {
+
+  # obj    
+  # str     PERL regular expression
+
+  cnames <- colnames(obj)
+  temp   <- grep(str, cnames, perl=TRUE)
+  cnames <- cnames[temp]
+  cnames
+
+} # END: getSnpNames
+
+# Function to get a unique variable name
+getUniqueVarName <- function(vec, alen=4, nlen=4) {
+
+  vec1 <- c("a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o",
+            "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z")
+  vec2 <- 0:9
+
+  while (1) {
+    t1  <- paste(sample(vec1, alen, replace=TRUE), collapse="", sep="")
+    t2  <- paste(sample(vec2, alen, replace=TRUE), collapse="", sep="")
+    ret <- paste(t1, t2, sep="")
+    if (!(ret %in% vec)) return(ret)
+  }
+
+} # END: getUniqueVarName

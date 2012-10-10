@@ -47,6 +47,14 @@
 #         Dec 29 2009  Add getFileDelim function
 #         Jan 06 2010  Call getFileType in getFID
 #         Jan 19 2010  Add function loadData.table
+#         Mar 23 2010  Update getFileDelim
+#         Apr 08 2010  Add function to read data from IMPUTE2 file
+#         Apr 12 2010  Add option to load.impute2
+#         Jun 09 2010  Return imputed flag for each snp in load.impute2
+#         Jul 22 2010  Update getFileDelim for data passed in
+#         Oct 11 2010  Update getFileDelim
+#         Jan 04 2011  Add getFileHeader function
+#         Jul 08 2011  Modify load.impute2 for missing genotypes (0 0 0)
 
 # Function to load and return the data object (or subset)
 loadData <- function(infile, p) {
@@ -106,6 +114,8 @@ loadData <- function(infile, p) {
   #         sas.exe
   #         sas.file
   #         shell
+  # subject.list   Only for file.type = 9, 10.
+  #                File containing subject ids
   #########################################################################
 
   # Set defaults
@@ -198,6 +208,9 @@ loadData <- function(infile, p) {
     # Type 3 compressed file
     dat <- readFile.gzip3(infile, p)
     if (stream) return(dat)
+  } else if (type %in% c(9, 10)) {
+    # Returned object is a list
+    return(load.impute2(infile, p))
 
   } else {
     # GLU format
@@ -208,8 +221,8 @@ loadData <- function(infile, p) {
   # Extract snps
   temp <- p[["snpNames", exact=TRUE]]
   if (!is.null(temp)) {
-    op <- list(include.row1=p$include.row1, substr.vec=c(1, 30), 
-               keep=p$snpNames.keep)
+    op <- list(include.row1=p$include.row1, substr.vec=c(1, 15), 
+               keep=p$snpNames.keep, exact=1)
     dat <- extractByStr(dat, temp, op=op)
   }
 
@@ -1059,10 +1072,10 @@ readTable <- function(file, p) {
   
     if (!is.null(p$remove.ids)) {
       temp.ids <- p$remove.ids
-      flag     <- 1
+      flag     <- -1
     } else {
       temp.ids <- p$keep.ids
-      flag     <- 0
+      flag     <- 1
     }
 
     temp.ids <- as.character(unique(temp.ids))
@@ -1288,13 +1301,14 @@ getFID <- function(infile, p) {
   if (is.null(p[["file.type", exact=TRUE]])) p$file.type <- getFileType(infile)
 
   type <- p$file.type
-  if (type %in% c(2, 3)) {
+  if (type %in% c(2, 3, 9)) {
     fid <- file(infile, open=p$open)
   } else if (type %in% c(5, 6)) {
     fid <- unz(infile, p$zipFile, open=p$open)
-  } else if (type %in% c(7, 8)) {
+  } else if (type %in% c(7, 8, 10)) {
     fid <- gzfile(infile, open=p$open)
   }
+
   fid
 
 } # END: getFID
@@ -1404,12 +1418,17 @@ getFileType <- function(f, default=3) {
 getFileDelim <- function(f, type=NULL, default="\t") {
 
   delim <- default
-  if (is.null(type)) type <- getFileType(f)
-  if (type %in% c("lbat", "sbat")) return(delim)
-  fid <- getFID(f, list(file.type=type))
-  x <- scan(fid, what="character", nlines=2, sep="\n")
-  close(fid)
-  if (length(x) < 2) return(delim)
+  if (length(f) == 1) {
+    if (is.null(type)) type <- getFileType(f)
+    if (type %in% c("lbat", "sbat")) return(delim)
+    fid <- getFID(f, list(file.type=type))
+    x <- scan(fid, what="character", nlines=2, sep="\n")
+    close(fid)
+    if (length(x) < 2) return(delim)
+  } else {
+    # Assume f is the data
+    x <- f
+  }
 
   x1 <- getVecFromStr(x[1], delimiter="")
   x1 <- sort(table(x1, exclude=NULL), decreasing=TRUE)
@@ -1417,13 +1436,28 @@ getFileDelim <- function(f, type=NULL, default="\t") {
   x2 <- sort(table(x2, exclude=NULL), decreasing=TRUE)
   n1 <- names(x1)
   n2 <- names(x2)
-  temp <- (n1 %in% n2) & (x1 %in% x2)
-  if (!any(temp)) return(delim)
 
-  x1    <- x1[temp]
-  n1    <- n1[temp]
-  delim <- n1[1]
-  
+  temp <- (n1 %in% n2) & (x1 %in% x2)
+  if (!any(temp)) return("\n")
+  x1   <- x1[temp]
+  n1   <- n1[temp]
+  temp <- (n2 %in% n1) & (x2 %in% x1)
+  if (!any(temp)) return("\n")
+  x2   <- x2[temp]
+  n2   <- n2[temp]
+
+  check <- c("\t", " ", "\n", "|", ",")
+  len1  <- length(n1)
+  for (j in 1:len1) {
+    temp <- n1[j]
+    if ((temp %in% check)  && (x1[j] == x2[temp])) {
+      delim <- temp
+      break
+    }
+  }
+
+  if (!(delim %in% check)) delim <- "\n"
+
   delim 
 
 } # END: getFileDelim
@@ -1485,3 +1519,139 @@ loadData.table <- function(flist) {
 
 } # END: loadData.table
 
+# Function to load data from impute2 output
+load.impute2 <- function(infile, op) {
+
+  # op                List of options
+  #   genetic.model   0 = Return expected value
+  #                   1 = Dominant
+  #                   2 = Recessive
+  #                   3 = Return all probs delimited by "|"
+  #                   The default is 0
+  #   subject.list    List of subject ids
+
+  # Imputed snps have "---" as first column
+
+  gmodel <- function(v1, v2, v3) {
+
+    if (retType == 0) {
+      ret <- v2 + 2*v3
+    } else if (retType == 1) {
+      ret <- v2 + v3
+    } else if (retType == 2) {
+      ret <- v3
+    } else if (retType == 3) {
+      ret <- paste(v1, v2, v3, collapse="\t", sep="|") 
+    }
+
+    ret
+
+  } # END: gmodel
+
+  op <- default.list(op, c("genetic.model", "stop.row", "file.type"), 
+                    list(0, -1, 10))
+
+  # Adjust options
+  op$delimiter <- "\n"
+  if (op$stop.row > 1) op$stop.row <- op$stop.row - 1
+  if (op$file.type == 9) {
+    x <- scanFile(infile, op)
+  } else {
+    x <- readFile.gz2(infile, op)
+  }
+
+  # Get the subject ids
+  subs     <- getIdsFromFile(op$subject.list, id.vec=NULL) 
+  nsubs    <- length(subs)
+  subs     <- paste(subs, collapse="\t", sep="")
+  subs     <- paste("ldat\t", subs, sep="")
+  nperLine <- 3*nsubs + 5
+  s1       <- seq(from=1, to=nperLine-5, by=3)
+  s2       <- seq(from=2, to=nperLine-5, by=3)
+  s3       <- seq(from=3, to=nperLine-5, by=3)
+  rem      <- 1:5
+  x        <- c(subs, x)
+  nx       <- length(x)
+  snpNames <- character(nx-1)
+  alleles  <- character(nx-1) # First should be major
+  MAF      <- numeric(nx-1)
+  imputed  <- rep.int(1, times=nx-1) 
+  retType  <- op$genetic.model
+  for (i in 1:(nx-1)) {
+    vec <- getVecFromStr(x[i+1], delimiter=" ")
+
+    if (length(vec) != nperLine) {
+      temp <- paste("ERROR in load.impute2: with line ", i+1, sep="")
+      stop(temp)
+    }
+    if (vec[1] != "---") imputed[i] <- 0
+    snpNames[i] <- vec[2]
+    a1    <- vec[4]
+    a2    <- vec[5]
+    vec   <- as.numeric(vec[-rem])
+    svec1 <- vec[s1]
+    svec2 <- vec[s2]
+    svec3 <- vec[s3]
+
+    # Check for missing values
+    temp <- svec1 + svec2 + svec3 == 0
+    temp[is.na(temp)] <- TRUE
+    if (any(temp)) {
+      svec1[temp] <- NA
+      svec2[temp] <- NA
+      svec3[temp] <- NA
+    }
+    
+    sum1  <- sum(svec1, na.rm=TRUE)
+    sum2  <- sum(svec2, na.rm=TRUE)
+    sum3  <- sum(svec3, na.rm=TRUE)
+
+    if (sum1 >= sum3) {
+      alleles[i] <- paste(a1, a2, sep="")
+      MAF[i]     <- (sum2 + 2*sum3)/(2*(sum1 + sum2 + sum3))
+      value      <- gmodel(svec1, svec2, svec3)
+    } else {
+      alleles[i] <- paste(a2, a1, sep="")
+      MAF[i]     <- (sum2 + 2*sum1)/(2*(sum1 + sum2 + sum3))
+      value      <- gmodel(svec3, svec2, svec1)
+    }
+    
+    temp <- paste(value, collapse="\t", sep="")
+    x[i+1] <- paste(snpNames[i], "\t", temp, sep="") 
+  }
+
+  rm(s1, s2, s3, svec2, svec3)
+  temp <- gc()
+
+  vec <- op[["snpNames", exact=TRUE]]
+  if (!is.null(vec)) {
+    temp <- snpNames %in% vec
+    if (any(temp)) {
+      x        <- x[c(TRUE, temp)]
+      snpNames <- snpNames[temp]
+      alleles  <- alleles[temp]
+      MAF      <- MAF[temp]
+    } else {
+      temp <- paste("NOTE: No SNPs found in file ", infile, sep="")
+      print(temp)
+    }
+  }
+
+  list(snpData=x, alleles=alleles, MAF=MAF, snpNames=snpNames, imputed=imputed)
+
+} # END: load.impute2
+
+# Function to determine if a file has a header
+getFileHeader <- function(flist) {
+
+  ret <- 1
+
+  flist$return.cols <- 1
+  cols <- getNcols(flist$file, flist)
+  numcols <- as.numeric(cols)
+  temp <- !is.na(numcols)
+  if (any(temp)) ret <- 0
+
+  ret  
+
+} # END: getFileHeader

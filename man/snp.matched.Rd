@@ -87,7 +87,8 @@ Bhattacharjee S., Wang Z., Ciampa J., Kraft P., Chanock S, Yu K., Chatterjee N.
  Ydata <- cbind(Xdata, PC1=rnorm(nrow(Xdata)), PC2=rnorm(nrow(Xdata)))
  
  # Match using PC1 and PC2
- mx <- getMatchedSets(Ydata, CC=TRUE, NN=TRUE, ccs.var="case.control", dist.vars=c("PC1","PC2"), size = 4)
+ mx <- getMatchedSets(Ydata, CC=TRUE, NN=TRUE, ccs.var="case.control", 
+                      dist.vars=c("PC1","PC2"), size = 4)
  
  # Append columns for CC and NN matching to the data
  Zdata <- cbind(Ydata, CCStrat=mx$CC, NNStrat=mx$NN)

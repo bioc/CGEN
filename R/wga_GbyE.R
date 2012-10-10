@@ -81,6 +81,18 @@
 #                      the major/minor allele or (1) all subjects
 #                      The default is 1
 #          Mar 18 2010 Add package="CGEN" option
+#          Mar 29 2010 Add return values to snp.logistic
+#          Mar 30 2010 Add option for fixing parameters
+#          Apr 02 2010 Add option zero.vars to snp.logistic
+#          Apr 05 2010 Change call to C code
+#          Apr 14 2010 Change default reltol to 1e-8
+#          Apr 22 2010 Fix bug in getInit with adding snp back when zeroSNP = 1
+#          Apr 26 2010 Change code for when there are NAs with UML parms
+#          Nov 04 2011 Check if snp.var is a main effect
+#          Dec 23 2011 Add function in snp.main to check CML initial estimates
+#                      Allow for initial estimates to be passed in
+#          Jul 18 2012 Remove errorCheck option in snp.main. Was causing a problem
+#                      for different genetic models.
 ######################################################################
 # TO DO: 
 # Modify the different tests for the different genetic models
@@ -126,7 +138,7 @@ snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) {
   #                 3: general
   #                 The default is 0. 
   #  reltol       Stopping tolerance
-  #               The default is 1e-6
+  #               The default is 1e-8
   #  maxiter      Maximum number of iterations
   #               The default is 100
   #  optimizer    One of : "BFGS", "Nelder-Mead", "BFGS", "CG", 
@@ -1455,7 +1467,7 @@ snp.logistic <- function(data, response.var, snp.var, main.vars=NULL,
   #                 The default is 0. 
   #                 This option has no effect if the snp is binary.
   #  reltol         Stopping tolerance
-  #                 The default is 1e-6
+  #                 The default is 1e-8
   #  maxiter        Maximum number of iterations
   #                 The default is 100
   #  optimizer      One of :"Nelder-Mead", "BFGS", "CG", "L-BFGS-B", 
@@ -1466,6 +1478,16 @@ snp.logistic <- function(data, response.var, snp.var, main.vars=NULL,
   #                 The default is "SNP_".
   #  debug          0 or 1 to show the IRLS iterations.
   #                 The default is 0 
+  #  fit.null       0 or 1 to fit a NULL model which excludes the snp, 
+  #                 interactions with the snp, and the interacting covariates
+  #                 This option takes precedence over zero.vars.
+  #                 The default is 0.
+  #  zero.vars      Character vector of variable names to fix or a list
+  #                 with names "snp.var", "main.vars", int.vars", and
+  #                 "strata.var".
+  #                 If zero.vars is a list, then the names is the list can 
+  #                 either be formulas or character vectors.
+  #                 The default is 0.
   ######################################################################
 
   # Check for errors
@@ -1473,8 +1495,14 @@ snp.logistic <- function(data, response.var, snp.var, main.vars=NULL,
   if (length(snp.var) != 1) stop("snp.var must be a single variable")
   if (!is.data.frame(data)) stop("data must be a data frame")
 
-  op <- default.list(op, c("snpName"), list("SNP_"))
+  main.call   <- main.vars
+  int.call    <- int.vars
+  strata.call <- strata.var
+  
+  op <- default.list(op, c("snpName", "fit.null"), list("SNP_", 0))
   if (!is.numeric(snp.var)) op$snpName <- snp.var
+  zeroFlag  <- 0
+  zero.vars <- NULL
 
   main.form <- ("formula" %in% class(main.vars))
   int.form  <- ("formula" %in% class(int.vars))
@@ -1490,11 +1518,18 @@ snp.logistic <- function(data, response.var, snp.var, main.vars=NULL,
     stop("The above variables were not found in the input data")
   }
 
+  # Check if snp.var is in main.vars or int.vars
+  if (snp.var %in% getAllVars(main.vars)) stop("ERROR: main.vars must not contain snp.var")
+  if (snp.var %in% getAllVars(int.vars)) stop("ERROR: int.vars must not contain snp.var")
+
   # Remove missing values
   temp <- getFormulas(vlist)
   miss <- c(NA, NaN, Inf, -Inf)
   if (length(temp)) data <- applyFormulas(data, temp, remove=miss)
   data <- removeMiss.vars(data, vars=vars, miss=miss)
+
+  rm(vlist, vars)
+  temp <- gc(verbose=FALSE)
 
   # Get the response variable 
   D    <- unfactor(data[, response.var])
@@ -1523,6 +1558,23 @@ snp.logistic <- function(data, response.var, snp.var, main.vars=NULL,
     if (is.factor(data[, temp])) facVars <- c(facVars, temp)
   }
 
+  # Get the V design matrix
+  design.V0 <- logistic.dsgnMat(data, int.vars, facVars)$designMatrix
+  int.vars  <- colnames(design.V0)
+
+  # For fitting a null model
+  if (op$fit.null) {
+    # Remove interaction vars, snp
+    temp         <- getAllVars(int.call)
+    temp         <- unique(temp, int.vars) 
+    zero.vars    <- temp
+    int.vars     <- NULL
+    design.V0    <- NULL
+    zeroFlag     <- 1
+    op$fixParms  <- list(parms=snp.var, values=0)
+    op$zero.vars <- NULL
+  }
+
   # Get the stratafication matrix
   if (!sflag) {
     design.S0 <- matrix(data=1, nrow=nobs, ncol=1)
@@ -1531,26 +1583,34 @@ snp.logistic <- function(data, response.var, snp.var, main.vars=NULL,
   }
 
   # Get the X design matrix
-  design.X0 <- logistic.dsgnMat(data, main.vars, facVars)$designMatrix
+  design.X0 <- logistic.dsgnMat(data, main.vars, facVars, remove.vars=zero.vars)$designMatrix
 
-  # Get the V design matrix
-  design.V0 <- logistic.dsgnMat(data, int.vars, facVars)$designMatrix
+  # For the zero.vars option
+  zero.vars <- op[["zero.vars", exact=TRUE]]
+  if (!is.null(zero.vars)) {
+    temp <- list(main.vars=design.X0, int.vars=design.V0, strata.var=design.S0)
+    temp <- apply_zero.vars(zero.vars, temp, snp.var, facVars, data)
+    op$fixParms <- temp[["fixParms", exact=TRUE]]
+    temp        <- temp$mat.list
+    design.V0   <- temp[["int.vars", exact=TRUE]]
+    int.vars    <- colnames(design.V0)
+    design.X0   <- temp[["main.vars", exact=TRUE]]
+    design.S0   <- temp[["strata.var", exact=TRUE]]
+  }
 
-  rm(vlist, vars)
-  temp <- gc(verbose=FALSE)
+  main.vars   <- colnames(design.X0)
+  strata.var  <- colnames(design.S0)
 
   # Call the core function
   ret <- snp.main(D, snp, X.main=design.X0, X.int=design.V0,
                       X.strata=design.S0, op=op) 
-  
+
   # Add model info
-  if (main.form) main.vars <- colnames(design.X0)
-  if (int.form) int.vars <- colnames(design.V0)
-  if (s.form) strata.var <- colnames(design.S0)
   model <- list(data=data, response.var=response.var, snp.var=snp.var,
                 main.vars=main.vars, int.vars=int.vars,
                 strata.var=strata.var, factors=facVars,
-                snpName=op$snpName)
+                snpName=op$snpName, main.call=main.call,
+                int.call=int.call, strata.call=strata.call)
   ret$model.info <- model
 
   ret
@@ -1586,7 +1646,7 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
   #                 The default is 0. 
   #                 This option has no effect if the snp is binary.
   #  reltol         Stopping tolerance
-  #                 The default is 1e-6
+  #                 The default is 1e-8
   #  maxiter        Maximum number of iterations
   #                 The default is 100
   #  optimizer      One of :"Nelder-Mead", "BFGS", "CG", "L-BFGS-B", 
@@ -1601,6 +1661,20 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
   #                 The default is 1
   #  use.C.code     0 or 1 to call the C code for the BFGS optimizer
   #                 The default is 1
+  #  fit.null       0 or 1 for fitting a null model. All the necessary
+  #                 variables should already be removed from the design
+  #                 matrices.
+  #                 The default is 0
+  #  num.deriv      0 or 1 to use numerical derivatives.
+  #                 Numerical derivatives will be used if genetic.model > 0
+  #                 The default is 0
+  ###################################################################
+  #  fixParms       List with names "parms" and "value".
+  #                 The default is NULL
+  #    parms        Vector of parm names to fix
+  #                 No default
+  #    values       Numeric vector of fixed values
+  #                 No default
   ######################################################################
   # RETURN:
   #  A list with sublists named UML (standard logistic regression),
@@ -1612,37 +1686,77 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
   getInit <- function() {
 
     # Define the formula
-    ff <- "D~"
-    if (nx) ff <- paste(ff, "X.main + ", sep="")
-    ff <- paste(ff, "fsnp ", sep="")
-    if (nv) {
-      if (!gmodel3) {
-        ff <- paste(ff, "+ fsnp:X.int", sep="")
-      } else {
-        ff <- paste(ff, "+ fsnp[,1]:X.int + fsnp[,2]:X.int", sep="")
+    ff <- "D ~ 1"
+    if (nx) ff <- paste(ff, " + X.main ", sep="")
+    if (!fit.null) {
+      if (!zeroSNP) ff <- paste(ff, "+ fsnp ", sep="")
+      if (nv) {
+        if (!gmodel3) {
+          ff <- paste(ff, "+ fsnp:X.int", sep="")
+        } else {
+          ff <- paste(ff, "+ fsnp[,1]:X.int + fsnp[,2]:X.int", sep="")
+        }
       }
     }
     ff <- as.formula(ff)
 
     # Get variable names for Z
     v <- logistic.vnames(X.main, X.int, nStrata, snpName=op$snpName, 
-           genetic.model=genetic.model)
-    cnames <- c(v$int, v$X, v$snp, v$V)
+           genetic.model=genetic.model, fit.null=fit.null, zeroSNP=zeroSNP)
 
     # Call after snp was multiplied by V
-    fit <- glm(ff, family=binomial(), model=FALSE, x=FALSE, y=FALSE) 
+    fit <- glm(ff, family=binomial(), model=FALSE, x=FALSE, y=FALSE)
 
     # Check the convergence
     if (!fit$converged) return(NULL)
 
-    parms   <- fit$coefficients
-    names(parms) <- cnames
-    loglike <- getLoglike.glm(fit)
-    cov     <- summary(fit)$cov.scaled
-    temp    <- !is.na(parms)
-    cnames  <- cnames[temp]
+    UML.parms <- fit$coefficients
+    loglike   <- getLoglike.glm(fit)
+    cov       <- summary(fit)$cov.scaled
+    cnames    <- v$UML.names
+    #all       <- v$all.names
+    names(UML.parms) <- cnames
+    parms <- UML.parms
+
+    if (zeroSNP) {
+      # Add the snp back in
+      pos   <- nx + 1
+      len   <- length(parms)
+      temp  <- c(parms[1:pos], 0)
+      temp2 <- c(cnames[1:pos], v$snp)
+      if (nv) {
+        temp  <- c(temp, parms[(pos+1):len])
+        temp2 <- c(temp2, cnames[(pos+1):len])
+      }
+      parms <- temp
+      names(parms) <- temp2
+    }
+
+    # Check for NAs
+    naFlag  <- 0
+    naXPos  <- NULL
+    naVPos  <- NULL
+    temp    <- is.na(UML.parms)
+    cnames  <- cnames[!temp]
     colnames(cov) <- cnames
     rownames(cov) <- cnames 
+    if (any(temp)) {
+      naFlag <- 1
+
+      # Stop if snp was not estimated
+      if (temp[nx+2]) stop("ERROR: SNP was not estimated for the UML method")
+
+      # Get the NA positions in the design matrices
+      naPos  <- (1:length(UML.parms))[temp]
+      temp2  <- (naPos <= nx + 1)
+      if (any(temp2)) naXPos <- naPos[temp2] - 1
+      temp2 <- !temp2
+      if (any(temp2)) naVPos <- naPos[temp2] - nx - 2 
+      
+      UML.parms <- UML.parms[!temp]
+      parms <- parms[!is.na(parms)]
+    }
+    
 
     # Remove the special character "`" that glm will sometimes
     #  put in the variable names
@@ -1670,9 +1784,11 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
     if (!is.finite(xi[1])) xi[1] <- 0
 
     eta <- c(parms, xi)
-    names(eta) <- v$all
+    names(eta) <- c(names(parms), v$strata)
+
     list(eta=eta, alpha=alpha, beta=beta, xi=xi, fit=fit, parms=parms,
-         loglike=loglike, cov=cov, fitted.values=fit$fitted.values)
+         loglike=loglike, cov=cov, fitted.values=fit$fitted.values, UML.parms=UML.parms,
+         naFlag=naFlag, naXPos=naXPos, naVPos=naVPos)
 
   } # END: getInit
 
@@ -1783,6 +1899,7 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
   # Function to compute the log-likelihood (or testing)
   loc.getLoglike <- function(eta) {
 
+    if (fixFlag) eta <- fixGetEta(eta)
     Pdg <- Pdg.xs(Pdg, eta[alpha.row], eta[beta.row], eta[xi.row])
     ret <- sum(log(Pdg[loglike.mat]))
 
@@ -1819,8 +1936,9 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
     #         Only needed for which = 1 
     # which   0 or 1, 1 is for the optimizer
     #         The default is 1 
-    
+
     # Get the matrix of probabilities
+    if (fixFlag) eta <- fixGetEta(eta)
     pmat  <- Pdg.xs(Pdg, eta[alpha.row], eta[beta.row], eta[xi.row])
 
     temp1 <- D - Pd1.xs(pmat)
@@ -1840,6 +1958,7 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
 
     temp      <- c(temp1, temp2, temp3)
     dim(temp) <- c(nparms, 1)
+    if (fixFlag) temp <- temp[fixMap]
     temp
 
   } # END: getWtYmu
@@ -1851,7 +1970,7 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
     control <- list(fnscale=-1, maxit=op$maxiter, reltol=op$reltol)
 
     # Call the optimizer
-    if (genetic.model) {
+    if (op$num.deriv) {
       ret <- optim(eta0, loc.getLoglike, method=op$optimizer, 
                control=control, hessian=TRUE)
     } else {
@@ -1865,7 +1984,6 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
     # Get the covariance matrix and score
     if (conv) {
       conv   <- 1
-      #cov   <- solve(-ret$hessian)
       cov    <- chol(-ret$hessian)
       cov    <- chol2inv(cov)
       cnames <- names(eta0)
@@ -1884,14 +2002,17 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
   # Function to compute empirical bayes estimates
   getEB <- function() {
 
+    #if (fixFlag) return(NULL)
+
     ids   <- c(alpha.row, beta.row)
+    if (zeroSNP) ids <- ids[-length(ids)]
+
     parm1 <- ret$UML$parms
     parm2 <- ret$CML$parms[ids]
     cov1  <- ret$UML$cov
     vnames     <- names(parm1)
     dim(parm1) <- NULL
     dim(parm2) <- NULL
- 
     psi2  <- parm1 - parm2
     psi2  <- psi2*psi2
     phi   <- diag(cov1)
@@ -1899,9 +2020,12 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
 
     # Compute the new estimates
     parms <- parm1*psi2/denom + parm2*phi/denom
-
     temp  <- (phi*(phi-psi2))/(denom*denom)
-    cmat  <- cbind(diag(1-temp), diag(temp))
+    if (length(temp) > 1) {
+      cmat  <- cbind(diag(1-temp), diag(temp))
+    } else {
+      cmat <- matrix(c(1-temp, temp), nrow=1)
+    }
     rm(psi2, phi, denom, parm1, parm2)
     temp <- gc(verbose=FALSE)
 
@@ -1918,14 +2042,19 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
     }
 
     # Define the Z matrix. X has an intercept column as the first column
-    Z <- cbind(X.main, fsnp, temp)
+    if (!zeroSNP) {
+      Z <- cbind(X.main, fsnp, temp)
+    } else {
+      Z <- cbind(X.main, temp)
+    }
 
     # Compute the scores for UML
     temp   <- D - fitted.values
     score1 <- matrixMultVec(Z, temp)
-  
+ 
     # Get the matrix of probabilities P(D=d, G=g|X,S)
     parm2 <- ret$CML$parms
+    if (fixFlag) parm2 <- fixGetEta(parm2)
     pmat  <- Pdg.xs(Pdg, parm2[alpha.row], parm2[beta.row], parm2[xi.row])
 
     # Get the scores for the 3 parts of eta (parm2)
@@ -1938,11 +2067,25 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
     } else {
       temp2 <- matrixMultVec(X.int, temp2)
     }
+    # If the snp was not in the model as a main effect, then remove the
+    #  first column of temp2.
+    if (zeroSNP) {
+      if (ncol(temp2) == 1) {
+        temp2 <- NULL
+      } else {
+        temp2 <- temp2[, -1]
+      }
+    }
+
     temp3 <- snp - Eg.xs(pmat)
     temp3 <- matrixMultVec(X.strata, temp3)
 
     # Get the scores for CML
-    score2 <- cbind(temp1, temp2, temp3)
+    if (!fit.null) {
+      score2 <- cbind(temp1, temp2, temp3)
+    } else {
+      score2 <- cbind(temp1, temp3)
+    } 
 
     # Free memory
     rm(temp1, temp2, temp3, Z, pmat, parm2)
@@ -1959,6 +2102,7 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
       dim(temp2) <- dim2
       temp <- temp + (temp1 %*% temp2)
     } 
+
     cov12 <- cov1 %*% temp %*% ret$CML$cov
 
     # We only need the cov(beta.UML, beta.CML) submatrix
@@ -1997,6 +2141,14 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
     }
     if (is.null(ret$CML)) return(ret)
 
+    if (fixFlag) {
+      xi.row <- fix_xi.row
+      if (!xi.row[1]) {
+        class(ret$CML) <- "CML"
+        return(ret)
+      }
+    }
+
     # Transfrom the strata parms ???
     xi  <- ret$CML$parms[xi.row]
     #exi <- exp(xi)
@@ -2027,7 +2179,12 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
     rownames(ret$CML$strata.cov) <- temp
 
     # Remove strata parms from cov
-    ret$CML$cov <- ret$CML$cov[-xi.row, -xi.row]
+    temp <- ret$CML$cov[-xi.row, -xi.row]
+    if (length(temp) == 1) {
+      dim(temp) <- c(1, 1)
+      rownames(temp) <- colnames(temp) <- "Intercept"
+    }
+    ret$CML$cov <- temp
 
     class(ret$CML) <- "CML"
     if (!is.null(ret$EB)) class(ret$EB) <- "EB"
@@ -2053,6 +2210,15 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
 
   } # END: fitGLM
 
+  # Function to get a new eta from fixEta0
+  fixGetEta <- function(eta) {
+
+    ret <- fixEta0
+    ret[fixMap] <- eta
+    ret
+
+  } # END: fixGetEta
+
   # Wrapper for the C function
   CML_EB.R <- function() {
 
@@ -2060,6 +2226,13 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
     if (!is.loaded("CML_EB")) {
       warning("CML_EB function is not loaded")
       return(NULL)
+    }
+
+    # If initial estimates were passed in, then use them
+    op_eta0 <- op[["init.parms", exact=TRUE]]
+    if (!is.null(op_eta0)) {
+      if (length(op_eta0) != nparms) stop("ERROR: init.parms has the wrong length")
+      eta0[] <- op_eta0
     }
 
     error <- 1
@@ -2084,6 +2257,19 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
     eb.cov    <- double(nbp1*nbp1)
     uml.cov   <- ret$UML$cov
 
+    if (zeroSNP) {
+      # Remove snp and update other variables
+      temp <- match(op$snpName, names(eta0))
+      if (!is.na(temp)) {
+        eta0   <- eta0[-temp]
+        nparms <- length(eta0) 
+        nbeta  <- nbeta - 1 
+      }
+    }
+
+    ##########################################################################
+    ############## Include PACKAGE="CGEN" when building a package ############
+    ##########################################################################
     # Call the C function
     temp <- .C("CML_EB", as.double(eta0), as.integer(nparms), as.integer(nbeta),
             as.integer(D), as.integer(snp), as.integer(n), as.double(X.main), as.integer(nx),
@@ -2091,9 +2277,11 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
             as.integer(genetic.model), as.integer(geno.binary),
             as.integer(op$maxiter), as.double(op$reltol), as.integer(op$debug),
             as.double(uml.cov), as.double(fitted.values),
+            as.integer(zeroSNP), as.integer(op$num.deriv), 
             error=error, cml.parms=cml.parms, cml.cov=cml.cov, cml.ll=cml.ll,
             eb.parms=eb.parms, eb.cov=eb.cov, PACKAGE="CGEN")
     error <- temp$error
+
     if (error) return(list())
 
     # Get the covariance matrix
@@ -2118,47 +2306,113 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
 
   } # END: CML_EB.R
 
+  # Function to check the initial estimates of CML
+  check_init <- function() {
+
+    new <- eta0
+
+    # If initial estimates were passed in, then use them
+    op_eta0 <- op[["init.parms", exact=TRUE]]
+    if (!is.null(op_eta0)) {
+      if (length(op_eta0) != nparms) stop("ERROR: init.parms has the wrong length")
+      new[] <- op_eta0
+    }
+   
+    maxll <- loc.getLoglike(eta0)
+
+    maxit <- 100
+    h     <- 0.1
+    steps <- h*abs(new)
+    temp  <- steps <= 1e-8
+    steps[temp] <- 0.01
+
+    for (i in 1:nparms) {
+      test  <- new
+      point <- new[i]
+      step  <- steps[i]
+      flag  <- 0
+
+      # For 2 directions
+      for (k in 1:2) {
+        for (j in 1:maxit) {
+
+          point0  <- point + step
+          test[i] <- point0
+          ll      <- loc.getLoglike(test)
+
+          if (ll > maxll) {
+            maxll <- ll
+            point <- point0
+            flag  <- 1
+          } else {
+            break
+          }
+        }
+        if (flag) {
+          new[i] <- point
+          break
+        } else {
+          # Try other direction
+          point <- new[i]
+          step  <- -step
+        }
+      }
+
+    }
+
+    new
+
+  } # END: check_init
 
   # Check the options list
   op <- default.list(op, c("reltol", "maxiter", "optimizer", 
         "snpName", "debug", "genetic.model", "errorCheck", "geno.binary",
-        "use.C.code"), 
-         list(1e-6, 100, "BFGS", "SNP_", 0, 0, 1, 0, 1))
+        "use.C.code", "only.UML", "fit.null", "num.deriv"), 
+         list(1e-8, 100, "BFGS", "SNP_", 0, 0, 1, 0, 1, 0, 0, 0))
+
+  fixFlag  <- 0
+  fit.null <- op$fit.null
+  zeroSNP <- FALSE
+  if (fit.null) {
+    X.int <- NULL
+    op$fixParms <- list(parms=op$snpName, values=0)
+    zeroSNP <- TRUE
+    fixFlag <- 1
+  } else {
+    fixFlag <- !is.null(op[["fixParms", exact=TRUE]])
+    if (fixFlag) {
+      if (op$snpName %in% op$fixParms$parms) zeroSNP <- TRUE 
+    }
+  }
+  if (zeroSNP) op$genetic.model <- 0
   genetic.model <- op$genetic.model
-  geno.binary <- op$geno.binary
-  if (genetic.model %in% 1:2) geno.binary <- 1
+  geno.binary <- 0
   
-  if (op$errorCheck) {
-    if (!(genetic.model %in% c(0, 1, 2, 3))) stop("genetic.model must be 0-3")
+  if (!(genetic.model %in% c(0, 1, 2, 3))) stop("genetic.model must be 0-3")
   
-    # Get the number of genotypes
-    snp  <- unfactor(snp, fun=as.integer)
-    temp <- sort(unique(snp))
-    n    <- length(temp)
+  # Get the number of genotypes
+  snp  <- unfactor(snp, fun=as.integer)
+  usnp <- sort(unique(snp))
+  n    <- length(usnp)
 
-    # If the input SNP is binary, set genetic.model to 0 
-    if (!all(temp %in% c(0, 1, 2))) stop("snp is not coded correctly")
-    if (n == 1) {
-      stop("snp only has 1 value")
-    } else if (n == 2) {
-      if (genetic.model) warning("genetic.model is set to 0")
-      genetic.model <- 0  
+  # If the input SNP is binary 0-1, set genetic.model to 0 
+  if (!all(usnp %in% c(0, 1, 2))) stop("snp is not coded correctly")
+  if (n == 1) {
+    stop("snp only has 1 value")
+  } else if (n == 2) {
+    if (genetic.model) warning("genetic.model is set to 0")
+    genetic.model <- 0  
        
-      # geno.binary is for a binary SNP
-      geno.binary <- 1
-    } else {
-      geno.binary <- 0
-    }
+    if (all(usnp %in% 0:1)) geno.binary <- 1
+  }
+  if (genetic.model %in% 1:2) geno.binary <- 1
     
-    # Check D
-    if (!all(unique(D) %in% c(0, 1))) stop("D is not coded correctly")
-    
+  # Check D
+  if (!all(unique(D) %in% c(0, 1))) stop("D is not coded correctly")
 
-    if (!is.null(X.strata)) {
-      if (!is.matrix(X.strata)) stop("X.strata is not a matrix")
-    }
-
-  } # END: if (op$errorCheck)
+  if (!is.null(X.strata)) {
+    if (!is.matrix(X.strata)) stop("X.strata is not a matrix")
+  }
 
   gmodel3 <- (genetic.model == 3) 
   n       <- length(D)
@@ -2201,7 +2455,8 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
 
   # Save the initial estimates and initialize the return list
   ret       <- list()
-  ret$UML   <- list(parms=temp$parms, cov=temp$cov, loglike=temp$loglike)
+  ret$UML   <- list(parms=temp$UML.parms, cov=temp$cov, loglike=temp$loglike)
+  if (op$only.UML) setReturn(ret)
 
   nbeta     <- length(temp$beta)
   eta0      <- temp$eta
@@ -2214,8 +2469,67 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
   # Save the fitted values for empirical bayes
   fitted.values <- temp$fitted.values
 
+  # If there were NAs in UML, modify the design matrices
+  if (temp$naFlag) {
+    if (nx) {
+      pos <- temp$naXPos
+      len <- length(pos)
+      if (len) {
+        if (len == nx) {
+          nx     <- 0
+          X.main <- NULL
+        } else {
+          X.main <- removeOrKeepCols(X.main, pos, which=-1)
+          nx     <- ncol(X.main)
+        }
+      }
+    }
+    if (nv) {
+      pos <- temp$naVPos
+      len <- length(pos)
+      if (len) {
+        if (len == nv) {
+          nv    <- 0
+          X.int <- NULL
+        } else {
+          X.int <- removeOrKeepCols(X.int, pos, which=-1)
+          nv    <- ncol(X.int)
+        }
+      }
+    }
+  }
+
+  # Determine if parameters are to be fixed
+  if (fixFlag) {
+    #op$use.C.code <- 0
+    temp <- op$fixParms
+
+    # Define the map for fixed parms
+    temp2 <- match(temp$parms, names(eta0))
+    temp2 <- temp2[!is.na(temp2)]
+    if (!length(temp2)) stop("ERROR with fixParms$parms")
+    fixEta0   <- eta0
+    fixEta0[temp2] <- temp$values
+    fixMap <- (1:nparms)[-temp2]
+
+    # Change eta0
+    eta0 <- eta0[fixMap]
+
+    # Get the updated xi.row
+    temp <- sum(xi.row %in% temp2)
+    nxi  <- length(xi.row) - temp
+    if (nxi) {
+      temp <- length(eta0)
+      fix_xi.row <- (temp-nxi+1):temp
+    } else {
+      fix_xi.row <- 0
+    } 
+  }
+  if (genetic.model) op$num.deriv <- 1
+
   # Call the C code
   clist <- try(CML_EB.R(), silent=TRUE)
+
   if (checkTryError(clist, conv=0)) return(setReturn(ret))
   if (!is.null(clist)) {
     if (!length(clist)) return(setReturn(ret))
@@ -2260,7 +2574,12 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
 
   # Define a logical matrix for the calculation of the log-likelihood
   loglike.mat <- getLoglike.mat()
+
+  # Update initial estiamtes if needed
+  eta0 <- check_init()
+
   temp <- try(callOptim(), silent=TRUE)
+
   if (checkTryError(temp, conv=0)) return(setReturn(ret))
   if (!temp$converged) return(setReturn(ret))
   temp <- list(parms=temp$parms, cov=temp$cov, loglike=temp$loglike)
@@ -2276,7 +2595,8 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
 
 # Function to return a vector of variable names
 logistic.vnames <- function(X, V, nStrata, snpName="SNP_", 
-                    out.est=NULL, genetic.model=0) {
+                    out.est=NULL, genetic.model=0, 
+                    fit.null=0, zeroSNP=0) {
 
     # Initialize the return list
     ret <- list()
@@ -2352,16 +2672,48 @@ logistic.vnames <- function(X, V, nStrata, snpName="SNP_",
       ret$est.parms <- ret$est.p
     }
 
+    if (fit.null) {
+      ret$UML.names <- c(ret$int, ret$X)
+      ret$all.names <- c(ret$int, ret$X, ret$snp, ret$strata)
+    } else {
+      UML.names <- c(ret$int, ret$X)
+      if (!zeroSNP) UML.names <- c(UML.names, ret$snp)
+      UML.names <- c(UML.names, ret$V)
+      ret$UML.names <- UML.names
+      ret$all.names <- ret$all
+    }
+    
     ret
 
 } # END: logistic.vnames
 
 # Function to create a design matrix
-logistic.dsgnMat <- function(data, vars, facVars, removeInt=1, norm.names=1) {
+logistic.dsgnMat <- function(data, vars, facVars, removeInt=1, 
+                      norm.names=1, remove.vars=NULL) {
 
   # data        Data frame
   # vars        Character vector of variable names or a formula
   # facVars     Character vector of factor names
+  # remove.vars Character vector of variable names to remove.
+  #             They are removed after the variable names are normalized.
+  #             The default is NULL.
+
+  rm.vars <- function(mat, rmvars) {
+
+    mnames <- colnames(mat)
+    temp   <- !(mnames %in% rmvars)
+    mnames <- mnames[temp]
+    len    <- length(mnames)
+    if (len == 0) {
+      mat <- NULL
+    } else if ((len == 1) && (mnames == "Intercept")) {
+      mat <- NULL
+    } else {
+      mat <- removeOrKeepCols(mat, mnames, which=1)
+    } 
+    mat
+
+  } # END: rm.vars
 
   if (is.null(vars)) return(list(designMatrix=NULL, newVars=NULL)) 
 
@@ -2379,6 +2731,7 @@ logistic.dsgnMat <- function(data, vars, facVars, removeInt=1, norm.names=1) {
       }
     }
     if (norm.names) colnames(design) <- normVarNames(colnames(design))
+    if (!is.null(remove.vars)) design <- rm.vars(design, remove.vars)
     return(list(designMatrix=design, newVars=newVars))    
   }
 
@@ -2406,6 +2759,8 @@ logistic.dsgnMat <- function(data, vars, facVars, removeInt=1, norm.names=1) {
     colnames(design) <- c("Intercept", cnames)
   }
 
+  if (!is.null(remove.vars)) design <- rm.vars(design, remove.vars)
+
   # Make sure matrix is numeric
   d <- dim(design)
   cnames <- colnames(design)
@@ -2417,4 +2772,59 @@ logistic.dsgnMat <- function(data, vars, facVars, removeInt=1, norm.names=1) {
 
 } # END: logistic.dsgnMat
 
+# Function to apply the zero.vars option to the design matrices
+apply_zero.vars <- function(zero.vars, mat.list, snp.var, facVars, data) {
 
+  mat.names <- names(mat.list)
+  fixParms  <- NULL
+  if (is.character(zero.vars)) {
+    for (i in 1:length(mat.names)) {
+      mat    <- mat.list[[i]]
+      if (is.null(mat)) next
+      cnames <- colnames(mat)
+      temp   <- cnames %in% zero.vars
+      if (any(temp)) {
+        cnames <- cnames[!temp]
+        if (!length(cnames)) {
+          mat <- NULL
+        } else {
+          mat <- removeOrKeepCols(mat, cnames, which=1)
+        }
+        mat.list[[mat.names[i]]] <- mat 
+      } 
+    }
+    if (snp.var %in% zero.vars) {
+      fixParms <- list(parms=snp.var, values=0)
+    }
+  } else {
+    # zero.vars is a list
+    znames <- names(zero.vars)
+    temp <- zero.vars[["snp.var", exact=TRUE]]
+    if (!is.null(temp)) {
+      if (temp == snp.var) {
+        fixParms <- list(parms=snp.var, values=0)
+      }
+    }
+    for (z in znames) {
+      vars <- zero.vars[[z]]
+      if (is.null(vars)) next
+      mat <- mat.list[[z, exact=TRUE]]
+      if (is.null(mat)) next
+      cnames <- colnames(mat)
+      pnames <- colnames(logistic.dsgnMat(data, vars, facVars)$designMatrix)
+      temp   <- cnames %in% pnames
+      if (any(temp)) {
+        cnames <- cnames[!temp]
+        if (!length(cnames)) {
+          mat <- NULL
+        } else {
+          mat <- removeOrKeepCols(mat, cnames, which=1)
+        }
+        mat.list[[z]] <- mat 
+      } 
+    }
+  }
+
+  list(mat.list=mat.list, fixParms=fixParms)
+
+} # END: apply_zero.vars

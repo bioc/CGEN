@@ -32,7 +32,7 @@ for SNP = s and X = x relative to SNP = 0 and X = \eqn{x_0}{x_0} is
 \deqn{ \frac{\exp(\alpha + \beta s + \gamma x + \delta s x)}{\exp(\alpha + \gamma x_0)}}{exp(alpha + beta*s + gamma*x + delta*s*x)/exp(alpha + gamma*x_0)} 
 The stratified effect of the SNP relative to SNP = 0 given X = x is
 \deqn{ \frac{\exp(\alpha + \beta s + \gamma x + \delta s x)}{\exp(\alpha + \gamma x)}}{exp(alpha + beta*s + gamma*x + delta*s*x)/exp(alpha + gamma*x)} 
-The stratified effect of \code{var} relative to X = x0 given SNP = s is
+The stratified effect of \code{var} relative to X = x given SNP = s is
 \deqn{ \frac{\exp(\alpha + \beta s + \gamma x + \delta s x)}{\exp(\alpha + \beta s)}}{exp(alpha + beta*s + gamma*x + delta*s*x)/exp(alpha + beta*s)} 
 A convenient way to print the returned object to view the effects tables is with the function \code{\link{printEffects}}.
 }
@@ -46,7 +46,7 @@ A convenient way to print the returned object to view the effects tables is with
 }
 %\references{ }
 %\author{ }
-\seealso{ \code{\link{printEffects}} }
+\seealso{ \code{\link{printEffects}} \code{\link{snp.effects.plot}} }
 \examples{
  # Use the ovarian cancer data
  data(Xdata, package="CGEN")

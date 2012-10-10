@@ -70,17 +70,21 @@ getMatchedSets(x, CC, NN, ccs.var=NULL, dist.vars=NULL, strata.var=NULL,
  # Assign matched set size and case/control ratio stratifying by ethnic group
   size <- ifelse(Xdata$ethnic.group == 3, 2, 4)
   ratio <- sapply(Xdata$ethnic.group, switch, 1/2 , 2 , 1)
-  mx <- getMatchedSets(Xdata, CC=TRUE, NN=TRUE, ccs.var="case.control", dist.vars=c("PC1","PC2") , strata.var="ethnic.group", 
-		size = size, ratio = ratio, fixed=TRUE)
+  mx <- getMatchedSets(Xdata, CC=TRUE, NN=TRUE, ccs.var="case.control", 
+                       dist.vars=c("PC1","PC2") , strata.var="ethnic.group", 
+		       size = size, ratio = ratio, fixed=TRUE)
   mx$NN[1:10]
   mx$tblNN
   
-  # Example of using a dissimilarity matrix using catergorical covariates with Gower's distance
+  # Example of using a dissimilarity matrix using catergorical covariates with 
+  #  Gower's distance
   library("cluster")
-  d <- daisy(Xdata[, c("age.group","BRCA.history","gynSurgery.history")] , metric = "gower")
+  d <- daisy(Xdata[, c("age.group","BRCA.history","gynSurgery.history")] , 
+             metric = "gower")
   # Specify size = 4 as maximum matched set size in all strata
-  mx <- getMatchedSets(d, CC = TRUE, NN = TRUE, ccs.var = Xdata$case.control, strata.var = Xdata$ethnic.group, size = 4, 
-		fixed = FALSE)
+  mx <- getMatchedSets(d, CC = TRUE, NN = TRUE, ccs.var = Xdata$case.control, 
+                       strata.var = Xdata$ethnic.group, size = 4, 
+		       fixed = FALSE)
   mx$CC[1:10]
   mx$tblCC
 }

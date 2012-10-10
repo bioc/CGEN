@@ -118,6 +118,13 @@
 #         Dec 30 2009  Add code for getting variables from formulas
 #         Feb 25 2010  Add genotype frequencies and number of missing genotypes
 #                      to loadData.type1
+#         Mar 25 2010  Add gene.var to getLocusMap
+#         Apr 08 2010  Update loadData.type1 for file.type = 9, 10
+#         Apr 12 2010  Change getSNPLoadList for file.type = 9, 10
+#         Apr 27 2010  Add code for duplicated pheno ids
+#         Jun 09 2010  Return imputed vector for imputed data in loadData.type1
+#         Oct 18 2010  With an empty space missing value ("") check the last genotype. If missing,
+#                      then a missing value needs to be added.
 
 # Function to read the locus map data set
 # This function return a list with the names "snp", "chrm", and "loc".
@@ -126,13 +133,14 @@ getLocusMap <- function(file, locusMap.list, temp.list=NULL, op=NULL) {
 
   # file           File to read
   #                No default
-  # locusMap.list  List of options (See convert.GenABEL)
+  # locusMap.list  List of options (See locusMap.list.wordpad)
   #                No default
   # op             List with names chrm, start, stop
 
   # Set up the input arguments to getColumns()
   vars <- c(locusMap.list$snp.var, locusMap.list$chrm.var,
-            locusMap.list$loc.var, locusMap.list$alleles.var)
+            locusMap.list$loc.var, locusMap.list$alleles.var,
+            locusMap.list$gene.var)
   file.list      <- locusMap.list
   file.list$file <- file
 
@@ -141,6 +149,8 @@ getLocusMap <- function(file, locusMap.list, temp.list=NULL, op=NULL) {
   locFlag  <- !is.null(locusMap.list[["loc.var", exact=TRUE]])
   snpFlag  <- !is.null(locusMap.list[["snp.var", exact=TRUE]])
   allFlag  <- !is.null(locusMap.list[["alleles.var", exact=TRUE]])
+  geneFlag <- !is.null(locusMap.list[["gene.var", exact=TRUE]])
+
   opFlag   <- !is.null(op)
 
   data <- getColumns(file.list, vars, temp.list=temp.list)
@@ -152,6 +162,8 @@ getLocusMap <- function(file, locusMap.list, temp.list=NULL, op=NULL) {
   if (chrmFlag) ret$chrm   <- data[[locusMap.list$chrm.var]]
   if (locFlag) ret$loc     <- as.numeric(data[[locusMap.list$loc.var]])
   if (allFlag) ret$alleles <- data[[locusMap.list$alleles.var]]
+  if (geneFlag) ret$gene   <- data[[locusMap.list$gene.var]]
+
 
   # Determine if only certain snps in a range is desired
   if (opFlag) {
@@ -173,6 +185,7 @@ getLocusMap <- function(file, locusMap.list, temp.list=NULL, op=NULL) {
     if (chrmFlag) ret$chrm   <- ret$chrm[temp]
     if (locFlag) ret$loc     <- ret$loc[temp]
     if (allFlag) ret$alleles <- ret$alleles[temp]
+    if (geneFlag) ret$gene   <- ret$gene[temp]
   }
 
   ret
@@ -284,9 +297,10 @@ getPhenoData <- function(p, temp.list=NULL) {
   if (n.uid != nr) {
     # Print a warning message
     warning("The subject ids are not all unique")
+  }
+  if (p$unique.ids) {
     
-    cnames  <- colnames(x)
-    orig.id <- "orig_id_57839"
+    orig.id <- p$orig.id.var
     
     x[, orig.id] <- x[, id.var]
  
@@ -294,13 +308,15 @@ getPhenoData <- function(p, temp.list=NULL) {
     count        <- rep(0, n.uid)
     names(count) <- uniq.id
     temp         <- x[, orig.id]
+    dups         <- duplicated(x[, id.var])
     if (is.factor(temp)) temp <- as.character(levels(temp))[temp]
     for (i in 2:nr) {
-      if (temp[i] %in% temp[-i]) {
-        name <- temp[i]
-        if (count[name]) {
-          temp[i]     <- paste(name, "_", count[name], sep="")
-          count[name] <- count[name] + 1
+      if (dups[i]) {
+        name    <- temp[i]
+        cntname <- count[name]
+        if (cntname) {
+          temp[i]     <- paste(name, "_", cntname, sep="")
+          count[name] <- cntname + 1
         } else {
           count[name] <- 2
         }
@@ -308,11 +324,10 @@ getPhenoData <- function(p, temp.list=NULL) {
     }
 
     x[, id.var] <- temp
-  } # END: if (n.uid != nr)
+  } # END: if (p$unique.ids)
 
   # Set the row names
-  rownames(x) <- as.character(x[, id.var])
-  #x[, id.var] <- NULL
+  #rownames(x) <- as.character(x[, id.var])
  
   # Return a list
   list(data=x, orig.id=orig.id)
@@ -423,6 +438,13 @@ loadData.type1 <- function(snp.list, pheno.list, temp.list, op=NULL) {
   # Define a list to call loadData
   tList <- getSnpLoadList(snp.list, temp.list)
 
+  imputeFlag <- snp.list$file.type %in% c(9, 10)
+  if (imputeFlag) {
+    op$MAF     <- 0
+    op$alleles <- 0
+    delimiter  <- "\t"
+  }
+
   snpNames   <- getListName(snp.list, "snpNames")
   total.nsnp <- length(snpNames)
   snpsFlag   <- 1 - is.null(snpNames)
@@ -450,6 +472,8 @@ loadData.type1 <- function(snp.list, pheno.list, temp.list, op=NULL) {
   nmissFlag  <- op$n.miss
   genoFreqs  <- NULL
   n.miss     <- NULL
+  temp2      <- NULL
+  imputed    <- NULL
 
   # If the snp names were specified, then set sFlag to 1 so that
   #  the snp names will be kept
@@ -484,6 +508,12 @@ loadData.type1 <- function(snp.list, pheno.list, temp.list, op=NULL) {
 
     # Get the snp data
     snpData <- loadData(temp, tList)
+    if (imputeFlag) {
+      MAF     <- c(MAF, snpData$MAF)
+      alleles <- c(alleles, snpData$alleles)
+      imputed <- c(imputed, snpData$imputed)
+      snpData <- snpData$snpData
+    }
     nsnps <- length(snpData)
     if (!firstFlag) {
       if (nsnps <= 1) next
@@ -586,14 +616,26 @@ loadData.type1 <- function(snp.list, pheno.list, temp.list, op=NULL) {
       if (sFlag) temp.snp[i-1] <- snp.name
 
       # Check for error
-      if (length(temp) != total.nsubjects) stop(paste("ERROR with SNP", snp.name))
+      lentemp <- length(temp)
+      if (lentemp != total.nsubjects) {
+        lenstr <- nchar(snpData[i])
+        if ((lentemp == total.nsubjects - 1) && ("" %in% in.miss) && 
+            (substr(snpData[i], lenstr, lenstr) == delimiter)) {
+          # Add a missing genotype
+          temp <- c(temp, "")
+        } else {
+          stop(paste("ERROR with SNP", snp.name))
+        }
+      }
 
       # Use the 0, 1, 2 codes
-      temp2 <- recode.geno(temp, in.miss=in.miss, out.miss=out.miss,
+      if (!imputeFlag) {
+        temp2 <- recode.geno(temp, in.miss=in.miss, out.miss=out.miss,
               out.genotypes=codes, heter.codes=heter.codes, subset=control.ids)
 
-      # Vector of recoded genotypes
-      temp <- temp2$vec
+        # Vector of recoded genotypes
+        temp <- temp2$vec
+      }
 
       # Get the MAF
       if (MAF.flag) temp.MAF[i-1] <- getMAF(temp, sub.vec=control.ids, controls=TRUE) 
@@ -672,7 +714,8 @@ loadData.type1 <- function(snp.list, pheno.list, temp.list, op=NULL) {
 
   list(data=data.obj, missing=missing, snpNames=snps, nsubjects=nsubj,
        subjects=save.subs, order=ret.order, phenoData.list=phenoData.list,
-       MAF=MAF, alleles=alleles, n.miss=n.miss, genoFreqs=genoFreqs)
+       MAF=MAF, alleles=alleles, n.miss=n.miss, genoFreqs=genoFreqs,
+       imputed=imputed)
 
 } # END: loadData.type1
 
@@ -911,20 +954,20 @@ getPheno.info <- function(pheno.list, snp.list, temp.list=NULL) {
 
   # Call getPhenoData for the other pheno.list options to get the 
   # data to be used in the analysis
-  getPheno.list <- getPhenoData(pheno.list, temp.list=temp.list)
-  phenoData     <- getPheno.list$data
-  pheno.list$data <- NULL
-  pdata.flag    <- !is.null(getPheno.list$orig.id)
+  getPheno.list      <- getPhenoData(pheno.list, temp.list=temp.list)
+  phenoData          <- getPheno.list$data
+  pheno.list$data    <- NULL
+  pdata.flag         <- !is.null(getPheno.list$orig.id)
   pheno.list$orig.id <- getPheno.list$orig.id
 
   # pdata.flag is the flag for non-unique subject ids
   if (!pdata.flag) {
     # Get the subject ids
-    pheno.id  <- rownames(phenoData) 
+    pheno.id  <- makeVector(phenoData[, pheno.list$id.var])
     pdata.ids <- pheno.id
   } else {
-    pheno.id   <- as.character(phenoData[, pheno.list$orig.id])
-    pdata.ids  <- rownames(phenoData) 
+    pheno.id  <- as.character(phenoData[, pheno.list$orig.id])
+    pdata.ids <- makeVector(phenoData[, pheno.list$id.var])
   }
 
   # Get the total number of subjects
@@ -1097,6 +1140,11 @@ getSnpLoadList <- function(snp.list, temp.list, op=NULL) {
     ret$outfile <- op$outfile
   }
   if (ret$file.type == 4) ret$sas.list$temp.list <- temp.list
+  if (ret$file.type %in% c(9, 10)) {
+    ret <- snp.list
+    ret$delimiter <- "\t"
+    ret$out.delimiter <- "\t"
+  }
   
   ret
 
@@ -1130,6 +1178,10 @@ intersectSubIds <- function(snp.list, pheno.list, temp.list=NULL) {
 
     # Get the data
     temp <- loadData(paste(snp.list$dir, file, sep=""), tList)
+    if (snp.list$file.type %in% c(9, 10)) {
+      temp <- temp$snpData
+      delimiter <- "\t"
+    }
 
     # Get the first 2 rows
     if (!stream) {
@@ -1145,7 +1197,6 @@ intersectSubIds <- function(snp.list, pheno.list, temp.list=NULL) {
 
     # Get the subject ids
     temp <- getSubject.vec(row1, row2, delimiter)
-
     if (index == 1) {
       isub <- temp
     } else {

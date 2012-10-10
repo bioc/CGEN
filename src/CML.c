@@ -9,7 +9,11 @@
                          Check variances from CML
              Feb 23 2010 Minor efficiency improvements
              Feb 26 2010 Changes based on R compiler warnings
+             Apr 05 2010 Add code for fixing parms
+             Apr 07 2010 Change malloc calls
              Apr 09 2010 Use R_alloc instead of malloc
+             Dec 26 2011 Use better initial estimates as in the R code
+
 */
 
 #include <stdlib.h>
@@ -26,6 +30,11 @@
 #define acctol	0.0001
 #define reltest	10.0
 #define expTo0       -9.0e100
+
+#define INIT_SMALL 1e-8
+#define INIT_MAXIT 100
+#define INIT_MINSTEP 0.01
+#define INIT_MINH 0.1
 
 typedef struct {
   int *D;
@@ -67,10 +76,14 @@ typedef struct {
   double *EB_parms;
   double *EB_cov;
   int CML_error;
+  int zeroSNP;
+  double log2;
+  int numDeriv;
 } opstruct;
 
+
 void CML_EB(double *eta0, int *nparms, int *nbeta, int *D, int *snp, int *nrow, double *xMain, int *nx, double *xInt, int *nv, double *xStrata, int *nstrata, int *gmodel, int *genoBinary,\
-            int *maxit, double *reltol, int *debug, double *UML_cov, double *UML_fitVals, int *retError, double *retCMLparms, double *retCMLcov, double *retCMLll, double *retEBparms, double *retEBcov);
+            int *maxit, double *reltol, int *debug, double *UML_cov, double *UML_fitVals, int *zeroSNP, int *numDeriv, int *retError, double *retCMLparms, double *retCMLcov, double *retCMLll, double *retEBparms, double *retEBcov);
 extern void ccl_optim(double *beta, int *maxit, double *tol, int *xnsub, int *D, double *x_snp, int *xp_snp, double *x_main, int *xp_main,
 			   double *x_int, int *xp_int, int *xnumSZ, int *xmnsz, int *usz, int *mdx, int *nsz, int *cnsz, int *osx, int *ndx, double *LOGLIKE, double *HESS, 
 			   int *CONV, int *ITER) ;
@@ -78,13 +91,21 @@ extern void pair_match(double *dmat , int *xm, int *xn , int *strata, int *xnstr
 extern void hcl_optim(double *beta, int *maxit, double *tol, int *xnsub, int *D, double *x_snp, int *xp_snp, double *x_main, int *xp_main,
 			   double *x_int, int *xp_int, int *xnumSZ, int *xmnsz, int *usz, int *nsz, int *cnsz, int *osx, double *LOGLIKE, double *HESS, int *CONV, int *ITER) ;
 extern void fs_clust(double *dmat , int *xn , int *strata, int *sizes, int *xnstrat, int *fcl);
+void additive1(double *theta0, int *nparms, int *x1cols, int *nx1, int *x2cols, int *nx2, double *datX, int *Xnrow, int *Xncol, double *covs, int *ncovs, int *y, char **method,\
+            int *maxit, double *reltol, int *debug, int *cols_covProd, int *ncols_covProd, int *cols_datX, int *ncols_datX,\
+            double *retParms, double *retLL, int *retFCount, int *retGCount, int *retError);
+void additive1_indep(double *theta0, int *nparms, int *x1cols, int *nx1, int *x2cols, int *nx2, int *Xnrow, int *covCols, int *ncovs, char **method,\
+            int *maxit, double *reltol, int *debug, int *genoBinary, int *llmatCols, double *Z0, double *Z1, double *Z2, int *xiCols, int *nxi, int *alphaCol, int *nStrata, double *strDat,\
+            double *retParms, double *retLL, int *retFCount, int *retGCount, int *retError);
 
 static const R_CMethodDef callMethods[] = {
-  {"CML_EB", (DL_FUNC)&CML_EB, 25},
+  {"CML_EB", (DL_FUNC)&CML_EB, 27},
   {"ccl_optim", (DL_FUNC)&ccl_optim, 23},
   {"pair_match", (DL_FUNC)&pair_match, 6},
   {"hcl_optim", (DL_FUNC)&hcl_optim, 21},
   {"fs_clust", (DL_FUNC)&fs_clust, 6},
+  {"additive1", (DL_FUNC)&additive1, 25},
+  {"additive1_indep", (DL_FUNC)&additive1_indep, 28},
   {NULL, NULL, 0}
 };
 
@@ -215,10 +236,7 @@ opstruct *op;
   } else {
     rMatMMultVec(op->xStrata, nrow, op->nstrata, op->xi, temp);
   }
-  log2 = log(2.0);
-
-  /* D=0, G=0 Calculate at the end*/
-  /*vecinit(op->d0g0, nrow, 1.0);*/
+  log2 = op->log2;
 
   /* D=0, G=1 */
   for (i=0, ptrd0g1=op->d0g1, ptrtemp=temp; i<nrow; i++, ptrd0g1++, ptrtemp++) *ptrd0g1 = log2 + *ptrtemp;
@@ -261,7 +279,8 @@ opstruct *op;
     }
 
     /* D=1, G=1 */
-    snpBeta = beta[nx];
+    snpBeta = (!op->zeroSNP) ? beta[nx] : 0.0; 
+    /*snpBeta = beta[nx];*/
 
     ptrx = op->xInt;
     for (i=0, ptrd1g1=op->d1g1, ptrxiBeta=xiBeta, ptrxBeta=xBeta, ptrtemp=temp; i<nrow; i++, ptrd1g1++, ptrxiBeta++, ptrxBeta++, ptrtemp++) {
@@ -457,7 +476,7 @@ double *ret;
     *ptrtemp2 = *ptrD * *ptrSNP - *ptrtemp;
   }
 
-  *ptrret++ = vecsum(op->temp2, nr);
+  if (!op->zeroSNP) *ptrret++ = vecsum(op->temp2, nr);
   if (op->nv) {
     nc = op->nv;
     ptrmat = op->xInt;
@@ -599,7 +618,7 @@ double *ret;
   int i;
   double fxplush, fxminush, h, save, h2, *ptr, *ptrret;
 
-  if (!op->gmodel) {
+  if (!op->numDeriv) {
     getWtYmu(eta, op, ret);
     return;
   }
@@ -658,15 +677,12 @@ static double ** Lmatrix(int n)
     int   i;
     double **m;
 
-    m = (double **) R_alloc(n, sizeof(double *));
+    m = (double **) malloc(n*sizeof(double *));
     for (i = 0; i < n; i++)
-	m[i] = (double *) R_alloc((i + 1), sizeof(double));
+	m[i] = (double *) malloc((i + 1)*sizeof(double));
     return m;
 }
 
-/*  BFGS variable-metric method, based on Pascal code
-in J.C. Nash, `Compact Numerical Methods for Computers', 2nd edition,
-converted by p2c then re-crafted by B.D. Ripley */
 
 static void myvmmin(int n0, double *b, double *Fmin, opstruct *op,
       int maxit, int trace, 
@@ -1179,9 +1195,84 @@ opstruct *op;
 
 } /* END: getEB */
 
+static void print_dVec(vec, n, name)
+double *vec;
+int n;
+char *name;
+{
+  int i;
+  printf("%s\n", name);
+  for (i=0; i<n; i++) printf("%g ", vec[i]);
+  printf("\n");
+
+}
+
+/* Function to update the initial estimates */
+static void check_init(eta, op)
+double *eta;
+opstruct *op;
+{
+  double maxll, ll, steps[op->nparms], temp, step, point, point0;
+  int i, j, k, nparms=op->nparms, flag;
+  double eta_i;
+
+  /* Compute the log-likelihood at the initial estimates */
+  maxll = -negloglike(eta, op);
+
+  for (i=0; i<nparms; i++) {
+    temp = fabs(eta[i]*INIT_MINH);
+    if (temp > INIT_SMALL) {
+      steps[i] = temp;
+    } else {
+      steps[i] = INIT_MINSTEP;
+    } 
+  }
+  
+  /* Loop over each parameter. !!! The vector eta must be changed and reset !!! */
+  for (i=0; i<nparms; i++) {
+    eta_i = eta[i];
+    step  = steps[i];
+    
+    /* 2 possible directions */
+    for (k=0; k<2; k++) {
+      flag = 0;
+      point0 = eta_i;      
+      point = point0;
+
+      for (j=0; j<INIT_MAXIT; j++) {
+        point += step;
+        eta[i] = point;
+        ll = -negloglike(eta, op);
+
+        if (ll > maxll) {
+          /* Continue in this direction */
+          flag = 1;
+          maxll = ll;
+          point0 = point;
+        } else {
+          break;
+        }
+      }
+
+      if (flag) {
+        /* Use the point */
+        eta[i] = point0;
+        break;
+      } else if (!k) {
+        /* Try other direction */
+        step = -step;
+      } else {
+        /* Reset */
+        eta[i] = eta_i; 
+      }
+    }
+  }
+
+} /* END: check_init */
 
 void CML_EB(eta0, nparms, nbeta, D, snp, nrow, xMain, nx, xInt, nv, xStrata, nstrata, gmodel, genoBinary,\
-            maxit, reltol, debug, UML_cov, UML_fitVals, retError, retCMLparms, retCMLcov, retCMLll, retEBparms, retEBcov)
+            maxit, reltol, debug, UML_cov, UML_fitVals, zeroSNP, numDeriv,\
+            retError, retCMLparms, retCMLcov, retCMLll, retEBparms, retEBcov)
 double *eta0;  /* Vector of UML parms plus allele freq parms */
 int *nparms;   /* Total number of parms */
 int *nbeta; /* Number of beta parms (not including intercept) */
@@ -1190,6 +1281,7 @@ int *snp;
 int *nrow, *nx, *nv, *nstrata, *gmodel, *genoBinary, *maxit, *debug, *retError;
 double *xMain, *xInt, *xStrata, *reltol;
 double *retCMLparms, *retCMLcov, *retCMLll, *UML_cov, *UML_fitVals, *retEBparms, *retEBcov;
+int *zeroSNP, *numDeriv;
 {
   /* All matrices must be passed in as vectors. For a nr x nc matrix, the first nc elements
      in the vector are from the first row. */
@@ -1233,6 +1325,9 @@ double *retCMLparms, *retCMLcov, *retCMLll, *UML_cov, *UML_fitVals, *retEBparms,
   op.d1g0 = d1g0;
   op.d1g1 = d1g1;
   op.d1g2 = d1g2;
+  op.zeroSNP = *zeroSNP;
+  op.log2 = log(2.0);
+  op.numDeriv = *numDeriv;
 
   /* Allocate memory */
   eta = (double *) R_Calloc(np, double);
@@ -1241,7 +1336,7 @@ double *retCMLparms, *retCMLcov, *retCMLll, *UML_cov, *UML_fitVals, *retEBparms,
   op.temp = (double *) R_Calloc(nr, double);
   op.temp2 = (double *) R_Calloc(nr, double);
   op.temp3 = (double *) R_Calloc(nr, double);
-  
+
   /* Initialize the vector of CML parms */
   vecmove(op.eta0, np, eta);
   op.beta = &eta[1];
@@ -1249,6 +1344,9 @@ double *retCMLparms, *retCMLcov, *retCMLll, *UML_cov, *UML_fitVals, *retEBparms,
 
   /* Get the vector of addresses for the loglike function */
   getLL_mat(&op);
+
+  /* Improve the in itial estimates */
+  check_init(eta, &op);
 
   /* Compute the CML estimates */
   getCML(eta, &op);
@@ -1275,4 +1373,3 @@ void R_init_CGEN(DllInfo *dll)
 {
     R_registerRoutines(dll, callMethods, NULL, NULL, NULL);
 }
-

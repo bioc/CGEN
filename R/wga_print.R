@@ -1,3 +1,6 @@
+# History Nov 18 2011 Transpose joint and stratified effect matrices for better viewing
+#         Jan 05 2012 Add print function for additive.test
+
 # Function to set up a snp.effects object for printing
 printEffects <- function(obj, op=NULL) {
 
@@ -21,6 +24,7 @@ printEffects <- function(obj, op=NULL) {
 
   ret <- list()
   effnames <- c("JointEffects", "StratEffects", "StratEffects.2")
+  effname3 <- effnames[3]
   for (m in methods) {
     if (!flag) {
       temp.m <- obj[[m, exact=TRUE]]
@@ -30,6 +34,12 @@ printEffects <- function(obj, op=NULL) {
     if (is.null(temp.m)) next
     tlist <- list()
     for (effn in effnames) {
+      if (effn != effname3) {
+        eff3Flag <- 0
+      } else {
+        eff3Flag <- 1
+      }
+
       temp.eff <- temp.m[[effn, exact=TRUE]]
       eff <- round(temp.eff[["effects"]], digits=digits)    
       l   <- round(temp.eff[["lower95"]], digits=digits)    
@@ -38,18 +48,37 @@ printEffects <- function(obj, op=NULL) {
       l   <- formatC(l, format="f", digits=digits)
       u   <- formatC(u, format="f", digits=digits)
 
+      nr  <- nrow(eff)
+      nc  <- ncol(eff)
+
       temp <- paste(eff, " (", l, ", ", u, ")", sep="")
-      dimeff <- dim(eff)
-      dim(temp) <- dimeff
-      rownames(temp) <- 1:dimeff[1]
-      colnames(temp) <- 1:dimeff[2]
+
+      dim(temp) <- dim(eff)
+
+      if (!eff3Flag) {
+        v1 <- attr(temp.eff, "var2")
+        v2 <- attr(temp.eff, "var1")
+        l1 <- attr(temp.eff, "levels2")
+        l2 <- attr(temp.eff, "levels1")
+
+        temp           <- t(temp)
+        dim(temp)      <- c(nc, nr)
+        rownames(temp) <- 1:nc
+        colnames(temp) <- 1:nr
+      } else {
+        v1 <- attr(temp.eff, "var1")
+        v2 <- attr(temp.eff, "var2")
+        l1 <- attr(temp.eff, "levels1")
+        l2 <- attr(temp.eff, "levels2")
+
+        dim(temp)      <- c(nr, nc)
+        rownames(temp) <- 1:nr
+        colnames(temp) <- 1:nc
+      }
 
       # Make temp an ftable
-      temp <- ftable(temp, justify="center")
-      v1 <- attr(temp.eff, "var1")
-      v2 <- attr(temp.eff, "var2")
-      l1 <- attr(temp.eff, "levels1")
-      l2 <- attr(temp.eff, "levels2")
+      temp <- ftable(temp)
+
       tmplist <- list()
       tmplist[[v1]] <- l1
       attr(temp, "row.vars") <- tmplist
@@ -87,6 +116,7 @@ myprintVars <- function(vars, type) {
   } else {
     vars <- paste(vars, collapse=" + ", sep="")
   }
+
   str <-  paste(type, " : ", vars, "\n", sep="")
   cat(str)
 
@@ -120,9 +150,9 @@ print.snp.logistic <- function(x, ...) {
   cat("\n")
   myprintVars(yvar,                     "response.var")
   myprintVars(snp,                      "snp.var     ")
-  myprintVars(x$model.info$main.vars,   "main.vars   ")
-  myprintVars(x$model.info$int.vars,    "int.vars    ")
-  myprintVars(x$model.info$strata.var,  "strata.var  ")
+  myprintVars(x$model.info$main.call,   "main.vars   ")
+  myprintVars(x$model.info$int.call,    "int.vars    ")
+  myprintVars(x$model.info$strata.call, "strata.var  ")
 
   cat("\n")
   data <- x$model.info$data
@@ -205,4 +235,55 @@ summary.snp.matched <- function(object, ...) {
   ret
 
 } # END: summary.snp.matched
+
+# Print function for additive.test
+print.additive.test <- function(x, ...) {
+
+  cat("additive.test\n")
+  str <- paste("Interaction test (", x$DF, " df) p-values:\n", sep="")
+  cat(str)
+  vec <- rep(NA, 3)
+  names(vec) <- c("Additive LRT", "Multiplicative LRT", "Multiplicative Wald")
+  vec[1] <- x[["pval.add", exact=TRUE]]
+  vec[2] <- x[["pval.mult", exact=TRUE]]
+  vec[3] <- x[["pval.wald.mult", exact=TRUE]]
+  print(vec)
+  cat("\n")
+
+  str <- paste("Method:       ", x$method, "\n", sep="")
+  cat(str)
+  indep <- x$model.info$op$indep
+  str <- paste("Independence: ", indep, "\n\n", sep="")
+  cat(str)
+
+  temp <- x[["RERI", exact=TRUE]]
+  if (!is.null(temp)) {
+    cat("Relative Excess Risk Due to Interaction:\n")
+    temp <- makeVector(temp)
+    print(temp)
+    cat("\n")
+  }
+
+  if (!indep) {
+    temp <- x[["S", exact=TRUE]]
+    if (!is.null(temp)) {
+      cat("Synergy Index:\n")
+      temp <- makeVector(temp)
+      print(temp)
+      cat("\n")
+    }
+  
+    temp <- x[["AP", exact=TRUE]]
+    if (!is.null(temp)) {
+      cat("Attributable Proportion due to interaction:\n")
+      temp <- makeVector(temp)
+      print(temp)
+      cat("\n")
+    }
+  }
+
+  invisible(x)
+
+} # END: print.additive.test
+
 

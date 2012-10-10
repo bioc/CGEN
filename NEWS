@@ -1,13 +1,13 @@
-CHANGES IN VERSION 1.1
+CHANGES IN VERSION 2.0
 ----------------------
 
 USER VISIBLE CHANGES
 
-    o Initial release of the CGEN package.
+    o The function additive.test has been added
 
 BUG FIXES
 
-    o None.
+    o The function snp.logisitic checks that the snp variable is used in main.vars or int.vars
 
 PLANS
 

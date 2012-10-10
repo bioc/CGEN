@@ -22,10 +22,11 @@ are included. The package will continue to be updated with new methods as they a
 not suitable for analysis of SNPs on sex chromosomes.
 }
 \details{
-The main functions for unmatched data are \code{\link{snp.logistic}} and \code{\link{snp.scan.logistic}}.
-Whereas \code{\link{snp.logistic}} analyzes one SNP with each function call, \code{\link{snp.scan.logistic}}
+The main functions for unmatched data are \code{\link{additive.test}}, \code{\link{snp.logistic}} 
+and \code{\link{snp.scan.logistic}}.
+Whereas \code{\link{additive.test}} and \code{\link{snp.logistic}} analyzes one SNP with each function call, \code{\link{snp.scan.logistic}}
 analyzes a collection of SNPs and writes the summary results to an external file.
-With \code{\link{snp.logistic}}, a data frame is input in which the SNP variable must be coded as 0-1-2 (or 0-1). 
+With \code{\link{additive.test}} and \code{\link{snp.logistic}}, a data frame is input in which the SNP variable must be coded as 0-1-2 (or 0-1). 
 If not, \code{\link{recode.geno}} can be used for recoding the SNP variable before calling \code{\link{snp.logistic}}.
 The functions
  \code{\link{getSummary}}, \code{\link{getWaldTest}} and \code{\link{snp.effects}} 

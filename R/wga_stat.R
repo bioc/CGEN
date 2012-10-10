@@ -62,6 +62,16 @@
 #                      Compute stratified effects in snp.effects
 #                      Add function to print snp.effects object
 #          Mar 15 2010 Add method option to snp.effects
+#          Mar 18 2010 Add function getGenoStats
+#          Aug 18 2010 Add base1.name option to effects.init
+#          Sep 23 2010 Update inflationFactor function
+#          Oct 12 2010 Update waldTest.main 
+#          Nov 09 2010 Update waldTest.main to return NA if chisq test < 0
+#          Nov 29 2010 Add option to getXBeta
+#                      Add getExtremeSubs function
+#          Dec 23 2010 Add getOR.CI function
+#          Jan 12 2011 Remove extended option in getDesingMatrix
+#          Nov 01 2011 Add getPermutation.strata function
 
 # Function to return point estimates and covariance matrix from an object
 getEstCov <- function(fit) {
@@ -186,12 +196,14 @@ waldTest.main <- function(parms, cov, parmNames) {
   vnames <- names(parms)
 
   if (is.numeric(parmNames)) {
-    vpos <- parmNames
+    temp <- parmNames %in% 1:nrcov
+    vpos <- parmNames[temp]
+    np   <- length(vpos)
+    if (!np) return(list(test=NA, df=0, pvalue=NA))
 
     # Update parms and cov
     parms <- parms[vpos]
-    cov   <- cov[vpos, vpos]
-    np    <- length(parms)
+    cov   <- cov[vpos, vpos] 
 
   } else {
     # Remove missing names in parmNames
@@ -213,6 +225,12 @@ waldTest.main <- function(parms, cov, parmNames) {
     cov <- cov[vnames, vnames]
   }
 
+  if (np == 1) {
+    test   <- parms/sqrt(cov)
+    pvalue <- 2*pnorm(abs(test), lower.tail=FALSE) 
+    return(list(test=test, df=np, pvalue=pvalue))
+  } 
+
   # See if matrix is invertible
   temp <- try(solve(cov), silent=TRUE)
   if (class(temp) == "try-error") {
@@ -223,8 +241,13 @@ waldTest.main <- function(parms, cov, parmNames) {
   dim(parms) <- c(np, 1)
   test       <- t(parms) %*% temp %*% parms
   dim(test)  <- NULL
+  if (test >= 0) {
+    pvalue   <- pchisq(test, df=np, lower.tail=FALSE) 
+  } else {
+    pvalue   <- NA
+  }
 
-  list(test=test, df=np, pvalue=pchisq(test, df=np, lower.tail=FALSE))
+  list(test=test, df=np, pvalue=pvalue)
 
 } # END: waldTest.main
 
@@ -492,6 +515,40 @@ setUpSummary <- function(parms, cov) {
  
 } # END: setUpSummary
 
+# Function to call for permutations with a stratification variable
+getPermutation.strata <- function(vec, start=NULL, stop=NULL) {
+
+  # vec           Vector of the strata variable (example family ids)
+  #               This vector MUST be sorted
+  # start         Starting indices for each unique value of vec
+  # stop          Stopping indices for each unique value of vec
+
+  if ((is.null(start)) || (is.null(stop))) {
+    levels  <- table(vec)
+    nlevels <- length(levels)
+    start   <- integer(nlevels)
+    stop    <- integer(nlevels)
+    a       <- 1
+    for (i in 1:nlevels) {
+      start[i] <- a
+      b        <- a + levels[i] - 1
+      stop[i]  <- b
+      a        <- b + 1 
+    } 
+  } else {
+    nlevels <- length(start)
+  }
+
+  ret <- integer(length(vec))
+  for (i in 1:nlevels) {
+    ids <- start[i]:stop[i]
+    ret[ids] <- sample(ids, replace=FALSE)
+  }
+
+  list(perm=ret, nlevels=nlevels, start=start, stop=stop)
+
+} # END: getPermutation.strata
+
 # Function to call for permutations
 getPermutation <- function(fit0, nsub, perm.method=1) {
 
@@ -568,10 +625,26 @@ getGenoCounts <- function(snp, exclude=c(NA, NaN), check=1) {
 } # END: getGenoCounts
 
 # Function to compute XBeta (linear.predictors) by matching the names
-getXBeta <- function(X, beta) {
+getXBeta <- function(X, beta, drop=NULL) {
 
+  X <- as.matrix(X)
+  
+  if (!is.null(drop)) {
+    temp <- !(names(beta) %in% drop)
+    beta <- beta[temp]
+  }
   cnames  <- intersect(colnames(X), names(beta))
+  print("Variables used:")
+  print(cnames)
   X       <- removeOrKeepCols(X, cnames, which=1)
+  if (!is.numeric(X)) {
+    dimX   <- dim(X)
+    temp   <- colnames(X)
+    X      <- as.numeric(X)
+    dim(X) <- dimX
+    colnames(X) <- temp
+  }
+
   beta    <- beta[cnames]
   b2      <- beta
   dim(b2) <- c(length(beta), 1)
@@ -754,7 +827,7 @@ getDesignMatrix <- function(snp, X.main=NULL, X.int=NULL,
 # Function to compute an effects table and standard errors
 effects.init <- function(parms, cov, var1, var2, levels1, levels2, 
                      base1=0, base2=0, int.var=NULL, effects=1,
-                     sep1="_", base2.name="baseline") {
+                     sep1="_", base2.name="baseline", base1.name="baseline") {
 
   # parms       Vector of parameter estimates
   # var1        Vector of parameter names for one of the variables. If the
@@ -801,7 +874,7 @@ effects.init <- function(parms, cov, var1, var2, levels1, levels2,
     nlev1   <- length(levels1)
     p1      <- c(0, parms[var1])
     base1   <- 0
-    names1  <- c("baseline", var1)
+    names1  <- c(base1.name, var1)
     v1      <- c(var1[1], var1)
   }
   if (contv2) {
@@ -1247,13 +1320,13 @@ unadjustedGLM.counts <- function(file.list, op=NULL) {
 } # END: unadjustedGLM.counts
 
 # Function to compute the inflation factor
-inflationFactor <- function(tests, squared=0) {
+inflationFactor <- function(tests, squared=0, df=1) {
 
   # tests    Vector of Z-test statistics or squared Z-test
-  #          statistics
+  #          statistics, or p-values
   # squared  0 or 1 if the tests are already squared
 
-  i1  <- qchisq(0.5, df=1)
+  i1  <- qchisq(0.5, df=df)
   if (!squared) tests <- tests*tests
   i2  <- median(tests, na.rm=TRUE)
   ret <- i2/i1
@@ -1640,4 +1713,121 @@ dsgnMat <- function(data, vars, facVars, removeInt=1) {
   list(designMatrix=design, newVars=newVars)
 
 } # END: dsgnMat
+
+# Function to return genotype stats
+getGenoStats <- function(vec, MAF=1, freqCounts=1) {
+
+  # Vec must be numeric coded as 0-1-2 or NA
+
+  if (MAF) {
+    MAF2 <- getMAF(vec)
+  } else {
+    MAF2 <- NULL
+  }
+  if (freqCounts) {
+    counts <- getGenoCounts(vec)
+  } else {
+    counts <- NULL
+  }
+  n.miss   <- sum(is.na(vec))
+  len      <- length(vec)
+  missRate <- n.miss/len
+  n        <- len - n.miss
+
+  list(MAF=MAF2, n.miss=n.miss, freqCounts=counts, missRate=missRate, n=n)
+
+} # END: getGenoStats
+
+# Function to return the extreme subjects based on a score
+getExtremeSubs <- function(id, cc, score, n=500, study=NULL) {
+
+  # Get cases with lowest score
+  temp   <- cc == 1
+  id1    <- id[temp]
+  temp   <- sort(score[temp], index.return=TRUE)$ix
+  id1    <- id1[temp]
+  case   <- id1[1:n]
+
+  # Get controls with highest score
+  temp   <- cc == 0
+  id1    <- id[temp]
+  temp   <- sort(score[temp], decreasing=TRUE, index.return=TRUE)$ix
+  id1    <- id1[temp]
+  cntl   <- id1[1:n]
+
+  if (!is.null(study)) {
+    # Save info for the chosen subjects
+    temp <- id %in% c(case, cntl)
+    s2   <- study[temp]
+    cc2  <- cc[temp]
+
+    # Let each study have an equal number of cases and controls
+    ustudy <- unique(study)
+    nstudy <- length(ustudy)
+
+    # Remove chosen subjects
+    temp  <- !(id %in% c(case, cntl))
+    id    <- id[temp]
+    cc    <- cc[temp]
+    score <- score[temp]
+    study <- study[temp]   
+    for (i in 1:nstudy) {
+      # Get the study counts for the chosen subjects
+      ncase <- sum((s2 == ustudy[i]) & (cc2 == 1))
+      ncntl <- sum((s2 == ustudy[i]) & (cc2 == 0))
+
+      if (ncase < ncntl) {
+        value <- 1
+        dec   <- FALSE
+      } else if (ncase > ncntl) {
+        value <- 0
+        dec   <- TRUE
+      } else {
+        next
+      }
+      # The number of subjects we need
+      m <- abs(ncase - ncntl)
+
+      temp   <- (cc == value) & (study == ustudy[i])
+      id1    <- id[temp]
+      temp   <- sort(score[temp], decreasing=dec, index.return=TRUE)$ix
+      id1    <- id1[temp]
+      subs   <- id1[1:m]
+
+      if (value == 1) {
+        case <- c(case, subs)
+      } else {
+        cntl <- c(cntl, subs)
+      }
+    }
+  }
+
+  list(case=case, control=cntl) 
+
+} # END: getExtremeSubs
+
+# Function to add the OR and confidence intervel onto a data frame or matrix
+getOR.CI <- function(x, op=NULL) {
+
+  op <- default.list(op, 
+         c("beta.var", "se.var", "OR.name", "CI.name", "alpha", "digits"),
+           list("Beta", "SE", "OR", "OR.CI", 0.05, 4))
+
+  z <- qnorm(1 - (op$alpha)/2)
+
+  cn   <- colnames(x)
+  beta <- as.numeric(x[, op$beta.var])
+  se   <- as.numeric(x[, op$se.var])
+  or   <- exp(beta)
+  l    <- exp(beta - z*se)
+  l    <- round(l, digits=op$digits)
+  u    <- exp(beta + z*se)
+  u    <- round(u, digits=op$digits)
+  ci   <- paste("(", l, ", ", u, ")", sep="") 
+  x    <- cbind(x, or, ci) 
+  colnames(x) <- c(cn, op$OR.name, op$CI.name)
+
+  x
+
+} # END: getOR.CI
 

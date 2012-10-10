@@ -206,9 +206,9 @@ nnmatch <- function(d, size, strat, cc.flag = NULL, cc.vec = NULL, fixed = TRUE,
 						strat = as.integer(strat), ccs = as.integer(ccs), ccd = as.integer(ccd),
 						cut = integer(1), PACKAGE = "CGEN")
 		
-		hcass <- .Fortran("hcass2", n = as.integer(n), ia = as.integer(hcl$ia), 
+		hcass <- .Fortran("myhcass2", n = as.integer(n), ia = as.integer(hcl$ia), 
 						  ib = as.integer(hcl$ib), order = integer(n), iia = integer(n), 
-						  iib = integer(n), PACKAGE = "stats")
+						  iib = integer(n), PACKAGE = "CGEN")
 		tree <- list(merge = cbind(hcass$iia[1L:(n - 1)], hcass$iib[1L:(n - 1)]), height = hcl$crit[1L:(n - 1)], order = hcass$order, 
 					 labels = attr(d, "Labels"), method = METHODS[method], call = match.call(), dist.method = attr(d, "method"))
 		class(tree) <- "hclust"
