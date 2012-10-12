@@ -91,10 +91,10 @@ extern void pair_match(double *dmat , int *xm, int *xn , int *strata, int *xnstr
 extern void hcl_optim(double *beta, int *maxit, double *tol, int *xnsub, int *D, double *x_snp, int *xp_snp, double *x_main, int *xp_main,
 			   double *x_int, int *xp_int, int *xnumSZ, int *xmnsz, int *usz, int *nsz, int *cnsz, int *osx, double *LOGLIKE, double *HESS, int *CONV, int *ITER) ;
 extern void fs_clust(double *dmat , int *xn , int *strata, int *sizes, int *xnstrat, int *fcl);
-void additive1(double *theta0, int *nparms, int *x1cols, int *nx1, int *x2cols, int *nx2, double *datX, int *Xnrow, int *Xncol, double *covs, int *ncovs, int *y, char **method,\
+extern void additive1(double *theta0, int *nparms, int *x1cols, int *nx1, int *x2cols, int *nx2, double *datX, int *Xnrow, int *Xncol, double *covs, int *ncovs, int *y, char **method,\
             int *maxit, double *reltol, int *debug, int *cols_covProd, int *ncols_covProd, int *cols_datX, int *ncols_datX,\
             double *retParms, double *retLL, int *retFCount, int *retGCount, int *retError);
-void additive1_indep(double *theta0, int *nparms, int *x1cols, int *nx1, int *x2cols, int *nx2, int *Xnrow, int *covCols, int *ncovs, char **method,\
+extern void additive1_indep(double *theta0, int *nparms, int *x1cols, int *nx1, int *x2cols, int *nx2, int *Xnrow, int *covCols, int *ncovs, char **method,\
             int *maxit, double *reltol, int *debug, int *genoBinary, int *llmatCols, double *Z0, double *Z1, double *Z2, int *xiCols, int *nxi, int *alphaCol, int *nStrata, double *strDat,\
             double *retParms, double *retLL, int *retFCount, int *retGCount, int *retError);
 

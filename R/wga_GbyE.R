@@ -890,7 +890,7 @@ snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) {
           ret[[name]] <- try(effects.init(temp$parms, temp$cov, eff$var1, 
                          eff$var2, eff$snp.levels, eff$var.levels, 
                          base1=0, base2=eff$var.base, int.var=eff$int.var,
-                         effects=type, sep=eff$sep), silent=TRUE)
+                         effects=type, sep1=eff$sep), silent=TRUE)
           if (class(ret[[name]]) == "try-error") ret[[name]] <- NULL
         }
       }
