@@ -75,7 +75,7 @@ void ccl_optim(double *beta, int *maxit, double *tol, int *xnsub, int *D, double
 	rda -> D = D ; rda -> osx = osx ; rda -> usz = usz ; rda -> mdx = mdx; rda -> nsz = nsz ; rda -> cnsz = cnsz ; rda -> ndx = ndx ;
 	
 	S = rda -> usz[rda -> numSZ - 1] ;
-	if(S > 8) { printf("Maximum matched set size > 8 not supported.\n") ; exit(1) ; }
+	if(S > 8) { Rprintf("Maximum matched set size > 8 not supported.\n") ; error(1) ; }
 	
 	root = (tnode *) R_Calloc(1 , tnode) ;
 	root -> g = 0 ; root -> h = 0 ;
@@ -385,9 +385,9 @@ double rel_error(double *beta, double *delta, int p)
 
 static void tree_print(tnode *node, int is_root)
 {
-	printf(" (%d, %d) ", node -> g , node -> h ) ;
+	Rprintf(" (%d, %d) ", node -> g , node -> h ) ;
 	if(is_root==0 && node -> next != NULL) tree_print(node -> next, 0) ;	
-	else printf("\n") ;
+	else Rprintf("\n") ;
 	if(node -> child != NULL) tree_print(node -> child, 0) ;
 }
 
@@ -475,7 +475,7 @@ static int factorial(int n)
 	int count;
 	int fact = 1.;
 	
-	if (n < 0) { printf("\nError: factorial of negative integer not defined\n"); exit(1); }
+	if (n < 0) { Rprintf("\nError: factorial of negative integer not defined\n"); error(1); }
 	
 	for (count = n; count > 0; --count) fact *= count ;
 	

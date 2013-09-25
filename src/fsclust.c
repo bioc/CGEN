@@ -57,7 +57,7 @@ void fs_clust(double *dmat , int *xn , int *strata, int *sizes, int *xnstrat, in
 	/* Loop over n/s matched sets to be constructed */
 	for(k = 0 ; (k < n) && (n_done_strat < nstrat) ; k++)
 	{
-		/* for(j = 0 ; j < n ; j++) printf("%lf " , avg[j]) ; printf("\n") ; */
+		/* for(j = 0 ; j < n ; j++) Rprintf("%lf " , avg[j]) ; Rprintf("\n") ; */
 		
 		med = 0 ; avg_max = -1 ; 
 
@@ -103,9 +103,9 @@ void fs_clust(double *dmat , int *xn , int *strata, int *sizes, int *xnstrat, in
 		/* Check if clustering of strata[med] is completed */
 		if(sets[strata[med]] == (nobj[strata[med]]/sizes[strata[med]])) { done_strat[strata[med]] = 1 ; n_done_strat++ ; }
 		
-		/* printf("%d ", med + 1) ;
-		for(i = 0 ; i < (s - 1) ; i++) printf("%d " , nn[i] + 1) ;
-		printf("\n") ; */
+		/* Rprintf("%d ", med + 1) ;
+		for(i = 0 ; i < (s - 1) ; i++) Rprintf("%d " , nn[i] + 1) ;
+		Rprintf("\n") ; */
 
 		
 	} /* End of loop over matched sets */

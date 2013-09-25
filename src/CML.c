@@ -581,7 +581,7 @@ opstruct *op;
       ret[i] = &d1g2[i];
       break;
     default:
-      printf(" \n \n ERROR in getLL_mat \n \n");
+      Rprintf(" \n \n ERROR in getLL_mat \n \n");
     }
 
   }
@@ -716,8 +716,8 @@ static void myvmmin(int n0, double *b, double *Fmin, opstruct *op,
     B = Lmatrix(n);
     f = negloglike(b, op);
     if (!isfinite(f))
-	printf("initial value in 'vmmin' is not finite");
-    if (trace) printf("initial  value %f \n", f);
+	Rprintf("initial value in 'vmmin' is not finite");
+    if (trace) Rprintf("initial  value %f \n", f);
     *Fmin = f;
     funcount = gradcount = 1;
     gradient(b, op, g);
@@ -819,22 +819,22 @@ static void myvmmin(int n0, double *b, double *Fmin, opstruct *op,
 	    /* Resets unless has just been reset */
 	}
 	if (trace && (iter % nREPORT == 0))
-	    printf("iter%4d value %f\n", iter, f);
+	    Rprintf("iter%4d value %f\n", iter, f);
 	if (iter >= maxit) break;
 	if (gradcount - ilast > 2 * n)
 	    ilast = gradcount;	/* periodic restart */
 
     } while (count != n || ilast != gradcount);
     if (trace) {
-	printf("final  value %f \n", *Fmin);
-	if (iter < maxit) printf("converged\n");
-	else printf("stopped after %i iterations\n", iter);
+	Rprintf("final  value %f \n", *Fmin);
+	if (iter < maxit) Rprintf("converged\n");
+	else Rprintf("stopped after %i iterations\n", iter);
     }
     *fail = (iter < maxit) ? 0 : 1;
     *fncount = funcount;
     *grcount = gradcount;
     if (op->debug) {
-      printf("fncount = %d   grcount = %d \n", funcount, gradcount);
+      Rprintf("fncount = %d   grcount = %d \n", funcount, gradcount);
     }
 }
 
@@ -1201,9 +1201,9 @@ int n;
 char *name;
 {
   int i;
-  printf("%s\n", name);
-  for (i=0; i<n; i++) printf("%g ", vec[i]);
-  printf("\n");
+  Rprintf("%s\n", name);
+  for (i=0; i<n; i++) Rprintf("%g ", vec[i]);
+  Rprintf("\n");
 
 }
 

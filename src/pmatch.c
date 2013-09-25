@@ -67,7 +67,7 @@ void pair_match(double *dmat , int *xm, int *xn , int *strata, int *xnstrat, int
 	/* Loop over abs(m - n) matched pairs to be constructed */
 	for(k = 0 ; k < MIN(m , n) && (n_done_strat < nstrat) ; k++)
 	{
-		/* for(j = 0 ; j < (m + n) ; j++) { if(!done_obj[j]) printf("%3.2lf " , avg[j]) ; } printf("\n") ; */
+		/* for(j = 0 ; j < (m + n) ; j++) { if(!done_obj[j]) Rprintf("%3.2lf " , avg[j]) ; } Rprintf("\n") ; */
 		
 		med = 0 ; avg_max = -1 ; 
 		
@@ -119,7 +119,7 @@ void pair_match(double *dmat , int *xm, int *xn , int *strata, int *xnstrat, int
 		/* Check if clustering of strata[med] is completed */
 		if(sets[str] == MIN(ncase[str] , ncntl[str])) { done_strat[str] = 1 ; n_done_strat++ ; }
 		
-		/* printf("%d %d %lf\n", med + 1, nn + 1, avg_max) ; */
+		/* Rprintf("%d %d %lf\n", med + 1, nn + 1, avg_max) ; */
 		
 	} /* End of loop over matched pairs */
 	
