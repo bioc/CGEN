@@ -1,6 +1,6 @@
 Package: CGEN
 Title: An R package for analysis of case-control studies in genetic epidemiology
-Version: 2.5.0
+Version: 2.5.1
 Date: 2012-10-10
 Author: Samsiddhi Bhattacharjee, Nilanjan Chatterjee, Summer Han and William Wheeler
 Description: An R package for analysis of case-control studies in genetic epidemiology
