@@ -1,11 +1,14 @@
 Package: CGEN
-Title: An R package for analysis of case-control studies in genetic epidemiology
-Version: 2.5.1
+Title: An R package for analysis of case-control studies in genetic
+        epidemiology
+Version: 2.5.2
 Date: 2012-10-10
-Author: Samsiddhi Bhattacharjee, Nilanjan Chatterjee, Summer Han and William Wheeler
-Description: An R package for analysis of case-control studies in genetic epidemiology
+Author: Samsiddhi Bhattacharjee, Nilanjan Chatterjee, Summer Han and
+        William Wheeler
+Description: An R package for analysis of case-control studies in
+        genetic epidemiology
 Maintainer: William Wheeler <wheelerb@imsweb.com>
 Depends: R (>= 2.10.1), survival
 License: GPL-2 + file LICENSE
-biocViews: SNP, MultipleComparisons, Clustering
 Suggests: cluster
+biocViews: SNP, MultipleComparison, Clustering
