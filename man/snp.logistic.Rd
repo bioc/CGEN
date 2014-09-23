@@ -19,15 +19,19 @@ principal compoenets of population stratification. \bold{(iii) Empirical-Bayes:}
 }
 \usage{
 snp.logistic(data, response.var, snp.var, main.vars=NULL, int.vars=NULL,
-             strata.var=NULL, op=NULL)
+             strata.var=NULL, ProbG1.var=NULL, op=NULL)
 }
 \arguments{
   \item{data}{Data frame containing all the data. No default. }
   \item{response.var}{ Name of the binary response variable coded 
                   as 0 (controls) and 1 (cases).
              No default. }
-  \item{snp.var}{Name of the genotype variable coded as 0, 1, 2 (or 0, 1). 
-             This variable will be included as a main effect in the model. 
+  \item{snp.var}{Character vector of the genotype variable names, where the genotypes are numerically coded.
+             The length of this vector must be 1 or 3.
+             For imputed genotypes, either specify the 3 variable names corresponding to Prob(G=0), Prob(G=1), Prob(G=2) in this order, 
+             or let \code{snp.var} be the variable name corresponding to E(G) and specify the argument \code{ProbG1.var}.
+             For directly genotyped data, the SNP must be coded as 0-1-2 (or 0-1).
+             The SNP will be included as a main effect in the model. 
              No default. }
   \item{main.vars}{Character vector of variable names or a formula for all covariates of interest 
                    which need to be included in the model as main effects.
@@ -36,8 +40,12 @@ snp.logistic(data, response.var, snp.var, main.vars=NULL, int.vars=NULL,
   \item{int.vars}{Character vector of variable names or a formula for all covariates of interest that will interact
                 with the SNP variable. The default is NULL, so that no interactions will be in
                the model.}
-  \item{strata.var}{Name of the stratification variable or a formula (see details for more).
+  \item{strata.var}{Name of the stratification variable or a formula (see details for more info). 
+                    If \code{strata.var}="SVAR", where "SVAR" is a factor or character variable in \code{data}, then
+                    "SVAR" will be treated as categorical. Otherwise, "SVAR" is treated as a continuous variable.
                     The default is NULL (1 stratum). }
+  \item{ProbG1.var}{Name of the variable corresponding to Prob(G = 1). This option is for imputed genotypes only.
+                    The default is NULL. }
   \item{op}{ A list with names \code{genetic.model}, \code{reltol}, \code{maxiter}, and
           \code{optimizer} (see details). The default is NULL.
   }
@@ -48,9 +56,13 @@ snp.logistic(data, response.var, snp.var, main.vars=NULL, int.vars=NULL,
     Each sublist contains the parameter estimates (parms) and covariance
     matrix (cov). The lists UML and CML also contain the log-likelihood (loglike). 
    The list CML also contains the results for the stratum specific allele frequencies
-    under the HWE assumption (strata.parms and strata.cov). 
+    under the HWE assumption (strata.parms and strata.cov). The EB sublist contains the joint UML-CML
+    covariance matrix.
 }
 \details{
+  \bold{Note:} Non-dummy continuous variables should be scaled for stability of the algorithm.
+               The \code{\link[base]{scale}} function can be used for this.
+
      The data is first fit using standard logistic regression. The estimated
   parameters from the standard logistic regression are then used as the initial
   estimates for the constrained model. For this,
@@ -59,11 +71,10 @@ snp.logistic(data, response.var, snp.var, main.vars=NULL, int.vars=NULL,
   combining both sets of estimated parameters (see below). The "strata" option, that is relevent for the 
 CML and EB method, allows 
 the assumption of HWE and G-X independence to be valid only conditional on a given set of other factors.
-If a variable name is provided, then the unique level of the variable will be used to define categorical strata. 
-If a formula object is given, 
-then it is assumed that the formula describes a parametric model for variation of allele
-frequency of the SNP as a function of the variables included in the formula. No assumption
-is made about the relationship between X and factor in S. Typically, S would include self reported ethnicity, 
+If a single categorical variable name is provided, then the unique levels of the variable will be used to define categorical strata. 
+Otherwise it is assumed that \code{strata.var} defines a parametric model for variation of allele
+frequency of the SNP as a function of the variables included. No assumption
+is made about the relationship between X and S. Typically, S would include self reported ethnicity, 
 study, center/geographic region and principal components of population stratification. The CML method with the "strata"
 defined by principal compoenents of population stratification can be viewed as a generalization of adjusted case-only method
 described in Bhattacharjee et al. (2010). More details of the individual methods follow.
@@ -95,8 +106,8 @@ Chatterjee and Carroll (2005) showed that under the above constraints, the maxim
  \deqn{P^{*}(D=d, G=g | Z, S) = \frac{\exp(\theta_{s}(d, g|Z))}{\sum_{d,g} \exp(\theta_{s}(d, g|Z))}}{P`(D=d, G=g | Z, S) = exp(theta_s(d,g|Z))/SUM[exp(theta_s(d,g|Z))]}
 where the sum is taken over the 6 combinations of d and g and
 \eqn{\theta_{s}(d,g)=d\alpha^{*}+dZ\beta+I(g=1)\log(2)+g\xi_s.}{theta_s(d,g) = d*alpha` + d*Z*beta + I(g=1)*log(2) + g*xi_s.}
-If S is a single categorical variable, then a separate \eqn{\xi_s}{xi_s} is allowed for each S=s. If S is specified using a formula object, then it is assumed 
-\eqn{\xi_s=V_{s}\gamma}{xi_s=V_s*gamma}, where \eqn{V_{s}}{V_s} is the design matrix associated with the formula object and
+If S is a single categorical variable, then a separate \eqn{\xi_s}{xi_s} is allowed for each S=s. Otherwise it is assumed 
+\eqn{\xi_s=V_{s}\gamma}{xi_s=V_s*gamma}, where \eqn{V_{s}}{V_s} is the design matrix associated with the stratification and
 \eqn{\gamma}{gamma} is the vector of stratification parameters. 
 If for example, S is specified as "strata=~PC1+PC2+...PCK" where PCk's denote principal components of population stratification, then it is assumed that the allele frequency of the SNP varies in directions of the different principal components in a logistic linear fashion.
 
@@ -132,9 +143,9 @@ If for example, S is specified as "strata=~PC1+PC2+...PCK" where PCk's denote pr
  Below are the names for the options list \code{op}. All names have default values
          if they are not specified.
 \itemize{
-  \item \code{genetic.model} 0-3: The genetic model for the SNP. 0=trend, 1=dominant, 
-          2=recessive, 3=general. 
-  \item \code{reltol} Stopping tolerance. The default is 1e-6. 
+  \item \code{genetic.model} 0-3: The genetic model for the SNP. 0=additive, 1=dominant, 
+          2=recessive, 3=general (co-dominant). 
+  \item \code{reltol} Stopping tolerance. The default is 1e-8. 
   \item \code{maxiter} Maximum number of iterations. The default is 100. 
   \item \code{optimizer} One of "BFGS", "CG", "L-BFGS-B", "Nelder-Mead", "SANN".
                     The default is "BFGS". 
@@ -165,11 +176,11 @@ Bhattacharjee S, Wang Z, Ciampa J, Kraft P, Chanock S, Yu K, Chatterjee N
  # Use the ovarian cancer data
  data(Xdata, package="CGEN")
 
- # Fit using a stratification variable
+ # Fit using a stratification (categorical) variable
  ret <- snp.logistic(Xdata, "case.control", "BRCA.status",
                      main.vars=c("oral.years", "n.children"), 
                      int.vars=c("oral.years", "n.children"), 
-                     strata.var="ethnic.group")
+                     strata.var=~factor(ethnic.group))
 
  # Compute a summary table for the models
  getSummary(ret)
@@ -181,7 +192,7 @@ Bhattacharjee S, Wang Z, Ciampa J, Kraft P, Chanock S, Yu K, Chatterjee N
  ret2 <- snp.logistic(Xdata, "case.control", "BRCA.status",
                      main.vars=~oral.years + n.children, 
                      int.vars=~oral.years + n.children, 
-                     strata.var="ethnic.group")
+                     strata.var=~factor(ethnic.group))
 }
 \keyword{ models } 
 

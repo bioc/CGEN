@@ -31,12 +31,12 @@
 
                 ####### remove covs with only one level....##   oherwise snp.logistic stop.....
 
-                covs0=COVS[keep.indic,]
+                covs0=COVS[keep.indic, , drop=FALSE]
                 #x=covs[,10]
                 myUni=function(x){ length(unique(x)) }
 
                 nUni = apply(covs0,2,myUni)
-                covs = covs0[,nUni > 1]
+                covs = covs0[,nUni > 1, drop=FALSE]
 
                 ncol(covs0);ncol(covs)
 

@@ -72,6 +72,8 @@
 #          Dec 23 2010 Add getOR.CI function
 #          Jan 12 2011 Remove extended option in getDesingMatrix
 #          Nov 01 2011 Add getPermutation.strata function
+#          Feb 22 2012 Add myrmvnorm function
+#          Feb 07 2013 Add function her2.log for heritability
 
 # Function to return point estimates and covariance matrix from an object
 getEstCov <- function(fit) {
@@ -1830,4 +1832,89 @@ getOR.CI <- function(x, op=NULL) {
   x
 
 } # END: getOR.CI
+
+# Function to generete multi-variate random normal vectors
+myrmvnorm <- function(n, mean = rep(0, nrow(sigma)), sigma = diag(length(mean)), 
+    method = c("eigen", "svd", "chol"), saveObj=NULL) {
+
+  # Taken from rmvnorm function in the mvtnorm package. It has been modified to
+  #   return and input an object that is used for generating the random vectors, so 
+  #   that a singular value decomposition or cholesky decomposition does not
+  #   have to be redone.
+  # n
+  # mean
+  # sigma
+  # method
+  # saveObj   For efficiency in calling the function more than once with 
+  #           the same input data
+
+    if (!isSymmetric(sigma, tol = sqrt(.Machine$double.eps), 
+        check.attributes = FALSE)) {
+        stop("sigma must be a symmetric matrix")
+    }
+    if (length(mean) != nrow(sigma)) {
+        stop("mean and sigma have non-conforming size")
+    }
+    sigma1 <- sigma
+    dimnames(sigma1) <- NULL
+    if (!isTRUE(all.equal(sigma1, t(sigma1)))) {
+        warning("sigma is numerically not symmetric")
+    }
+    method <- match.arg(method)
+    if (is.null(saveObj)) {
+      if (method == "eigen") {
+        ev <- eigen(sigma, symmetric = TRUE)
+        if (!all(ev$values >= -sqrt(.Machine$double.eps) * abs(ev$values[1]))) {
+            warning("sigma is numerically not positive definite")
+        }
+        retval <- ev$vectors %*% diag(sqrt(ev$values), length(ev$values)) %*% 
+            t(ev$vectors)
+      }
+      else if (method == "svd") {
+        sigsvd <- svd(sigma)
+        if (!all(sigsvd$d >= -sqrt(.Machine$double.eps) * abs(sigsvd$d[1]))) {
+            warning("sigma is numerically not positive definite")
+        }
+        retval <- t(sigsvd$v %*% (t(sigsvd$u) * sqrt(sigsvd$d)))
+      }
+      else if (method == "chol") {
+        retval <- chol(sigma, pivot = TRUE)
+        o <- order(attr(retval, "pivot"))
+        retval <- retval[, o]
+      }
+      saveObj <- retval
+
+    } # END: if (is.null(retval)) 
+    
+    retval <- matrix(rnorm(n * ncol(sigma)), nrow = n) %*% saveObj
+    retval <- sweep(retval, 2, mean, "+")
+    colnames(retval) <- names(mean)
+
+    list(randomVectors=retval, saveObj=saveObj)
+
+} # END: myrmvnorm
+
+# This function coverts a heritability estimate in the liability-threshold (LT) scale 
+# to that in the log-risk scale.
+her2.log<-function(prev.D, her2.LT) {
+
+  # Arguments
+  # prev.D: prevalence of disease of interest
+  # her2.LT: heritability estimate in the LT scale
+
+  ### Example ####################################################
+  # prev.D<-0.005
+  # her2.LT<-0.32
+  # her2<-her2.log(prev.D, her2.LT)
+  ### AUC calculation based on heritability in the log-risk scale
+  # pnorm(sqrt(her2/2))
+  ################################################################
+
+  return((dnorm(qnorm(1-prev.D))/prev.D)^2*her2.LT)
+
+} # END: her2.log
+
+
+
+
 

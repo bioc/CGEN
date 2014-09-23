@@ -55,6 +55,14 @@
 #         Oct 11 2010  Update getFileDelim
 #         Jan 04 2011  Add getFileHeader function
 #         Jul 08 2011  Modify load.impute2 for missing genotypes (0 0 0)
+#         Dec 22 2011  Allow for genetic.model = 4 (heterozygous) in load.impute2
+#         Jan 13 2012  Add function to read a compressed file for a C function
+#         Sep 06 2012  Add function read_tped to read a tped file
+#         Mar 29 2013  Return Prob(G=1) from impute2
+#         Jul 25 2013  Add extract.SNP functions
+#         Oct 04 2013  Allow for more than 1 id variable in readTable (temp$len <- NULL) 
+#         Oct 09 2013  Add option checkVars in readTable
+#         Jan 31 2014  Add scan.file function
 
 # Function to load and return the data object (or subset)
 loadData <- function(infile, p) {
@@ -66,7 +74,7 @@ loadData <- function(infile, p) {
   #######################################################################
   # p         A list with the folowing names:
   #
-  # file.type      1-8  Type 1 is for a file created with the save()
+  # file.type      1-12  Type 1 is for a file created with the save()
   #                command. Type 2 is for other flat files that have row 1
   #                as subject ids and then the snps as rows.
   #                Type 3 is for tables where column 1 is the subject id
@@ -211,7 +219,11 @@ loadData <- function(infile, p) {
   } else if (type %in% c(9, 10)) {
     # Returned object is a list
     return(load.impute2(infile, p))
-
+  } else if (type %in% c(11, 12)) {
+    # Returned object is a list
+    temp <- p[["subject.list", exact=TRUE]] 
+    if (is.null(temp)) temp <- p[["pheno.list", exact=TRUE]] 
+    return(read_tped(p, temp, op=p))
   } else {
     # GLU format
     dat <- glu.transform(infile, inFormat=type)
@@ -1026,13 +1038,15 @@ readTable <- function(file, p) {
   #                See the function subsetData.list in the file wga_util.R
   #                Ex: list(list(var="GENDER", operator"==", value="MALE"))
   #                The default is NULL
+  # checkVars      0 or 1 to check that variable names exist
+  #                The default is 1
   ##################################################################
 
   # Set defaults
   p <- default.list(p, 
       c("header", "file.type", "delimiter", "make.dummy", "in.miss",
-        "remove.miss", "is.the.data"),
-      list(1, 3, "", 0, "NA", 0, 0))
+        "remove.miss", "is.the.data", "checkVars"),
+      list(1, 3, "", 0, "NA", 0, 0, 1))
 
   # Check for errors
   if ((!is.null(p$keep.vars)) && (!is.null(p$remove.vars))) {
@@ -1041,6 +1055,8 @@ readTable <- function(file, p) {
   if ((!is.null(p$keep.ids)) && (!is.null(p$remove.ids))) {
     stop("ERROR: keep.ids and remove.ids cannot both be specified.")
   }
+
+  stopOnError <- p$checkVars
 
   # Read in the data
   if (p$is.the.data) {
@@ -1060,10 +1076,12 @@ readTable <- function(file, p) {
   nc     <- ncol(x)
   cnames <- colnames(x)
   temp   <- list(maxValue=nc, minValue=1, checkList=cnames)
-  check.vec(p$keep.vars, "keep.vars", temp)
-  check.vec(p$remove.vars, "remove.vars", temp)
-  check.vec(p$factor.vars, "factor.vars", temp)
-  temp$len <- 1
+  if (p$checkVars) {
+    check.vec(p$keep.vars, "keep.vars", temp)
+    check.vec(p$remove.vars, "remove.vars", temp)
+    check.vec(p$factor.vars, "factor.vars", temp)
+  }
+  temp$len <- NULL
 
   if (idFlag) check.vec(p$id.var, "id.var", temp)
 
@@ -1092,12 +1110,13 @@ readTable <- function(file, p) {
   }
 
   # Subset data by variables
-  sub <- getListName(p, "subsetData")
+  sub <- p[["subsetData", exact=TRUE]]
   if (!is.null(sub)) {
 
     # Get var names and unfactor
     for (i in 1:length(sub)) {
-      temp <- getListName(sub[[i]], "var")
+      tlist     <- sub[[i]]
+      temp      <- tlist[["var", exact=TRUE]]
       x[, temp] <- unfactor(x[, temp], fun=NULL)
     } 
 
@@ -1105,17 +1124,17 @@ readTable <- function(file, p) {
   }
 
   # Remove variables
-  temp <- getListName(p, "remove.vars")
+  temp <- p[["remove.vars", exact=TRUE]]
   if (!is.null(temp)) {
     temp <- unique(temp)
-    x    <- removeOrKeepCols(x, temp, which=-1) 
+    x    <- removeOrKeepCols(x, temp, which=-1, stopOnError=stopOnError) 
   }
 
   # Keep variables
-  temp <- getListName(p, "keep.vars")
+  temp <- p[["keep.vars", exact=TRUE]]
   if (!is.null(temp)) {
     temp <- unique(temp)
-    x    <- removeOrKeepCols(x, temp, which=1) 
+    x    <- removeOrKeepCols(x, temp, which=1, stopOnError=stopOnError) 
   }
 
   # Un-factor all factors
@@ -1301,11 +1320,11 @@ getFID <- function(infile, p) {
   if (is.null(p[["file.type", exact=TRUE]])) p$file.type <- getFileType(infile)
 
   type <- p$file.type
-  if (type %in% c(2, 3, 9)) {
+  if (type %in% c(2, 3, 9, 11)) {
     fid <- file(infile, open=p$open)
   } else if (type %in% c(5, 6)) {
     fid <- unz(infile, p$zipFile, open=p$open)
-  } else if (type %in% c(7, 8, 10)) {
+  } else if (type %in% c(7, 8, 10, 12)) {
     fid <- gzfile(infile, open=p$open)
   }
 
@@ -1381,7 +1400,7 @@ checkVars <- function(flist, vars) {
 getFileType <- function(f, default=3) {
 
   ret  <- default
-  vec  <- getVecFromStr(f, delimiter=".")
+  vec  <- tolower(getVecFromStr(f, delimiter="."))
   n    <- length(vec)
   ext1 <- ""
   if (n) {
@@ -1392,6 +1411,8 @@ getFileType <- function(f, default=3) {
         ret <- 8
       } else if (ext1 %in% c("ldat")) {
         ret <- 7
+      } else if (ext1 %in% c("tped")) {
+        ret <- 12 
       }
     } else if (ext0 %in% c("txt", "xls", "csv", "dat", "data", "sdat", "def")) {
       ret <- 3
@@ -1407,6 +1428,8 @@ getFileType <- function(f, default=3) {
       }
     } else if (ext0 %in% c("lbat", "sbat")) {
       ret <- ext0
+    } else if (ext0 %in% c("tped")) {
+      ret <- 11
     }
   }
 
@@ -1471,6 +1494,7 @@ loadData.table <- function(flist) {
     flist <- list(file=temp)
   }
   flist <- check.file.list(flist)
+
   flag  <- 0
   type  <- flist$file.type
   if (type == 1) {
@@ -1542,14 +1566,16 @@ load.impute2 <- function(infile, op) {
       ret <- v3
     } else if (retType == 3) {
       ret <- paste(v1, v2, v3, collapse="\t", sep="|") 
-    }
+    } else if (retType == 4) {
+      ret <- v2
+    } 
 
     ret
 
   } # END: gmodel
 
-  op <- default.list(op, c("genetic.model", "stop.row", "file.type"), 
-                    list(0, -1, 10))
+  op <- default.list(op, c("genetic.model", "stop.row", "file.type", "ProbG1"), 
+                    list(0, -1, 10, 1))
 
   # Adjust options
   op$delimiter <- "\n"
@@ -1559,6 +1585,8 @@ load.impute2 <- function(infile, op) {
   } else {
     x <- readFile.gz2(infile, op)
   }
+  ProbG1.flag <- op$ProbG1
+  ProbG1      <- NULL
 
   # Get the subject ids
   subs     <- getIdsFromFile(op$subject.list, id.vec=NULL) 
@@ -1577,9 +1605,10 @@ load.impute2 <- function(infile, op) {
   MAF      <- numeric(nx-1)
   imputed  <- rep.int(1, times=nx-1) 
   retType  <- op$genetic.model
+  if (ProbG1.flag) ProbG1 <- x[-1]
+
   for (i in 1:(nx-1)) {
     vec <- getVecFromStr(x[i+1], delimiter=" ")
-
     if (length(vec) != nperLine) {
       temp <- paste("ERROR in load.impute2: with line ", i+1, sep="")
       stop(temp)
@@ -1616,8 +1645,10 @@ load.impute2 <- function(infile, op) {
       value      <- gmodel(svec3, svec2, svec1)
     }
     
-    temp <- paste(value, collapse="\t", sep="")
+    temp   <- paste(value, collapse="\t", sep="")
     x[i+1] <- paste(snpNames[i], "\t", temp, sep="") 
+
+    if (ProbG1.flag) ProbG1[i] <- paste(svec2, collapse="\t", sep="")
   }
 
   rm(s1, s2, s3, svec2, svec3)
@@ -1631,13 +1662,15 @@ load.impute2 <- function(infile, op) {
       snpNames <- snpNames[temp]
       alleles  <- alleles[temp]
       MAF      <- MAF[temp]
+      if (ProbG1.flag) ProbG1 <- ProbG1[temp]
     } else {
       temp <- paste("NOTE: No SNPs found in file ", infile, sep="")
       print(temp)
     }
   }
 
-  list(snpData=x, alleles=alleles, MAF=MAF, snpNames=snpNames, imputed=imputed)
+  list(snpData=x, alleles=alleles, MAF=MAF, snpNames=snpNames, imputed=imputed,
+       ProbG1=ProbG1)
 
 } # END: load.impute2
 
@@ -1655,3 +1688,355 @@ getFileHeader <- function(flist) {
   ret  
 
 } # END: getFileHeader
+
+# Function to read a compressed file for a C function
+# For this function, there must be a global variable GLOBAL_GZ_FPT declared 
+read_C_GZ_file <- function(filename) {
+
+  if (exists("GLOBAL_GZ_FPT")) {
+    #if (is.null(GLOBAL_GZ_FPT)) {
+    #  GLOBAL_GZ_FPT <<- gzfile(filename, open="r")
+    #  ret <- scan(GLOBAL_GZ_FPT, nlines=1, what="character", sep="\n")
+    #}
+  } else {
+    stop("GLOBAL_GZ_FPT must be declared as a global variable")
+  }
+  #ret <- scan(GLOBAL_GZ_FPT, nlines=1, what="character", sep="\n")
+  0
+
+} # END: read_C_GZ_file
+
+# Function to read a tped file and convert to compressed ldat format
+read_tped <- function(snp.list, pheno.list, op=NULL) {
+
+  snp.list$header <- 0
+  snp.list$file.type <- 11
+  if (is.null(snp.list[["in.miss", exact=TRUE]])) snp.list$in.miss <- "0"
+  snp.list <- check.snp.list(snp.list)
+
+  phenoFlag <- !is.null(pheno.list)
+  if (phenoFlag) {
+    pheno.list <- check.file.list(pheno.list)
+    id <- pheno.list[["id.var", exact=TRUE]]
+    if ((!is.null(id)) && (id == -1)) {
+      ids <- removeWhiteSpace(scan(pheno.list$file, what="character"))
+    } else {
+      check.pheno.list(pheno.list)
+      x <- loadData.table(pheno.list)
+      ids <- makeVector(x[, pheno.list$id.var])
+      rm(x)
+      gc()
+    }
+  } 
+
+  op <- default.list(op, c("returnVector"), list(1))
+
+  p              <- snp.list
+  p$include.row1 <- 0
+  p$delimiter    <- snp.list$delimiter
+  p$returnMatrix <- 1
+
+  x <- scanFile(snp.list$file, p)
+
+  # Col1 is chr, Col2 is snp name, Col3 is 0, Col4 is loc
+  chr <- makeVector(x[, 1])
+  snp <- makeVector(x[, 2])
+  loc <- as.numeric(makeVector(x[, 4]))
+  x   <- removeOrKeepCols(x, c(1, 2, 3, 4), which=-1)
+  
+  if (!is.null(snp.list[["snpNames", exact=TRUE]])) {
+    temp <- snp %in% snp.list$snpNames
+    chr  <- chr[temp]
+    snp  <- snp[temp]
+    loc  <- loc[temp]
+    x    <- removeOrKeepRows(x, temp)
+  }
+  if (!length(snp)) stop("ERROR: No SNPs included")
+
+  nr <- nrow(x)
+  nc <- ncol(x)
+  nsubs <- floor(nc/2)
+  if (nc != nsubs*2) stop("ERROR: Incorrect number of columns in TPED file")
+  if (phenoFlag) {
+    if (nsubs != length(ids)) stop("ERROR: Incorrect number of columns in TPED file or rows in pheno.list$file")
+  }
+
+  if (!phenoFlag) ids <- paste("sub", 1:nsubs, sep="")
+
+  x1      <- x[, seq(from=1, to=nc, by=2)]
+  x2      <- x[, seq(from=2, to=nc, by=2)]
+  miss    <- (x1 %in% snp.list$in.miss) | (x2 %in% snp.list$in.miss)
+  temp    <- x1 > x2
+  x       <- matrix(data=paste(x1, x2, sep=""), ncol=nsubs, nrow=nr, byrow=FALSE)
+
+  if (any(temp)) x[temp] <- paste(x2[temp], x1[temp], sep="")
+  rm(x1, x2, temp)
+  gc()
+
+  x[miss] <- "  " 
+
+  rm(miss)
+  gc()
+
+  sep <- snp.list$out.delimiter
+  if (sep == " ") {
+    sep <- "\t"
+    snp.list$out.delimiter <- sep
+  }
+  if (op$returnVector) {
+    data <- character(nr)
+    for (i in 1:nr) data[i] <- paste(x[i, ], collapse=sep, sep="")
+    data <- paste(snp, data, sep="\t")
+    data <- c(paste(c("ldat", ids), collapse=sep, sep=""), data)
+    x <- data
+    rm(data)
+    gc()
+  } else {
+    colnames(x) <- ids
+  }
+
+  ret <- list(snpData=x, snp=snp, chr=chr, loc=loc, snp.list=snp.list)
+
+  ret
+
+} # END: read_tped
+
+# Function to extract SNPs from a character vector
+extract.SNP.vec <- function(x, rows, op=NULL) {
+
+  op <- default.list(op, 
+          c("substr.start", "substr.stop", "format", "delimiter", "method"), 
+          list(1, 30, "impute", " ", 1))
+  
+  ret      <- NULL
+  numFlag  <- is.numeric(rows) 
+  rows     <- unique(rows)
+  lenx     <- length(x)
+  format   <- op$format
+  if (format %in% c("impute", "tped")) {
+    snp.col <- 2
+  } else {
+    snp.col <- 1
+  } 
+  method <- op$method
+  sep    <- op$delimiter
+  
+  if (numFlag) {
+    temp   <- (rows <= lenx) & (rows > 0)
+    rows   <- rows[temp] 
+    if (!length(rows)) return(list(data=NULL, snps=NULL))
+    ret    <-  x[rows] # Order is preserved
+  } else {
+    # Check for SNP names
+    y    <- extract.SNPinfo.vec(x, format, op=op)$snp 
+    temp <- y %in% rows
+    ret  <- x[temp]  
+    rows <- y[temp]   # Order is preserved
+  }
+  if (!length(ret)) ret <- NULL
+  if (!length(rows)) rows <- NULL
+
+  list(data=ret, rows=rows)
+
+} # END: extract.SNP.vec
+
+# Function to extract SNPs from a file
+extract.SNP.file <- function(snp.list, rows.list, op=NULL) {
+
+  # snp.list
+  # rows.list   A character/numeric vector of snp names/row numbers or
+  #               a list of type file.list
+  # op          List with names read.n, substr.end
+
+  snp.list <- check.snp.list(snp.list)
+  op       <- default.list(op, c("read.n"), 
+               list(-1))
+
+  format <- "impute"
+  type   <- snp.list$file.type
+  if (type %in% c(2, 7)) format <- "ldat"
+  if (type %in% c(11, 12)) format <- "tped"
+  op$format    <- format
+  op$delimiter <- snp.list$delimiter
+
+  if (is.list(rows.list)) {
+    rows <- getIdsFromFile(rows.list) 
+  } else {
+    rows <- as.vector(rows.list)
+  }
+
+  outfile  <- op[["out.file", exact=TRUE]]
+  outFlag  <- !is.null(outfile)
+  rows     <- unique(rows)
+  numFlag  <- is.numeric(rows) 
+  nrows    <- length(rows)
+  ff       <- snp.list$file  
+  read.n   <- op$read.n
+  
+  maxRow   <- rows[nrows]  
+  if (!numFlag) {
+    maxRow   <- -1
+  } else {
+    rows <- sort(rows)
+  }
+  ret <- list(data=NULL, rows=NULL)
+  
+  # Special case
+  if ((nrows == 1) & (numFlag)) {
+    ret$data <- scan(ff, what="character", sep="\n", quiet=TRUE, nlines=1, skip=rows-1)
+    ret$rows <- rows
+  } else {
+    op$snp.col   <- snp.list$snp.col
+    op$delimiter <- snp.list$delimiter
+
+    if (read.n <= 0) {
+      x   <- scan(ff, what="character", sep="\n", quiet=TRUE, nlines=maxRow)
+      ret <- extract.SNP.vec(x, rows, op=op)
+    } else {
+      # Read in a portion of the file. Watch out for numeric rows!!!!
+      ret$data   <- NULL
+      total.read <- 0
+
+      # Open the file
+      fid <- getFID(ff, snp.list)
+      while (1) {
+        temp  <- scan(fid, what="character", sep="\n", quiet=TRUE, nlines=read.n)
+        ndat  <- length(temp)
+        if (!ndat) break
+        
+        temp <- extract.SNP.vec(temp, rows, op=op)
+        if (length(temp$data)) {
+          ret$data <- c(ret$data, temp$data)
+
+          # Take into account changing row numbers
+          if (numFlag) {
+            ret$rows <- c(ret$rows, temp$rows + total.read)
+          } else {
+            ret$rows <- c(ret$rows, temp$rows)
+          }      
+        }
+ 
+        # Update rows
+        if (numFlag) {
+          rows <- rows - ndat
+          rows <- rows[rows > 0]
+        } else {
+          temp <- !(rows %in% ret$rows) 
+          rows <- rows[temp]
+        }
+
+        if (!length(rows)) break   
+        total.read <- total.read + ndat
+      }
+      close(fid)
+    }
+  }
+  if (!length(ret$data)) ret$data <- NULL
+  if (!length(ret$rows)) ret$rows <- NULL
+  if ((!is.null(ret$data)) && (outFlag)) write(ret$data, file=outfile, ncolumns=1)
+
+  ret
+
+} # END: extract.SNP.file
+
+# Function to extract snp info from a char vector
+extract.SNPinfo.vec <- function(x, format, op=NULL) {
+
+  format <- tolower(format)
+  if (!(format %in% c("impute", "ldat", "tped"))) stop("ERROR: invalid format")
+  op <- default.list(op, c("method", "substr.end", "stop.on.error"), list(1, -1, 0))
+
+  substr.end <- op$substr.end
+  if (substr.end < 1) {
+    substr.end <- max(nchar(x))
+  }
+
+  # format  impute, tped, ldat
+  impute.col <- 0
+  snp.col    <- 0
+  loc.col    <- 0
+  a1.col     <- 0
+  a2.col     <- 0
+  chr.col    <- 0
+  impute     <- NULL
+  snp        <- NULL
+  loc        <- NULL
+  a1         <- NULL
+  a2         <- NULL
+  chr        <- NULL
+
+  # The "-" must be first or last in each class []
+  if (format == "impute") {
+    pattern    <- "^[-0-9A-Za-z:_;]+ [-0-9A-Za-z:_;]+ [0-9]+ [-0-9A-Za-z]+ [-0-9A-Za-z]+"
+    sep        <- " "
+    impute.col <- 1
+    snp.col    <- 2
+    loc.col    <- 3
+    a1.col     <- 4
+    a2.col     <- 5
+    NCOL       <- 5
+  } else if (format == "ldat") {
+    pattern    <- "^[-0-9A-Za-z:_]+"
+    sep        <- "\t"
+    snp.col    <- 1
+    NCOL       <- 1
+  } else if (format == "tped") {
+    pattern    <- "^[0-9A-Za-z]+ [-0-9A-Za-z:_]+ [0-9]+ [0-9]+"
+    sep        <- " "
+    chr.col    <- 1
+    snp.col    <- 2
+    loc.col    <- 4
+    NCOL       <- 4
+  }
+
+  str <- substr(x, 1, substr.end)
+  n0  <- length(x)
+  if (op$method == 1) {
+
+    tmp <- gregexpr(pattern, str, perl=TRUE)
+    str <- unlist(regmatches(str, tmp))
+    n1  <- length(str)
+
+    if (n1 != n0) {
+      str <- substr(x, 1, substr.end)
+      tmp <- grep(pattern, str, perl=TRUE)
+      temp <- !((1:n0) %in% tmp)
+      str2 <- str[temp]
+      print(substr(str2, 1, 100))
+
+      print(paste("n0 = ", n0, ", n1 = ", n1, sep=""))
+      print("ERROR in extract.SNPinfo.vec: with vector lengths")
+      if (op$stop.on.error) stop("ERROR in extract.SNPinfo.vec: with vector lengths")
+    }
+    tmp <- length(getVecFromStr(str[1], delimiter=sep))
+    mat <- matrix(unlist(strsplit(str, sep, fixed=TRUE)), byrow=TRUE, ncol=tmp)
+  } else {
+    mat <- matrix(data="", nrow=n0, ncol=NCOL)
+    for (i in 1:n0) mat[i, ] <- getVecFromStr(str[i], delimiter=sep)[1:NCOL]
+  }
+
+  if (impute.col) impute <- makeVector(mat[, impute.col])
+  if (snp.col)    snp    <- makeVector(mat[, snp.col])
+  if (loc.col)    loc    <- makeVector(mat[, loc.col])
+  if (a1.col)     a1     <- makeVector(mat[, a1.col])
+  if (a2.col)     a2     <- makeVector(mat[, a2.col])
+  if (chr.col)    chr    <- makeVector(mat[, chr.col])
+
+  list(impute=impute, snp=snp, chr=chr, loc=loc, a1=a1, a2=a2)
+
+} # END: extract.SNPinfo.vec
+
+# Function to scan a file
+scan.file <- function(f, header=0, sep="") {
+
+  row1 <- scan(f, what="character", sep=sep, nlines=1, quiet=TRUE)
+  nc   <- length(row1)
+  skip <- 1
+  if (!header) skip <- 0
+  x    <- matrix(scan(f, what="character", skip=skip, sep=sep, quiet=TRUE), byrow=TRUE, ncol=nc)
+  if (header) colnames(x) <- row1
+
+  x
+
+} # END: scan.file
+

@@ -13,7 +13,9 @@
              Apr 07 2010 Change malloc calls
              Apr 09 2010 Use R_alloc instead of malloc
              Dec 26 2011 Use better initial estimates as in the R code
-
+             Mar 27 2013 Allow for imputed data
+             Mar 29 2013 Return UML-CML cov matrix
+             Nov 06 2013 Pass in UML parms to fix EB estimates when init.parms option is used
 */
 
 #include <stdlib.h>
@@ -38,7 +40,7 @@
 
 typedef struct {
   int *D;
-  int *snp;
+  double *snp;
   double *d0g0;
   double *d0g1;
   double *d0g2;
@@ -68,6 +70,7 @@ typedef struct {
   double reltol;
   int maxit;
   int debug;
+  double *UML_parms;
   double *UML_cov;
   double *UML_fitVals;
   double *CML_parms;
@@ -79,11 +82,17 @@ typedef struct {
   int zeroSNP;
   double log2;
   int numDeriv;
+  int imputed;  /* 0 or 1 for imputed data */
+  double *ProbG1; /* Vector of Prob(G = 1) */
+  double *Pdg_rowSums; /* Vector of row sums of Pdg matrix */
+  double *imputeSum;   /* Vector of D*(alpha + Z(G, X, S)*Beta) + G*Xi + Prob(G=1)*log2 */
+  double *UML_CML_cov;  /* UML-CML covariance matrix */
 } opstruct;
 
 
-void CML_EB(double *eta0, int *nparms, int *nbeta, int *D, int *snp, int *nrow, double *xMain, int *nx, double *xInt, int *nv, double *xStrata, int *nstrata, int *gmodel, int *genoBinary,\
-            int *maxit, double *reltol, int *debug, double *UML_cov, double *UML_fitVals, int *zeroSNP, int *numDeriv, int *retError, double *retCMLparms, double *retCMLcov, double *retCMLll, double *retEBparms, double *retEBcov);
+void CML_EB(double *eta0, int *nparms, int *nbeta, int *D, double *snp, int *nrow, double *xMain, int *nx, double *xInt, int *nv, double *xStrata, int *nstrata, int *gmodel, int *genoBinary,\
+            int *maxit, double *reltol, int *debug, double *UML_cov, double *UML_fitVals, int *zeroSNP, int *numDeriv, int *imputed, double *ProbG1,\
+            double *UML_parms, int *retError, double *retCMLparms, double *retCMLcov, double *retCMLll, double *retEBparms, double *retEBcov, double *retUMLCML);
 extern void ccl_optim(double *beta, int *maxit, double *tol, int *xnsub, int *D, double *x_snp, int *xp_snp, double *x_main, int *xp_main,
 			   double *x_int, int *xp_int, int *xnumSZ, int *xmnsz, int *usz, int *mdx, int *nsz, int *cnsz, int *osx, int *ndx, double *LOGLIKE, double *HESS, 
 			   int *CONV, int *ITER) ;
@@ -99,7 +108,7 @@ extern void additive1_indep(double *theta0, int *nparms, int *x1cols, int *nx1, 
             double *retParms, double *retLL, int *retFCount, int *retGCount, int *retError);
 
 static const R_CMethodDef callMethods[] = {
-  {"CML_EB", (DL_FUNC)&CML_EB, 27},
+  {"CML_EB", (DL_FUNC)&CML_EB, 31},
   {"ccl_optim", (DL_FUNC)&ccl_optim, 23},
   {"pair_match", (DL_FUNC)&pair_match, 6},
   {"hcl_optim", (DL_FUNC)&hcl_optim, 21},
@@ -109,6 +118,17 @@ static const R_CMethodDef callMethods[] = {
   {NULL, NULL, 0}
 };
 
+static void print_dVec(vec, n, name)
+double *vec;
+int n;
+char *name;
+{
+  int i;
+  Rprintf("%s\n", name);
+  for (i=0; i<n; i++) Rprintf("%g ", vec[i]);
+  Rprintf("\n");
+
+}
 
 /* Function to initialize a vector to a constant */
 static void vecinit(vec, n, c)
@@ -219,8 +239,8 @@ opstruct *op;
 {
   double log2, *ptrd0g0, *ptrd0g1, *ptrd0g2, *ptrd1g0, *ptrd1g1, *ptrd1g2, *ptrtemp, *ptrbeta; 
   double sum, *ptrx, *ptrxBeta, *ptrxiBeta, snpBeta, *vPos, value2, value3, value4, value5, value6;
-  double *xBeta, *xiBeta, *temp, *beta, alpha, suminv;
-  int i, j, nrow, nx, nv;
+  double *xBeta, *xiBeta, *temp, *beta, alpha, suminv, *ptrRowSum, rowSum, *ptrImputeSum, *ptrProbG1, *ptrSNP;
+  int i, j, nrow, nx, nv, *ptrD, imputed=op->imputed;
 
   nrow = op->nrow;
   temp = op->temp;
@@ -295,6 +315,15 @@ opstruct *op;
     } else {
       vecinit(op->d1g2, nrow, expTo0);
     }
+
+    /* For imputed data */
+    if (imputed) {
+      for (i=0, ptrImputeSum=op->imputeSum, ptrxiBeta=xiBeta, ptrxBeta=xBeta, ptrtemp=temp, ptrD=op->D, ptrSNP=op->snp, ptrProbG1=op->ProbG1; i<nrow; i++,\
+                ptrImputeSum++, ptrxiBeta++, ptrxBeta++, ptrtemp++, ptrD++, ptrSNP++, ptrProbG1++) {
+        *ptrImputeSum = *ptrD *(alpha + *ptrxBeta + (snpBeta * *ptrSNP) + (*ptrxiBeta * *ptrSNP)) + (*ptrSNP * *ptrtemp) + (log2 * *ptrProbG1);
+      }
+    }
+
   } else {
     /* General genetic model */
 
@@ -341,19 +370,22 @@ opstruct *op;
   }
 
   /* Exponeniate and compute row sums */
-  for (i=0, ptrd0g0=op->d0g0, ptrd0g1=op->d0g1, ptrd0g2=op->d0g2, ptrd1g0=op->d1g0, ptrd1g1=op->d1g1, ptrd1g2=op->d1g2; i<nrow; i++, ptrd0g0++, ptrd0g1++, ptrd0g2++, ptrd1g0++, ptrd1g1++, ptrd1g2++) {
-    value2 = exp(*ptrd0g1);
-    value3 = exp(*ptrd0g2);
-    value4 = exp(*ptrd1g0);
-    value5 = exp(*ptrd1g1);
-    value6 = exp(*ptrd1g2);
-    suminv   = 1./(1.0 + value2 + value3 + value4 + value5 + value6);
-    *ptrd0g0 = suminv;
-    *ptrd0g1 = value2*suminv;
-    *ptrd0g2 = value3*suminv;
-    *ptrd1g0 = value4*suminv;
-    *ptrd1g1 = value5*suminv;
-    *ptrd1g2 = value6*suminv;
+  for (i=0, ptrd0g0=op->d0g0, ptrd0g1=op->d0g1, ptrd0g2=op->d0g2, ptrd1g0=op->d1g0, ptrd1g1=op->d1g1, ptrd1g2=op->d1g2, ptrRowSum=op->Pdg_rowSums; i<nrow; i++,\
+       ptrd0g0++, ptrd0g1++, ptrd0g2++, ptrd1g0++, ptrd1g1++, ptrd1g2++, ptrRowSum++) {
+    value2     = exp(*ptrd0g1);
+    value3     = exp(*ptrd0g2);
+    value4     = exp(*ptrd1g0);
+    value5     = exp(*ptrd1g1);
+    value6     = exp(*ptrd1g2);
+    rowSum     = 1.0 + value2 + value3 + value4 + value5 + value6;
+    suminv     = 1./rowSum;
+    *ptrd0g0   = suminv;
+    *ptrd0g1   = value2*suminv;
+    *ptrd0g2   = value3*suminv;
+    *ptrd1g0   = value4*suminv;
+    *ptrd1g1   = value5*suminv;
+    *ptrd1g2   = value6*suminv;
+    *ptrRowSum = rowSum;
   }
 
 } /* END: Pdg_xs */
@@ -439,8 +471,8 @@ double *eta;
 opstruct *op;
 double *ret;
 {
-  int i, *ptrD, *ptrSNP, nr, j, nc;
-  double *ptrtemp, *ptrtemp2, *ptrmat, *ptrnp, *ptrd, value, *ptrret;
+  int i, *ptrD, nr, j, nc;
+  double *ptrtemp, *ptrtemp2, *ptrmat, *ptrnp, *ptrd, value, *ptrret, *ptrSNP;
     
   nr = op->nrow;
   ptrnp = op->temp_np;
@@ -517,20 +549,21 @@ double *ret;
 } /* END: getWtYmu */
 
 /* Function to return transformed value of a snp */
-static int fSNP(SNP, gmodel)
-int SNP, gmodel;
+static double fSNP(SNP, gmodel)
+double SNP;
+int gmodel;
 {
-  int ret = SNP;
+  double ret = SNP;
 
   if (!gmodel || (gmodel == 3)) {
     return(ret);
   } else if (gmodel == 1) {
-    if (SNP == 2) ret = 1;
+    if (SNP > 1.5) ret = 1.0;
   } else if (gmodel == 2) {
-    if (SNP == 1) {
-      ret = 0;
-    } else if (SNP == 2) {
-      ret = 1;
+    if (SNP < 1.5) {
+      ret = 0.0;
+    } else if (SNP > 1.5) {
+      ret = 1.0;
     }
   }
 
@@ -542,9 +575,9 @@ int SNP, gmodel;
 static void getLL_mat(op)
 opstruct *op;
 {
-  int temp, i, *D, *snp; 
+  int temp, i, *D; 
   int gmodel;
-  double *d0g0, *d0g1, *d0g2, *d1g0, *d1g1, *d1g2, **ret, value;
+  double *d0g0, *d0g1, *d0g2, *d1g0, *d1g1, *d1g2, **ret, value, *snp;
 
   D = op->D;
   gmodel = op->gmodel;
@@ -559,7 +592,7 @@ opstruct *op;
 
   for (i=0; i<op->nrow; i++, D++, snp++) {
     value = fSNP(*snp, gmodel);
-    temp = 3* *D + 1 + value; 
+    temp = 3* *D + 1 + ((int) value); 
 
     switch(temp) {
     case 1:
@@ -593,15 +626,22 @@ static double negloglike(eta, op)
 double *eta; 
 opstruct *op;
 {
-  double **llmat, sum;
+  double **llmat, sum, *p1, *p2;
   int i;
 
   /* Update DiGj vectors */
   Pdg_xs(eta, op); 
 
   sum = 0.;
-  for (i=0, llmat=op->llmat; i<op->nrow; i++, llmat++) sum += log(*(*llmat));
 
+  if (op->imputed) {
+    for (i=0, p1=op->imputeSum, p2=op->Pdg_rowSums; i<op->nrow; i++, p1++, p2++) sum += log(exp(*p1) / *p2);
+  } else {
+    for (i=0, llmat=op->llmat; i<op->nrow; i++, llmat++) sum += log(*(*llmat));
+  }
+/*
+Rprintf("%g\n", sum);
+*/
   return(-sum);
 
 } /* END: negloglike */
@@ -991,12 +1031,12 @@ opstruct *op;
 static void getEB(op)
 opstruct *op;
 {
-  int i, j, k, np, np1, nr, gmodel, index, nx, nv, *ptrD, *ptrSNP, Dval, SNPval, ns, tempi, nparms;
-  double *p1, *p2, *pcov1, psi, phi, denom, *p3, temp, cmat[(op->nbeta+1)*(op->nbeta+1)], *pc;
+  int i, j, k, np, np1, nr, gmodel, index, nx, nv, *ptrD, Dval, ns, tempi, nparms;
+  double *p1, *p2, *pcov1, psi, phi, denom, *p3, temp, cmat[(op->nbeta+1)*(op->nbeta+1)], *pc, *ptrSNP;
   double score1[op->nbeta+1], score2[op->nparms], *ptrFV, *ptrX, *ptrV, *ptrS;
   double val1, val2, val3, fsnp, *ptrscore, *pXnx, *pVnv;
   double tempcov[(op->nbeta+1)*(op->nparms)];
-  double temp2cov[(op->nbeta+1)*(op->nparms)];
+  double temp2cov[(op->nbeta+1)*(op->nparms)], SNPval;
   int gmodel3 = op->gmodel3, nv2;
 
   /* Initialize to remove compiler warnings */
@@ -1005,7 +1045,8 @@ opstruct *op;
   pXnx = 0;
   fsnp = 0.0;
 
-  p1 = op->eta0;
+  /*p1 = op->eta0;*/
+  p1 = op->UML_parms;
   p2 = op->CML_parms;
   p3 = op->EB_parms;
   pcov1 = op->UML_cov;
@@ -1073,20 +1114,20 @@ opstruct *op;
         for (j=0, p1=pVnv; j<nv; j++, p1++) *ptrscore++ = val2 * *p1;
       }
     } else {
-      if (!SNPval) {
+      if (SNPval < 0.5) {
         *ptrscore++ = 0.;
         *ptrscore++ = 0.;
         if (nv) {
           for (j=0; j<nv2; j++) *ptrscore++ = 0.;
         }
-      } else if (SNPval == 1) {
+      } else if (SNPval < 1.5) {
         *ptrscore++ = val1;
         *ptrscore++ = 0.;
         if (nv) {
           for (j=0, p1=pVnv; j<nv; j++, p1++) *ptrscore++ = val1 * *p1;
           for (j=0; j<nv; j++) *ptrscore++ = 0.;
         }
-      } else if (SNPval == 2) {
+      } else if (SNPval > 1.5) {
         *ptrscore++ = 0.;
         *ptrscore++ = val1;
         if (nv) {
@@ -1175,6 +1216,9 @@ opstruct *op;
   rmatrixMult(op->UML_cov, np, np, tempcov, nparms, temp2cov);
   rmatrixMult(temp2cov, np, nparms, op->CML_cov, nparms, tempcov);
 
+  /* Save the UML-CML matrix */
+  for (i=0, p1=op->UML_CML_cov, p2=tempcov; i<np*nparms; i++, p1++, p2++) *p1 = *p2;
+
   /* Get the final covariance matrix */
   pcov1 = op->EB_cov;
   p1 = op->UML_cov; 
@@ -1194,18 +1238,6 @@ opstruct *op;
   }
 
 } /* END: getEB */
-
-static void print_dVec(vec, n, name)
-double *vec;
-int n;
-char *name;
-{
-  int i;
-  Rprintf("%s\n", name);
-  for (i=0; i<n; i++) Rprintf("%g ", vec[i]);
-  Rprintf("\n");
-
-}
 
 /* Function to update the initial estimates */
 static void check_init(eta, op)
@@ -1271,17 +1303,17 @@ opstruct *op;
 } /* END: check_init */
 
 void CML_EB(eta0, nparms, nbeta, D, snp, nrow, xMain, nx, xInt, nv, xStrata, nstrata, gmodel, genoBinary,\
-            maxit, reltol, debug, UML_cov, UML_fitVals, zeroSNP, numDeriv,\
-            retError, retCMLparms, retCMLcov, retCMLll, retEBparms, retEBcov)
+            maxit, reltol, debug, UML_cov, UML_fitVals, zeroSNP, numDeriv, imputed, ProbG1,\
+            UML_parms, retError, retCMLparms, retCMLcov, retCMLll, retEBparms, retEBcov, retUMLCML)
 double *eta0;  /* Vector of UML parms plus allele freq parms */
 int *nparms;   /* Total number of parms */
 int *nbeta; /* Number of beta parms (not including intercept) */
 int *D; /* Response vector */
-int *snp; 
 int *nrow, *nx, *nv, *nstrata, *gmodel, *genoBinary, *maxit, *debug, *retError;
-double *xMain, *xInt, *xStrata, *reltol;
+double *snp, *xMain, *xInt, *xStrata, *reltol;
 double *retCMLparms, *retCMLcov, *retCMLll, *UML_cov, *UML_fitVals, *retEBparms, *retEBcov;
-int *zeroSNP, *numDeriv;
+int *zeroSNP, *numDeriv, *imputed;
+double *ProbG1, *retUMLCML, *UML_parms;
 {
   /* All matrices must be passed in as vectors. For a nr x nc matrix, the first nc elements
      in the vector are from the first row. */
@@ -1312,6 +1344,7 @@ int *zeroSNP, *numDeriv;
   op.reltol = *reltol;
   op.maxit = *maxit;
   op.debug = *debug;
+  op.UML_parms = UML_parms;
   op.UML_cov = UML_cov;
   op.UML_fitVals = UML_fitVals;
   op.CML_error = 0;
@@ -1328,6 +1361,10 @@ int *zeroSNP, *numDeriv;
   op.zeroSNP = *zeroSNP;
   op.log2 = log(2.0);
   op.numDeriv = *numDeriv;
+  op.imputed = *imputed;
+  if (op.imputed) op.ProbG1 = ProbG1;
+  op.Pdg_rowSums = NULL;
+  op.UML_CML_cov = retUMLCML;
 
   /* Allocate memory */
   eta = (double *) R_Calloc(np, double);
@@ -1336,6 +1373,10 @@ int *zeroSNP, *numDeriv;
   op.temp = (double *) R_Calloc(nr, double);
   op.temp2 = (double *) R_Calloc(nr, double);
   op.temp3 = (double *) R_Calloc(nr, double);
+  op.Pdg_rowSums = (double *) R_Calloc(nr, double);
+  if (op.imputed) {
+    op.imputeSum = (double *) R_Calloc(nr, double);
+  }
 
   /* Initialize the vector of CML parms */
   vecmove(op.eta0, np, eta);
@@ -1345,7 +1386,7 @@ int *zeroSNP, *numDeriv;
   /* Get the vector of addresses for the loglike function */
   getLL_mat(&op);
 
-  /* Improve the in itial estimates */
+  /* Improve the initial estimates */
   check_init(eta, &op);
 
   /* Compute the CML estimates */
@@ -1362,9 +1403,14 @@ int *zeroSNP, *numDeriv;
   R_Free(op.temp3);
   R_Free(op.temp_np);
   R_Free(eta);
-
+  
   /* Compute empirical bayes estimates */
   if (!op.CML_error) getEB(&op);
+
+  R_Free(op.Pdg_rowSums);
+  if (op.imputed) {
+    R_Free(op.imputeSum);
+  }
 
   return;
 }

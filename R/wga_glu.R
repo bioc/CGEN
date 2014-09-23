@@ -28,6 +28,9 @@
 #         Nov 12 2010 Add function to convert to a ped file for Haploview
 #         Nov 16 2010 Change options in ldmatrix and add function to add missing snps
 #         Jan 21 2011 Convert mat to a matrix in addMissingSNPs
+#         Sep 12 2013 Add function to find snps in LD with a set of snps
+#         Sep 13 2013 Add function to extract snps
+#         Sep 19 2013 Add GLU option and info.list to create_ped function
 
 # Function to open a connection and transfrom data
 glu.transform <- function(infile, inFormat=NULL, outFormat="ldat") {
@@ -996,12 +999,17 @@ glu.SNP_bins <- function(snps, genoFile, op=NULL) {
 } # END: glu.SNP_bins
 
 # Function to convert to a ped file
-glu.create_ped <- function(snp.list, pheno.list, op=NULL) {
+glu.create_ped <- function(snp.list, pheno.list, op=NULL, info.list=NULL) {
  
   # snp.list        File must be a format GLU can read
   # pheno.list      With names response.var, gender.var, male, female
   # op       
   #   map.type      0=file from GLU, 1=format for haploview
+  #   GLU           path to GLU
+  # info.list       List with snp info (location) for map file
+  #   id.var        SNP column
+  #   loc.var
+
 
   snp.list <- check.snp.list(snp.list)
   pheno.list <- check.pheno.list(pheno.list)
@@ -1009,10 +1017,12 @@ glu.create_ped <- function(snp.list, pheno.list, op=NULL) {
                 c("response.var", "gender.var", "male", "female"), 
                 list("ERROR", "ERROR", "MALE", "FEMALE"), 
                 error=c(1, 1, 0, 0))
-  op <- default.list(op, c("temp.list", "map.type"), list(list(), 0))
+  op <- default.list(op, c("temp.list", "map.type", "GLU"), list(list(), 0, "glu"))
   temp.list <- check.temp.list(op$temp.list)
+  GLU       <- op$GLU
 
   x         <- loadData.table(pheno.list)
+  print(dim(x))
   vars      <- c(pheno.list$id.var, pheno.list$response.var, pheno.list$gender.var)
   x         <- removeOrKeepCols(x, vars)
   subids    <- makeVector(x[, pheno.list$id.var])
@@ -1041,14 +1051,14 @@ glu.create_ped <- function(snp.list, pheno.list, op=NULL) {
   # Create file for sample ids
   dir <- temp.list$dir
   id  <- temp.list$id
-  tmpids <- getTempfile(dir, prefix=paste("ids_", id, "_", sep=""), ext=".txt")
+  tmpids <- paste(dir, "ids_", id, ".txt", sep="")
   write(subids, file=tmpids, ncolumns=1)
 
   # Temporary output file
-  tmpfile <- getTempfile(dir, prefix=paste("out_", id, "_", sep=""), ext=".ped")
+  tmpfile <- paste(dir, "out_", id, ".ped", sep="")
 
-  str <- paste("glu transform -F ped -o ", tmpfile, sep="")
-  str <- paste(str, " --includeloci=", snp.file, sep="")
+  str <- paste(GLU, " transform -F ped -o ", tmpfile, sep="")
+  if (snpFlag) str <- paste(str, " --includeloci=", snp.file, sep="")
   str <- paste(str, " --includesamples=", tmpids, sep="")
   str <- paste(str, " ", snp.list$file, sep="")
   print(str)
@@ -1079,12 +1089,26 @@ glu.create_ped <- function(snp.list, pheno.list, op=NULL) {
     file.copy(tmpmap, out, overwrite=TRUE)
   }
 
-  if (op$map.type) {
-    x <- scan(out, what="character", sep=" ")
-    x <- matrix(x, byrow=TRUE, ncol=4)
-    x <- x[, c(2, 4)]
-    write.table(x, file=out, sep=" ", row.names=FALSE, quote=FALSE, col.names=FALSE)
+  # Read the map file
+  x <- matrix(scan(out, what="character", sep=" "), byrow=TRUE, ncol=4)
+
+  # Add locations
+  if (!is.null(info.list)) {
+    info.list <- default.list(info.list, c("id.var", "loc.var"), list("ERROR", "ERROR"), error=c(1, 1))
+    info.list <- check.file.list(info.list)
+    id.var    <- info.list$id.var
+    y <- loadData.table(info.list)
+    temp <- x[, 2] %in% y[, id.var]
+    ids  <- match(x[, 2], y[, id.var])
+    ids  <- ids[!is.na(ids)]
+    x[temp, 4] <- y[ids, info.list$loc.var]
   }
+
+  if (op$map.type) {
+    x <- x[, c(2, 4)]
+  }
+
+  write.table(x, file=out, sep=" ", row.names=FALSE, quote=FALSE, col.names=FALSE)
 
   if (temp.list$delete) {
     file.remove(tmpids)
@@ -1093,4 +1117,140 @@ glu.create_ped <- function(snp.list, pheno.list, op=NULL) {
   }
 
 }
+
+glu.LD.snps <- function(snps.file, geno.file, out.dir, qc.file, subs.file=NULL, GLU="GLU", 
+                 id.str="", delta=200000, delete=1, snp.var="LOCUS", chr.var="CHROMOSOME", loc.var="LOCATION") {
+
+  tmp.snps <- paste(out.dir, "tmp.snps", id.str, sep="")
+  tmp.glu  <- paste(out.dir, "tmp.glu", id.str, sep="")
+  out.file <- paste(out.dir, "GLU.LD.snps", id.str, ".txt.xls", sep="")
+  out.max  <- paste(out.dir, "GLU.R2.max", id.str, ".txt.xls", sep="")
+
+
+  # Get the complete set of snps
+  x    <- loadData.table(qc.file)
+  keep <- c(snp.var, loc.var, chr.var)
+  x    <- x[, keep]
+  
+  all  <- NULL
+  snps <- scan(snps.file, what="character")
+  temp <- x[, snp.var] %in% snps
+  y    <- x[temp, , drop=FALSE]
+  LOC  <- as.numeric(x[, loc.var])
+  CHR  <- x[, chr.var]
+
+  for (i in 1:nrow(y)) {
+    snp  <- y[i, snp.var]
+    chr  <- y[i, chr.var]
+    loc  <- as.numeric(y[i, loc.var])
+    temp <- (CHR %in% chr) & (LOC >= loc - delta) & (LOC <= loc + delta)
+    temp[is.na(temp)] <- FALSE
+    n <- sum(temp)
+    print(c(snp, chr, loc, n))
+    if (!n) next
+    all <- unique(c(all, x[temp, snp.var]))
+  }
+  n <- length(all)
+  if (!n) stop("ERROR: no SNPs")
+  write(all, file=tmp.snps, ncolumns=1)
+
+  # Call GLU
+  str <- paste(GLU, " tagzilla --skipbinning -r 0 -m 9999 -a 0.04", sep="")
+  str <- paste(str, " --saveldpairs=", tmp.glu, sep="")
+  str <- paste(str, " --includeloci=", tmp.snps, sep="")
+  if (!is.null(subs.file)) str <- paste(str, " --includesamples=", subs.file, sep="")
+  str <- paste(str, " ", geno.file, sep="")
+  print(str)
+  callOS(str)
+  
+  # Read in and edit the glu output
+  x    <- read.table(tmp.glu, header=1, sep="\t", as.is=TRUE)
+  temp <- ((x[, "LNAME1"] %in% snps) | (x[, "LNAME2"] %in% snps)) & (x[, "LNAME1"] != x[, "LNAME2"])
+  temp[is.na(temp)] <- FALSE
+  x    <- x[temp, , drop=FALSE]
+
+  # Put snps in column1
+  temp <- (x[, "LNAME2"] %in% snps)
+  if (any(temp)) {
+    tsnp <- x[temp, "LNAME1"]
+    x[temp, "LNAME1"] <- x[temp, "LNAME2"]
+    x[temp, "LNAME2"] <- tsnp
+  }
+  x <- sort2D(x, "RSQUARED", fun=as.numeric, dec=TRUE)
+  x <- sort2D(x, "LNAME1")
+ 
+  writeTable(x, out.file)
+
+  # Maximum R^2 for each snp, x is sorted
+  dup <- duplicated(x[, "LNAME1"])
+  y   <- x[!dup, , drop=FALSE]
+  writeTable(y, out.max)
+  
+
+  # Delete file
+  if (delete) {
+    file.remove(tmp.snps) 
+    file.remove(tmp.glu)
+  }
+
+  x
+
+} # END: glu.LD.snps
+
+# Function to extract snps
+glu.extract <- function(chr.vec, start.vec, end.vec, geno.file, out.dir, qc.file, subs.file=NULL, GLU="GLU", out.format="sdat", gzip=1,
+                 id.str="", delta=20000, delete=1, snp.var="LOCUS", chr.var="CHROMOSOME", loc.var="LOCATION") {
+
+  tmp.snps <- paste(out.dir, "tmp.snps", id.str, sep="")
+  out.file <- paste(out.dir, "snps", id.str, ".", out.format, sep="")
+
+  # Get the complete set of snps
+  x    <- loadData.table(qc.file)
+  keep <- c(snp.var, loc.var, chr.var)
+  x    <- x[, keep]
+  temp <- x[, chr.var] %in% chr.vec
+  x    <- x[temp, ]
+  
+  all  <- NULL
+  LOC  <- as.numeric(x[, loc.var])
+  CHR  <- x[, chr.var]
+  print(x[1:10, ])
+#print(sort(LOC))
+  for (i in 1:length(chr.vec)) {
+    chr  <- chr.vec[i]
+    a    <- start.vec[i]
+    b    <- end.vec[i] 
+    temp <- (CHR %in% chr) & (LOC >= a - delta) & (LOC <= b + delta)
+    temp[is.na(temp)] <- FALSE
+    n <- sum(temp)
+    print(c(chr, a, b, n))
+    if (!n) next
+    all <- unique(c(all, x[temp, snp.var]))
+  }
+  n <- length(all)
+  if (!n) stop("ERROR: no SNPs")
+  write(all, file=tmp.snps, ncolumns=1)
+
+  # Call GLU
+  str <- paste(GLU, " transform -F ", out.format, sep="")
+  str <- paste(str, " --includeloci=", tmp.snps, sep="")
+  if (!is.null(subs.file)) str <- paste(str, " --includesamples=", subs.file, sep="")
+  str <- paste(str, " -o ", out.file, " ",  geno.file, sep="")
+  print(str)
+  callOS(str)
+  
+  if (gzip) {
+    str <- paste("gzip ",  out.file, sep="")
+    print(str)
+    callOS(str)
+  }
+
+  # Delete file
+  if (delete) {
+    file.remove(tmp.snps) 
+  }
+
+  NULL
+
+} # END: glu.extract
 

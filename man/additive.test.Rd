@@ -114,7 +114,7 @@ where the sum is taken over the 6 combinations of d and g.
      
  }
 %\author{ }
-\seealso{ \code{\link{snp.logistic}} }
+\seealso{ \code{\link{snp.logistic}}, \code{\link{score.test}} }
 \examples{
  # Use the ovarian cancer data
  data(Xdata, package="CGEN")

@@ -51,15 +51,15 @@ snp.scan.logistic(snp.list, pheno.list, op=NULL)
  Below are the names for the options list \code{op}. All names have default values
          if they are not specified.
 \itemize{
-  \item \code{genetic.model} 0-3: The genetic model for the SNP. 0=trend, 1=dominant, 
-          2=recessive, 3=general. 
+  \item \code{genetic.model} 0-3: The genetic model for the SNP. 0=additive, 1=dominant, 
+          2=recessive, 3=general (co-dominant). 
   \item \code{tests} List of character vectors that will be used in Wald tests.
                  For example, \code{tests}=list(c("x1", "x2"), c("x1", "x4", "x9")),
                  will compute a 2 df Wald test involving the variables x1 and x2, 
                  and will compute a 3 df Wald test for the variables x1, x4, and x9.
-                 The variable name for the main effect of each SNP is called "SNP\_",
+                 The variable name for the main effect of each SNP is called "SNP_",
                  and the variable names that interact with each SNP are of the form
-                 "SNP\_x1", "SNP\_gender", etc. In the output, these tests will 
+                 "SNP_x1", "SNP_gender", etc. In the output, these tests will 
                  labeled as "test1", "test2", etc. 
                  The default is NULL.
   \item \code{tests.1df} Character vector of variable names to compute 1 degree of 
@@ -101,7 +101,7 @@ snp.scan.logistic(snp.list, pheno.list, op=NULL)
                  to read these files into R.
                  The object names are called "ret".
                  The default is NULL.
-  \item \code{reltol} Stopping tolerance. The default is 1e-6. 
+  \item \code{reltol} Stopping tolerance. The default is 1e-8. 
   \item \code{maxiter} Maximum number of iterations. The default is 100. 
   \item \code{optimizer} One of "BFGS", "CG", "L-BFGS-B", "Nelder-Mead", "SANN".
                     The default is "BFGS". 
@@ -126,7 +126,7 @@ Bhattacharjee S, Wang Z, Ciampa J, Kraft P, Chanock S, Yu K, Chatterjee N
   American Journal of Human Genetics, 2010, 86(3):331-342. \cr
  }
 %\author{ }
-\seealso{ \code{\link{snp.logistic}} }
+\seealso{ \code{\link{snp.logistic}}, \code{\link{GxE.scan}} }
 \examples{
 
  # Define the list for the genotype data. 

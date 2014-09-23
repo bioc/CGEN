@@ -69,7 +69,7 @@ void hcl_optim(double *beta, int *maxit, double *tol, int *xnsub, int *D, double
 	rda -> D = D ; rda -> osx = osx ; rda -> usz = usz ; rda -> nsz = nsz ; rda -> cnsz = cnsz ;
 	
 	S = rda -> usz[rda -> numSZ - 1] ;
-	if(S > 8) { Rprintf("Maximum matched set size > 8 not supported.\n") ; error(1) ; }
+	if(S > 8) { Rprintf("Maximum matched set size > 8 not supported.\n") ; error("1") ; }
 	
 	root = (tnode *) R_Calloc(1 , tnode) ;
 	root -> g = 0 ; root -> h = 0 ;
@@ -464,7 +464,7 @@ static int factorial(int n)
 	int count;
 	int fact = 1.;
 	
-	if (n < 0) { Rprintf("\nError: factorial of negative integer not defined\n"); error(1); }
+	if (n < 0) { Rprintf("\nError: factorial of negative integer not defined\n"); error("1"); }
 	
 	for (count = n; count > 0; --count) fact *= count ;
 	

@@ -5,7 +5,7 @@
 \description{Creates a chromosome plot }
 \usage{ chromosome.plot(infile, plot.vars, locusMap.list, op=NULL)}
 \arguments{
-   \item{infile}{Output file from \code{\link{snp.scan.logistic}}. No default.}
+   \item{infile}{Output file from \code{\link{GxE.scan}} or \code{\link{snp.scan.logistic}}. No default.}
    \item{plot.vars}{Character vector of the variables in \code{infile}
                     to plot. These variables should p-values. No default.}
    \item{locusMap.list}{See \code{\link{locusMap.list}}. No default. }

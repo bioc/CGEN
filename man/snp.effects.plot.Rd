@@ -73,7 +73,7 @@
  # Plot all on the same scale
  #snp.effects.plot(objects, op=list(ylim=c(0.9, 1.4), legend=list(x="bottom")))
 
- # Plot all the joint effects of rs789 for the CML method
+ # Plot all the joint effects of rs789 for the CML method and add confidence intervals
  #snp.effects.plot(objects[[4]], op=list(method="CML", type="JointEffects",
  #        legend=list(x="bottomleft", inset=0), ylim=c(0.45, 1.3),
  #        colors=c("blue", "aquamarine", "skyblue"), addCI=1))

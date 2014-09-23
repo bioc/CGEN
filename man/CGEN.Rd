@@ -23,25 +23,61 @@ not suitable for analysis of SNPs on sex chromosomes.
 }
 \details{
 The main functions for unmatched data are \code{\link{additive.test}}, \code{\link{snp.logistic}} 
-and \code{\link{snp.scan.logistic}}.
-Whereas \code{\link{additive.test}} and \code{\link{snp.logistic}} analyzes one SNP with each function call, \code{\link{snp.scan.logistic}}
+and \code{\link{score.test}}.
+Whereas \code{\link{additive.test}}, \code{\link{snp.logistic}} and \code{\link{score.test}} analyzes one SNP with each function call, \code{\link{GxE.scan}} and \code{\link{snp.scan.logistic}}  
 analyzes a collection of SNPs and writes the summary results to an external file.
-With \code{\link{additive.test}} and \code{\link{snp.logistic}}, a data frame is input in which the SNP variable must be coded as 0-1-2 (or 0-1). 
-If not, \code{\link{recode.geno}} can be used for recoding the SNP variable before calling \code{\link{snp.logistic}}.
+With \code{\link{additive.test}} and \code{\link{score.test}}, a data frame is input in which the SNP variable must be coded as 0-1-2 (or 0-1). 
+If not, \code{\link{recode.geno}} can be used for recoding the SNP variable.
+The function \code{\link{snp.logistic}} can also handle imputed genotype data.
 The functions
  \code{\link{getSummary}}, \code{\link{getWaldTest}} and \code{\link{snp.effects}} 
 can be called for creating summary
  tables, computing Wald tests and joint/stratified effects using the returned object from \code{\link{snp.logistic}}
  (see \code{Examples} in \code{\link{snp.logistic}}).
-With \code{\link{snp.scan.logistic}}, the data is read in from external files defined in 
+With \code{\link{GxE.scan}}, the data is read in from external files defined in 
 \code{\link{snp.list}} and \code{\link{pheno.list}}.
- The collection of p-values computed in \code{\link{snp.scan.logistic}}, can be plotted using the functions \code{\link{QQ.plot}} and
+ The collection of p-values computed in \code{\link{GxE.scan}}, can be plotted using the functions \code{\link{QQ.plot}} and
  \code{\link{chromosome.plot}}. \cr
  The function for analysis of matched case-control data is \code{\link{snp.matched}}. Optimal matching can be obtained 
 from the function  \code{\link{getMatchedSets}}. 
  This package contains sample genotype data \code{\link{SNPdata}}, sample covariate
  data \code{\link{Xdata}}, and sample SNP meta data \code{\link{LocusMapData}}. The current version of the package
-is only suitable for analysis of SNPs on non-sex chromosomes. 
+is only suitable for analysis of SNPs on non-sex chromosomes. \cr
+
+Main functions for single SNP analysis: \cr
+\code{\link{additive.test}} \cr
+\code{\link{score.test}} \cr
+\code{\link{snp.logistic}} \cr
+\code{\link{snp.matched}} \cr
+
+For GWAS analysis: \cr
+\code{\link{GxE.scan}} \cr
+\code{\link{GxE.scan.combine}} \cr
+\code{\link{GxE.scan.partition}} \cr
+\code{\link{pheno.list}} \cr
+\code{\link{snp.list}} \cr
+\code{\link{snp.scan.logistic}} \cr 
+\code{\link{subject.list}} \cr
+
+Graphics: \cr
+\code{\link{chromosome.plot}} \cr 
+\code{\link{QQ.plot}} \cr
+\code{\link{snp.effects.plot}} \cr
+
+Sample data: \cr
+\code{\link{LocusMapData}} \cr
+\code{\link{SNPdata}} \cr 
+\code{\link{Xdata}} \cr
+
+Miscellaneous: \cr
+\code{\link{getMatchedSets}} (Used with \code{\link{snp.matched}}) \cr
+\code{\link{getSummary}} (The same as calling \code{\link[base]{summary}}) \cr
+\code{\link{getWaldTest}} (For computing Wald tests)\cr 
+\code{\link{locusMap.list}} (Used with \code{\link{chromosome.plot}}) \cr
+\code{\link{printEffects}} (The same as calling \code{\link[base]{print}}) \cr
+\code{\link{recode.geno}} (For converting raw genotypes to integer values) \cr
+\code{\link{snp.effects}} (For computing joint and stratified effects) \cr
+
 }
 \references{ 
 \bold{Maximum-likelihood estimation under independence}

@@ -196,6 +196,19 @@
 #          Jan 31 2011 Allow snp.list and pheno.list to be file names instead of lists
 #                      Remove all calls to getListName
 #          Jul 12 2011 Add function to return a unique variable name
+#          Dec 22 2011 Allow for genetic.model = 4 (heterozygous) in check.snp.list
+#          Jan 13 2012 No change
+#          Feb 09 2012 Add code in recode.geno to check heterozygous codes when more than 3 genotypes
+#          Sep 07 2012 Update mergePhenoGeno for TPED files
+#          Dec 04 2012 Add num.prefix option to mergePhenoGeno function
+#          Jan 11 2013 Return alleles from mergePhenoGeno
+#          Aug 29 2013 Update code for stream
+#          Sep 26 2013 Add impute.cutoff and impute.method to snp.list
+#          Oct 07 2013 Add function check.subject.list
+#          Oct 09 2013 Add option in check.pheno.list to check that variables exist in data
+#          Oct 14 2013 Add check.include.snps function
+#          Oct 22 2013 Update genfile.list for a formula
+#          Mar 07 2014 Add function parseDelimVec
 
 # Function to pull apart each string from the data object
 getVecFromStr <- function(string, delimiter="|") {
@@ -256,12 +269,23 @@ recode.geno <- function(vec, in.miss=c("  "), out.miss=NA,
   # Initialize
   index   <- Inf
   subSum  <- Inf
-  alleles <- "  "
+  alleles <- " | "
   hflag   <- 1
   a1      <- NULL
   a2      <- NULL
 
   if (!is.null(out.genotypes)) {
+
+    # Watch out for heterozygous codes. If snp vector contains more than 1 distinct
+    # heterozygous code, then make them consistent
+    if (!is.null(heter.codes)) {
+      temp <- vec %in% heter.codes
+      if (any(temp)) {
+        uht  <- unique(vec[temp]) 
+        nuht <- length(uht)
+        if (nuht > 1) vec[temp] <- uht[1] 
+      }
+    }
 
     # Get the frequency counts
     if (subFlag) {
@@ -350,19 +374,19 @@ recode.geno <- function(vec, in.miss=c("  "), out.miss=NA,
       # Major
       if (minFlag) {
         # There was major and minor genotypes
-        alleles <- paste(hom1, hom2, sep="")
+        alleles <- paste(hom1, hom2, sep="|")
       } else if (flag2) {
         # Use heterozygous genotype
         a2 <- substr(hetg, 2, 2)
         if (hom1 != a2) {
-          alleles <- paste(hom1, a2, sep="")
+          alleles <- paste(hom1, a2, sep="|")
         } else {
           a1 <- substr(hetg, 1, 1)
-          alleles <- paste(hom1, a1, sep="")
+          alleles <- paste(hom1, a1, sep="|")
         }
       } else {
         # Only major homozygous
-        alleles <- paste(hom1, hom1, sep="") 
+        alleles <- paste(hom1, hom1, sep="|") 
       }
     } else {
       # Only heterozygous genotype
@@ -463,6 +487,120 @@ getListName <- function(inList, name) {
 
 } # END: getListName
 
+# Function to check the subject list
+check.subject.list <- function(slist, format=NULL) {
+
+  len   <- length(slist)
+  if (!len) return(slist)
+
+  if ((len == 1) && (is.character(slist))) {
+    # Assume a file
+    slist <- list(file=slist) 
+  }
+  if (!is.list(slist)) return(slist)
+  
+  ff <- slist[["file", exact=TRUE]]  
+  if (is.null(ff)) return(slist)
+
+  # Check that the file exists
+  if (check.files(ff)) stop("ERROR with subject.list")
+
+  # If id.var is specified return
+  id.var <- slist[["id.var", exact=TRUE]]
+  if (!is.null(id.var)) return(slist)
+
+  header <- slist[["header", exact=TRUE]]
+  if (is.null(header)) slist$header <- 0
+
+  plink.format <- format %in% c("ped", "bed", "tped")
+
+  # Get the number of columns
+  row1 <- scan(ff, what="character", sep="", nlines=1, quiet=TRUE)
+  nc   <- length(row1)
+
+  sep  <- slist[["delimiter", exact=TRUE]]
+  if (is.null(sep)) {
+    if (nc == 1) {
+      slist$delimiter <- "\n"
+    } else if (plink.format) {
+      slist$delimiter <- " "
+    }
+  }
+
+  if (nc == 1) {
+    slist$id.var <- -1
+  } else {
+    # More than 1 column
+    if (plink.format) {
+      slist$id.var <- 1:2    
+    } else {
+      slist$id.var <- 1
+    }
+  }
+  
+  slist
+
+} # END: check.subject.list
+
+# Function to check the included snps
+check.include.snps <- function(slist, format=NULL) {
+
+  len   <- length(slist)
+  if (!len) return(slist)
+
+  if ((len == 1) && (is.character(slist))) {
+    # Check for a file
+    if (file.exists(slist)) {
+      slist <- list(file=slist)
+    } else {
+      return(slist)
+    } 
+  }
+  if (!is.list(slist)) return(slist)
+  
+  ff <- slist[["file", exact=TRUE]]  
+  if (is.null(ff)) return(slist)
+
+  # Check that the file exists
+  if (check.files(ff)) stop("ERROR with include.snps")
+
+  # If id.var is specified return
+  id.var <- slist[["id.var", exact=TRUE]]
+  if (!is.null(id.var)) return(slist)
+
+  header <- slist[["header", exact=TRUE]]
+  if (is.null(header)) slist$header <- 0
+
+  plink.format <- format %in% c("ped", "bed", "tped")
+
+  # Get the number of columns
+  row1 <- scan(ff, what="character", sep="", nlines=1, quiet=TRUE)
+  nc   <- length(row1)
+
+  sep  <- slist[["delimiter", exact=TRUE]]
+  if (is.null(sep)) {
+    if (nc == 1) {
+      slist$delimiter <- "\n"
+    } else if (plink.format) {
+      slist$delimiter <- " "
+    }
+  }
+
+  if (nc == 1) {
+    slist$id.var <- -1
+  } else {
+    # More than 1 column
+    if (plink.format) {
+      slist$id.var <- 2    
+    } else {
+      slist$id.var <- 1
+    }
+  }
+  
+  slist
+
+} # END: check.include.snps
+
 # Function to check snp.list
 check.snp.list <- function(snp.list) {
 
@@ -471,14 +609,97 @@ check.snp.list <- function(snp.list) {
 
   # Check the names in the list
   snp.list <- default.list(snp.list, 
-            c("file", "in.miss", 
+            c("file", 
         "read.n", "genetic.model", "stream", "recode",
-        "alreadyChecked", "out.miss", "out.delimiter", "snpNames.keep"), 
-        list("ERROR", "  ", -1, 0, 0, 1, 0, NA, "\t", 1), 
-            error=c(1, 0, 0, 0, 0, 0, 0, 0, 0, 0),
-         checkList=list(NA, NA, NA, 0:3, 0:1, 0:1, NA, NA, NA, NA))
+        "alreadyChecked", "out.miss", "out.delimiter", "snpNames.keep", "GLU",
+        "temp.dir", "id.str", "delete", "impute.method", "impute.cutoff", "PLINK",
+        "glu.checked", "plink.checked"), 
+        list("ERROR", -1, 0, 0, 1, 0, NA, "\t", 1, "glu",
+             getwd(), "", 1, 1, -1, "plink",
+             0, 0), 
+            error=c(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+                    0, 0, 0, 0, 0, 0, 0, 0),
+         checkList=list(NA, NA, 0:4, 0:1, 0:1, NA, NA, NA, NA, NA, 
+                        NA, NA, 0:1, 1:2, NA, NA, NA, NA))
 
   if (snp.list$alreadyChecked == 1) return(snp.list)
+
+  if (is.null(snp.list$PLINK)) snp.list$PLINK <- ""
+  if (is.null(snp.list$GLU)) snp.list$GLU <- ""
+
+  format <- snp.list[["format", exact=TRUE]]
+  type   <- snp.list[["file.type", exact=TRUE]]
+  if (!is.null(format)) {
+    format <- tolower(removeWhiteSpace(format))
+    if (format %in% "ldat") {
+      snp.list$file.type <- 7
+    } else if (format %in% "tped") {
+      snp.list$file.type <- 12
+    } else if (format %in% "impute") {
+      snp.list$file.type <- 10
+    } else {
+      snp.list$file.type <- format
+
+    }
+    snp.list$format <- format
+  } 
+
+  if (is.null(snp.list[["file.type", exact=TRUE]])) {
+    snp.list$file.type <- getFileType(snp.list$file[1], default=7)
+  }
+  type <- tolower(removeWhiteSpace(snp.list$file.type))
+  if (type %in% c(2, 7, "ldat")) {
+    snp.list$format <- "ldat"
+  } else if (type %in% c(9, 10, "impute")) {
+    snp.list$format <- "impute"
+  } else if (type %in% c(11, 12, "tped")) {
+    snp.list$format <- "tped"
+  } else {
+    snp.list$format <- type
+  }
+  ntype <- as.numeric(type)
+  if (!is.na(ntype)) type <- ntype
+  snp.list$file.type <- type
+
+  format <- snp.list$format
+  if (format %in% c("bed", "ped", "tped")) {
+    snp.list$plink.format <- 1
+  } else {
+    snp.list$plink.format <- 0
+  }
+  plink.format <- snp.list$plink.format
+
+  if (!nchar(snp.list$PLINK)) snp.list$use.PLINK <- 0
+  if (!nchar(snp.list$GLU)) snp.list$use.GLU <- 0
+
+  # Let PLINK have priority
+  if (is.null(snp.list[["use.PLINK", exact=TRUE]])) {
+    snp.list$use.PLINK <- 0
+    gluFlag <- snp.list[["use.GLU", exact=TRUE]]
+    if (is.null(gluFlag)) gluFlag <- 0
+    if ((!gluFlag) && (plink.format) && (format != "tped")) {
+      snp.list$use.PLINK <- 1
+    } 
+  }
+
+  if (is.null(snp.list[["use.GLU", exact=TRUE]])) {
+    if ((is.na(as.numeric(snp.list$file.type))) && (!snp.list$use.PLINK)) {
+      snp.list$use.GLU <- 1
+    } else {
+      snp.list$use.GLU <- 0
+    }
+  }
+
+  id.sep <- snp.list[["id.sep", exact=TRUE]]
+  if (is.null(id.sep)) {
+    id.sep <- ":"
+    if (snp.list$use.PLINK) {
+      id.sep <- " "
+    } else if (snp.list$format %in% "mach") {
+      id.sep <- "->"
+    }
+    snp.list$id.sep <- id.sep
+  }
 
   # Check file vector
   nfiles <- length(snp.list$file)
@@ -488,11 +709,24 @@ check.snp.list <- function(snp.list) {
   snp.list$file <- temp
   snp.list$dir <- ""
 
-  if (is.null(snp.list[["file.type", exact=TRUE]])) {
-    snp.list$file.type <- getFileType(snp.list$file[1], default=7)
-  }
+  
   if (is.null(snp.list[["delimiter", exact=TRUE]])) {
-    snp.list$delimiter <- getFileDelim(snp.list$file[1], type=snp.list$file.type, default="\t")
+    if (snp.list$plink.format) {
+      snp.list$delimiter <- " "
+    } else if (!snp.list$use.GLU) {
+      snp.list$delimiter <- getFileDelim(snp.list$file[1], type=snp.list$file.type, default="\t")
+    }
+  }
+
+  if (is.null(snp.list[["in.miss", exact=TRUE]])) {
+    if (snp.list$file.type %in% c(11, 12)) {
+      snp.list$in.miss <- "0"
+    } else {
+      snp.list$in.miss <- "  "
+    }
+  }
+  if (snp.list$file.type %in% c(11, 12)) {
+    snp.list$out.delimiter <- "\t"
   }
 
   # Check start.vec and stop.vec
@@ -508,7 +742,7 @@ check.snp.list <- function(snp.list) {
     snp.list$stop.vec  <- rep(-1, times=nfiles)
   }
   temp <- (snp.list$stop.vec == 1)
-  if (any(temp)) snp.list$stop.vec[temp] <- 2
+  #if (any(temp)) snp.list$stop.vec[temp] <- 2
   
   # Check for id variable for type 3 and 4
   if (snp.list$file.type %in% c(3, 4)) {
@@ -544,14 +778,14 @@ check.snp.list <- function(snp.list) {
   # Check file.type
   temp <- snp.list$file.type
   if (is.numeric(temp)) {
-    if (!(temp %in% 1:10)) {
+    if (!(temp %in% 1:12)) {
       temp <- paste("ERROR:", temp, "is not a valid value for snp.list$file.type")
       stop(temp) 
     }
   } else {
     # GLU format
-    if (snp.list$stream == 0) {
-      warning("Assuming snp.list$file.type is a GLU format. Setting snp.list$stream to 1")
+    if ((snp.list$stream == 0) && (snp.list$plink.format == 0)) {
+      warning("Assuming snp.list$file.type is a GLU format.")
       snp.list$stream <- 1
     }
   }
@@ -564,7 +798,7 @@ check.snp.list <- function(snp.list) {
 
   # For file type 1, stream must be 0
   if (snp.list$file.type == 1) {
-    print("snp.list$stream is set to 0 for file.type = 1")
+    #print("snp.list$stream is set to 0 for file.type = 1")
     snp.list$stream <- 0
   }
    
@@ -577,6 +811,45 @@ check.snp.list <- function(snp.list) {
   }
 
   if (snp.list$file.type %in% c(9, 10)) snp.list$out.delimiter <- "\t"
+
+  # Subject list
+  slist <- snp.list[["subject.list", exact=TRUE]]
+  if (!is.null(slist)) {
+    snp.list$subject.list <- check.subject.list(slist, format=snp.list$format)
+  }
+
+  # Included snps
+  slist <- snp.list[["include.snps", exact=TRUE]]
+  if (!is.null(slist)) {
+    snp.list$include.snps <- check.include.snps(slist, format=snp.list$format)
+  }
+
+  snp.list$temp.dir <- checkForSep(snp.list$temp.dir)
+
+  # If plink format, check for bim or map file
+  format <- snp.list$format
+  if ((snp.list$plink.format) && (format != "tped")) {
+    bim.file <- snp.list[["PLINK.bim.file", exact=TRUE]]
+    fam.file <- snp.list[["PLINK.fam.file", exact=TRUE]]
+    map.file <- snp.list[["PLINK.map.file", exact=TRUE]]
+    bim.flag <- !is.null(bim.file)
+    fam.flag <- !is.null(fam.file)
+    map.flag <- !is.null(map.file)
+    if ((bim.flag) && (!file.exists(bim.file))) stop("ERROR: snp.list$PLINK.bim.file does not exist")
+    if ((fam.flag) && (!file.exists(fam.file))) stop("ERROR: snp.list$PLINK.fam.file does not exist")
+    if ((map.flag) && (!file.exists(map.file))) stop("ERROR: snp.list$PLINK.map.file does not exist")
+    if (length(snp.list$file) == 1) {
+      dir   <- dirname(snp.list$file)
+      base  <- basename(snp.list$file)
+      if (format == "bed") {
+        bim <- paste(dir, "/", gsub(".bed", ".bim", base, fixed=TRUE), sep="")
+        if ((!bim.flag) && (file.exists(bim))) snp.list$PLINK.bim.file <- bim 
+      } else if (format == "ped") {
+        map <- paste(dir, "/", gsub(".ped", ".map", base, fixed=TRUE), sep="")
+        if ((!map.flag) && (file.exists(map))) snp.list$PLINK.map.file <- map 
+      }
+    }
+  }
 
   snp.list$alreadyChecked <- 1
 
@@ -592,13 +865,15 @@ check.pheno.list <- function(pheno.list) {
 
   pheno.list <- default.list(pheno.list, 
    c("file", "id.var", "header", "remove.miss", "alreadyChecked", 
-     "is.the.data", "in.miss", "orig.id.var", "unique.ids"),
-        list("ERROR", "ERROR", 1, 0, 0, 0, c(NA, "NA", NaN, "NaN", "."), "origID5uh23gx25l6eq", 0), 
-               error=c(1, 1, 0, 0, 0, 0, 0, 0, 0))
+     "is.the.data", "in.miss", "orig.id.var", "unique.ids", "id.sep", "checkVars"),
+        list("ERROR", "ERROR", 1, 0, 0, 
+             0, c(NA, "NA", NaN, "NaN", "."), "origID5uh23gx25l6eq", 0, ":", 1), 
+               error=c(1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0))
 
   if (pheno.list$alreadyChecked == 1) return(pheno.list)
 
   temp  <- getAllVars(pheno.list)
+  if (pheno.list$checkVars == 0) temp <- NULL
   pheno.list <- check.file.list(pheno.list, op=list(exist=1, vars=temp))
 
   if (!(pheno.list$file.type %in% c(1, 3, 4, 6, 8)))
@@ -1721,6 +1996,21 @@ genfile.list <- function(inList, listName, fid) {
       cat(temp, file=fid)
       next
     }
+
+    # For a formula
+    if ("formula" %in% class(temp)) {
+      temp <- paste(as.character(temp), collapse="", sep="")
+      temp <- paste(listName, str1, name, str2, temp, ' \n', sep='')
+      cat(temp, file=fid)
+      next
+    }
+    # For NULL
+    if (is.null(temp)) {
+      temp <- paste(listName, str1, name, str2, 'NULL \n', sep='')
+      cat(temp, file=fid)
+      next
+    }
+
     if (length(temp) == 1) {
       if (is.character(temp)) { 
         if (cmm == "FUNCTION") {
@@ -2690,14 +2980,17 @@ mergePhenoGeno <- function(snp.list, pheno.list, temp.list=NULL, op=NULL) {
   #   alleles  (For snp.list$file.type = 9 or 10)
   #            0 or 1 to add alleles (major/minor) for each SNP
   #            The default is 0
+  #   only.alleles 0 or 1 to only return the named vector of alleles
 
-  op <- default.list(op, c("which", "alleles"), list(0, 0))
+  op <- default.list(op, c("which", "alleles", "only.alleles"), list(0, 0, 0))
 
   # Check the input lists
   snp.list   <- check.snp.list(snp.list)
   pheno.list <- check.pheno.list(pheno.list)
 
+  alleles    <- NULL
   imputeFlag <- snp.list$file.type %in% c(9, 10)
+  tpedFlag   <- snp.list$file.type %in% c(11, 12)
   snp.list$recode <- 0
   snp.list$genetic.model <- 3
   flag0 <- 0 %in% op$which
@@ -2717,15 +3010,27 @@ mergePhenoGeno <- function(snp.list, pheno.list, temp.list=NULL, op=NULL) {
     stop("ERROR loading data")
   }
 
+  prefix    <- op[["num.prefix", exact=TRUE]]
   snpData   <- temp$data
   snpNames  <- temp$snpNames
+  if (!is.null(prefix)) {
+    jj <- !is.na(as.numeric(snpNames))
+    if (any(jj)) snpNames[jj] <- paste(prefix, snpNames[jj], sep="")
+  }
   delimiter <- getDelimiter(snp.list, output=1)
   nsnps     <- length(snpData)
-  if (aflag) alleles <- temp$alleles
+  alleles   <- temp[["alleles", exact=TRUE]]
+  if (!is.null(alleles)) names(alleles) <- snpNames
+  if (op$only.alleles) return(alleles)
+  if (tpedFlag) {
+    chrVec <- temp$chr
+    locVec <- temp$loc
+  }
 
   # Get the phenotype data
   phenoData.list <- temp$phenoData.list
   phenoData0     <- phenoData.list$data
+  phenoData0     <- as.data.frame(phenoData0, stringsAsFactors=FALSE)
 
   # Determine if cc.var was specified
   ccVar <- pheno.list[["cc.var", exact=TRUE]]
@@ -2788,7 +3093,16 @@ mergePhenoGeno <- function(snp.list, pheno.list, temp.list=NULL, op=NULL) {
   newnc  <- ncol(phenoData0)
   gnames <- colnames(phenoData0)[(nc+1):newnc]
 
-  list(data=phenoData0, geno.vars=gnames)
+  rm(snpData)
+  gc()
+
+  if (!tpedFlag) {
+    ret <- list(data=phenoData0, geno.vars=gnames, alleles=alleles)
+  } else {
+    ret <- list(data=phenoData0, geno.vars=gnames, chr=chrVec, loc=locVec, alleles=alleles)
+  }
+
+  ret
 
 } # END: mergePhenoGeno
 
@@ -3181,7 +3495,7 @@ checkTryError <- function(obj, conv=1) {
 
   # Check for convergence
   if (conv) {
-    if (("glm" %in% classObj) || ("lm" %in% classObj)) {
+    if ("glm" %in% classObj) {
       ret <- 1 - obj$converged
     } else if ("vglm" %in% classObj) {
       temp <- try(obj@criterion$loglikelihood, silent=TRUE)
@@ -3308,3 +3622,12 @@ getUniqueVarName <- function(vec, alen=4, nlen=4) {
   }
 
 } # END: getUniqueVarName
+
+# Function to break up character vector
+parseDelimVec <- function(vec, sep, ncol) {
+
+  mat <- matrix(unlist(strsplit(vec, sep, fixed=TRUE)), byrow=TRUE, ncol=ncol)
+  mat   
+
+} # END: parseDelimVec
+

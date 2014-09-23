@@ -125,6 +125,8 @@
 #         Jun 09 2010  Return imputed vector for imputed data in loadData.type1
 #         Oct 18 2010  With an empty space missing value ("") check the last genotype. If missing,
 #                      then a missing value needs to be added.
+#         Sep 07 2012  Add code for TPED files
+#         Apr 03 2013  Add code to return ProbG1 for imputed data
 
 # Function to read the locus map data set
 # This function return a list with the names "snp", "chrm", and "loc".
@@ -405,6 +407,9 @@ loadData.type1 <- function(snp.list, pheno.list, temp.list, op=NULL) {
     }
   }
 
+  tpedFlag <- snp.list$file.type %in% c(11, 12)
+  if (tpedFlag) snp.list$pheno.list <- pheno.list
+
   # Character vector containing the snp data. First element contains the
   # subject ids. Remaining elements contain the snp name and genotypes.
   # This character vector must be delimited.
@@ -474,6 +479,8 @@ loadData.type1 <- function(snp.list, pheno.list, temp.list, op=NULL) {
   n.miss     <- NULL
   temp2      <- NULL
   imputed    <- NULL
+  chr        <- NULL
+  loc        <- NULL
 
   # If the snp names were specified, then set sFlag to 1 so that
   #  the snp names will be kept
@@ -493,6 +500,12 @@ loadData.type1 <- function(snp.list, pheno.list, temp.list, op=NULL) {
   } else {
     out.sep <- snp.list$out.delimiter
   }
+  if (tpedFlag) {
+    delimiter <- snp.list$out.delimiter
+    in.miss   <- "  "
+  }
+  ProbG1 <- NULL
+  ProbG1.flag <- 0
 
   # Loop over each file and combine the objects
   for (file in snp.list$file) {
@@ -512,6 +525,12 @@ loadData.type1 <- function(snp.list, pheno.list, temp.list, op=NULL) {
       MAF     <- c(MAF, snpData$MAF)
       alleles <- c(alleles, snpData$alleles)
       imputed <- c(imputed, snpData$imputed)
+      ProbG1  <- c(ProbG1, snpData$ProbG1)
+      ProbG1.flag <- !is.null(ProbG1)
+      snpData <- snpData$snpData
+    } else if (tpedFlag) {
+      chr     <- c(chr, snpData$chr)
+      loc     <- c(loc, snpData$loc)
       snpData <- snpData$snpData
     }
     nsnps <- length(snpData)
@@ -664,6 +683,12 @@ loadData.type1 <- function(snp.list, pheno.list, temp.list, op=NULL) {
       } else {
         snpData[i] <- paste(temp, sep="", collapse=out.sep)
         if (inc.snps) snpData[i] <- paste(snp.name, out.sep, snpData[i], sep="")
+        if (ProbG1.flag) {
+          temp <- getVecFromStr(ProbG1[i-1], delimiter=delimiter)
+          if (subjFlag) temp <- temp[subj.ids]
+          temp <- temp[subj.order2]
+          ProbG1[i-1] <- paste(temp, sep="", collapse=out.sep)
+        } 
       }
     } # END: for (i in 2:nsnps)
 
@@ -715,7 +740,7 @@ loadData.type1 <- function(snp.list, pheno.list, temp.list, op=NULL) {
   list(data=data.obj, missing=missing, snpNames=snps, nsubjects=nsubj,
        subjects=save.subs, order=ret.order, phenoData.list=phenoData.list,
        MAF=MAF, alleles=alleles, n.miss=n.miss, genoFreqs=genoFreqs,
-       imputed=imputed)
+       imputed=imputed, chr=chr, loc=loc, ProbG1=ProbG1)
 
 } # END: loadData.type1
 
@@ -1126,6 +1151,8 @@ getSnpLoadList <- function(snp.list, temp.list, op=NULL) {
 
   op <- default.list(op, c("file.index"), list(1))
 
+  if (snp.list$file.type %in% c(11, 12)) return(snp.list) 
+
   ret <- list(file.type=snp.list$file.type, 
          delimiter=snp.list$delimiter, read.n=snp.list$read.n,
          sas.list=snp.list$sas.list, transpose=1, include.row1=1,
@@ -1178,10 +1205,10 @@ intersectSubIds <- function(snp.list, pheno.list, temp.list=NULL) {
 
     # Get the data
     temp <- loadData(paste(snp.list$dir, file, sep=""), tList)
-    if (snp.list$file.type %in% c(9, 10)) {
+    if (snp.list$file.type %in% c(9, 10, 11, 12)) {
       temp <- temp$snpData
       delimiter <- "\t"
-    }
+    } 
 
     # Get the first 2 rows
     if (!stream) {

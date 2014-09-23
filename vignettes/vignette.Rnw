@@ -165,7 +165,7 @@ library("cluster")
 size <- ifelse(Xdata$ethnic.group == 3, 3, 4)
 d <- daisy(Xdata[,c("age.group_1","gynSurgery.history","BRCA.history")])
 mx <- getMatchedSets(d, CC=TRUE, NN=TRUE, ccs.var = Xdata$case.control, 
-	  strata.var = Xdata$ethnic.group, size = size, fixed = FALSE)
+	  strata.var = Xdata$ethnic.group, size = size, fixed = TRUE)
 @
 
 The return object mx contains vectors corresponding to CC and NN matching as well as corresponding summary matrices tblCC and tblNN.

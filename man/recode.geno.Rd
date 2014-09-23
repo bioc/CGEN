@@ -35,11 +35,11 @@
 }
 \details{The input vector \code{vec} can be either character or numeric. If it is numeric, then
 \code{heter.codes} should be set. 
-This function is useful if the input vector of genotypes is of the form (AA, AB, BB)
+This function is useful if the input vector of genotypes is of the form (AA, AG, GG)
          and the standard (0, 1, 2) coding is desired, or vice-versa.
 }
 \value{
-   Vector of recoded genotypes. 
+   A list containing the vector of recoded genotypes and the major|minor alleles. 
 }
 %\references{ }
 %\author{ }

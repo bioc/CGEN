@@ -15,32 +15,37 @@ additiveTest=function(Y,X1,X2,COVS,method,indep=F,X.st=NULL,control=list(maxit=5
 
             ans=NULL
             #optim.maxit=1000
-            ################## [1] Deal with missing values #######################################################################
+            ################## [1] Deal with missing values #################################
             
             TB=table(X1,X2)
                
             nX1=as.numeric(strsplit(method,split="x")[[1]])[1]  #[1] 2
             nX2=as.numeric(strsplit(method,split="x")[[1]])[2]  #[1] 3
              
-            min.counts=5    
-            indic.collapse=(sum(TB< min.counts)>0 | dim(TB)[1]!=nX1 | dim(TB)[2]!=nX2)  ## if any of cell counts is smaller than 10 (min.counts) or dimension collaps then do not test
-           
+            min.counts=5 
+          
+            indic.collapse=(sum(TB< min.counts)>0 | dim(TB)[1]!=nX1 | dim(TB)[2]!=nX2)
+            ## if any of cell counts is smaller than 10 (min.counts) or dimension collaps then do not test
+          
 
-            if (indic.collapse==T) {     ans=NULL    ; print("Error: wrong dimension for X1 or X2 specified")                            } # if dimension is not 3 by 3 then don't do test
-            
+            if (indic.collapse==T) {     
+              ans=NULL    ; 
+              print("Error: wrong dimension for X1 or X2 specified")   
+            } # if dimension is not 3 by 3 then don't do test
+           
             if (indic.collapse==F) {
 
                     indic.st = is.null(X.st)==F    # stratified for indep?
                     
                     ##### [1] Deal with missing values #####
-                    
+                 
                     ttt=variablePrep2(Y,X1,X2,COVS,X.st,indep)
                     
                     y=ttt$y
                     x1=ttt$x1
                     x2=ttt$x2
                     covs=ttt$covs
-                    
+                 
                     x.st=NULL
                     nStrata=1
                     strDat=NULL

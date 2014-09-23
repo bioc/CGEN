@@ -3,7 +3,7 @@ additiveTest.small=function(y,x1,x2,covs,method, optim.method="BFGS", control,in
                             use.C.code=1, genetic.model=0, snp.orig=NULL){
 
        ans=NULL
-     
+   
        if (!is.loaded("additive1")) use.C.code <- 0
        if (optim.method != "BFGS") use.C.code <- 0
 
