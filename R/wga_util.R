@@ -668,6 +668,7 @@ check.snp.list <- function(snp.list) {
     snp.list$plink.format <- 0
   }
   plink.format <- snp.list$plink.format
+  if (format == "impute") stop("The impute genotype format is not currently supported")
 
   if (!nchar(snp.list$PLINK)) snp.list$use.PLINK <- 0
   if (!nchar(snp.list$GLU)) snp.list$use.GLU <- 0

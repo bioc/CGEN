@@ -19,18 +19,14 @@ principal compoenets of population stratification. \bold{(iii) Empirical-Bayes:}
 }
 \usage{
 snp.logistic(data, response.var, snp.var, main.vars=NULL, int.vars=NULL,
-             strata.var=NULL, ProbG1.var=NULL, op=NULL)
+             strata.var=NULL, op=NULL)
 }
 \arguments{
   \item{data}{Data frame containing all the data. No default. }
   \item{response.var}{ Name of the binary response variable coded 
                   as 0 (controls) and 1 (cases).
              No default. }
-  \item{snp.var}{Character vector of the genotype variable names, where the genotypes are numerically coded.
-             The length of this vector must be 1 or 3.
-             For imputed genotypes, either specify the 3 variable names corresponding to Prob(G=0), Prob(G=1), Prob(G=2) in this order, 
-             or let \code{snp.var} be the variable name corresponding to E(G) and specify the argument \code{ProbG1.var}.
-             For directly genotyped data, the SNP must be coded as 0-1-2 (or 0-1).
+  \item{snp.var}{Name of the SNP variable, which must be coded 0-1-2 (or 0-1).
              The SNP will be included as a main effect in the model. 
              No default. }
   \item{main.vars}{Character vector of variable names or a formula for all covariates of interest 
@@ -44,8 +40,8 @@ snp.logistic(data, response.var, snp.var, main.vars=NULL, int.vars=NULL,
                     If \code{strata.var}="SVAR", where "SVAR" is a factor or character variable in \code{data}, then
                     "SVAR" will be treated as categorical. Otherwise, "SVAR" is treated as a continuous variable.
                     The default is NULL (1 stratum). }
-  \item{ProbG1.var}{Name of the variable corresponding to Prob(G = 1). This option is for imputed genotypes only.
-                    The default is NULL. }
+  %\item{ProbG1.var}{Name of the variable corresponding to Prob(G = 1). This option is for imputed genotypes only.
+  %                  The default is NULL. }
   \item{op}{ A list with names \code{genetic.model}, \code{reltol}, \code{maxiter}, and
           \code{optimizer} (see details). The default is NULL.
   }

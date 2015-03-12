@@ -1481,7 +1481,7 @@ snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) {
 
 # Function to permform a SNP by environment interaction analysis for 1 SNP.
 snp.logistic <- function(data, response.var, snp.var, main.vars=NULL, 
-                         int.vars=NULL, strata.var=NULL, ProbG1.var=NULL, op=NULL) {
+                         int.vars=NULL, strata.var=NULL, op=NULL) {
 
   # INPUT:
   # data           Data frame containing all the data.
@@ -1542,11 +1542,13 @@ snp.logistic <- function(data, response.var, snp.var, main.vars=NULL,
   # Check for errors
   if (length(response.var) != 1) stop("response.var must be a single variable")
   if (!is.data.frame(data)) stop("data must be a data frame")
+  ProbG1.var <- NULL
 
   n.snp.var <- length(snp.var)
-  if (!(n.snp.var %in% c(1, 3))) {
-    stop("snp.var must be a single variable or 3 variables for imputed genotypes")
-  }
+  #if (!(n.snp.var %in% c(1, 3))) {
+  #  stop("snp.var must be a single variable or 3 variables for imputed genotypes")
+  #}
+  if (n.snp.var != 1) stop("snp.var must be a single variable")
 
   # Check variable names
   vlist <- list(response.var=response.var, snp.var=snp.var, main.vars=main.vars,
@@ -1568,29 +1570,31 @@ snp.logistic <- function(data, response.var, snp.var, main.vars=NULL,
   
   op <- default.list(op, c("snpName", "fit.null", "imputed", "genetic.model"), 
                      list("SNP_", 0, 0, 0))
+  op$imputed <- 0
   if ((!is.numeric(snp.var)) && (n.snp.var == 1)) op$snpName <- snp.var
   zeroFlag  <- 0
   zero.vars <- NULL
-  if ((n.snp.var > 1) || (!is.null(ProbG1.var))) {
-    op$imputed <- 1
-  } 
+  #if ((n.snp.var > 1) || (!is.null(ProbG1.var))) {
+  #  op$imputed <- 1
+  #} 
   if (n.snp.var == 1) {
     snp <- as.numeric(unfactor(data[, snp.var]))
     snp <- snp[is.finite(snp)] 
-    if (!all(snp %in% 0:2)) op$imputed <- 1
+    #if (!all(snp %in% 0:2)) op$imputed <- 1
+    if (!all(snp %in% 0:2)) stop("snp.var must be coded 0-1-2")
   }
 
   imputed       <- op$imputed
   genetic.model <- op$genetic.model
   if (!(genetic.model %in% 0:3)) stop("op$genetic.model must be 0-3")
-  if ((imputed) && (genetic.model == 3)) stop("op$genetic.model must be 0-2 for imputed genotypes")
-  if ((imputed) && (n.snp.var == 1) && (genetic.model != 0)) {
-    stop("op$genetic.model must be 0 for imputed genotypes and length(snp.var) = 1")
-  }
-  if ((imputed) && (n.snp.var == 1) && (is.null(ProbG1.var))) {
-    stop("ProbG1.var must be specified for imputed genotypes and length(snp.var) = 1")
-  }
-  if ((imputed) && (length(ProbG1.var) > 1)) stop("ProbG1.var must be NULL or of length 1")
+  #if ((imputed) && (genetic.model == 3)) stop("op$genetic.model must be 0-2 for imputed genotypes")
+  #if ((imputed) && (n.snp.var == 1) && (genetic.model != 0)) {
+  #  stop("op$genetic.model must be 0 for imputed genotypes and length(snp.var) = 1")
+  #}
+  #if ((imputed) && (n.snp.var == 1) && (is.null(ProbG1.var))) {
+  #  stop("ProbG1.var must be specified for imputed genotypes and length(snp.var) = 1")
+  #}
+  #if ((imputed) && (length(ProbG1.var) > 1)) stop("ProbG1.var must be NULL or of length 1")
 
 
   main.form <- ("formula" %in% class(main.vars))
@@ -1599,13 +1603,13 @@ snp.logistic <- function(data, response.var, snp.var, main.vars=NULL,
   ProbG1    <- NULL
 
   # For impute snp with 3 vars, if all 0, then missing
-  if (n.snp.var > 1) {
-    snp1 <- as.numeric(unfactor(data[, snp.var[1]]))
-    snp2 <- as.numeric(unfactor(data[, snp.var[2]]))
-    snp3 <- as.numeric(unfactor(data[, snp.var[3]]))
-    temp <- (snp1 %in% 0) & (snp2 %in% 0) & (snp3 %in% 0)
-    if (any(temp)) data[temp, snp.var] <- NA 
-  }
+  #if (n.snp.var > 1) {
+  #  snp1 <- as.numeric(unfactor(data[, snp.var[1]]))
+  #  snp2 <- as.numeric(unfactor(data[, snp.var[2]]))
+  #  snp3 <- as.numeric(unfactor(data[, snp.var[3]]))
+  #  temp <- (snp1 %in% 0) & (snp2 %in% 0) & (snp3 %in% 0)
+  #  if (any(temp)) data[temp, snp.var] <- NA 
+  #}
 
   # Remove missing values
   temp <- getFormulas(vlist)
@@ -1621,34 +1625,34 @@ snp.logistic <- function(data, response.var, snp.var, main.vars=NULL,
   nobs <- length(D)
 
   # Get Prob(G=1)
-  if ((imputed) && (!is.null(ProbG1.var))) ProbG1 <- as.numeric(unfactor(data[, ProbG1.var]))
+  #if ((imputed) && (!is.null(ProbG1.var))) ProbG1 <- as.numeric(unfactor(data[, ProbG1.var]))
 
   # Get the snp variable(s)
   if (n.snp.var == 1) {
     snp  <- as.numeric(unfactor(data[, snp.var]))
   } else {
-    snp1 <- as.numeric(unfactor(data[, snp.var[1]]))
-    snp2 <- as.numeric(unfactor(data[, snp.var[2]]))
-    snp3 <- as.numeric(unfactor(data[, snp.var[3]]))
+  #  snp1 <- as.numeric(unfactor(data[, snp.var[1]]))
+  #  snp2 <- as.numeric(unfactor(data[, snp.var[2]]))
+  #  snp3 <- as.numeric(unfactor(data[, snp.var[3]]))
 
-    if (genetic.model == 0) {
-      snp <- snp2 + 2*snp3
-    } else if (genetic.model == 1) {
-      snp <- snp2 + snp3
-    } else if (genetic.model == 2) {
-      snp <- snp3
-    } 
+  #  if (genetic.model == 0) {
+  #    snp <- snp2 + 2*snp3
+  #  } else if (genetic.model == 1) {
+  #    snp <- snp2 + snp3
+  #  } else if (genetic.model == 2) {
+  #    snp <- snp3
+  #  } 
 
     # Add it ot the data frame
-    data[, op$snpName] <- snp
+  #  data[, op$snpName] <- snp
 
     # Save Prob(G = 1) if needed
-    if (is.null(ProbG1)) ProbG1 <- snp2
+  #  if (is.null(ProbG1)) ProbG1 <- snp2
  
-    rm(snp1, snp2, snp3)
-    gc()
+  #  rm(snp1, snp2, snp3)
+  #  gc()
   }
-  if (imputed) op$genetic.model <- 0
+  #if (imputed) op$genetic.model <- 0
 
   facVars    <- NULL
   sflag      <- !is.null(strata.var)
@@ -2565,6 +2569,8 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
   snp.nc   <- ncol(snp)
   if (is.null(snp.nc)) snp.nc <- 0
   if (snp.nc == 3) op$imputed <- 1
+  op$imputed <- 0 # Changed Mar 11, 2015
+
   fixFlag  <- 0
   fit.null <- op$fit.null
   imputed  <- op$imputed
@@ -3109,7 +3115,7 @@ UML_CML_GxE_parms <- function(main.variables, interaction.variables, out.file, s
     outvec["SNP"] <- snp
 
     fit <- try(snp.logistic(data, response.var, snp, main.vars=main.vars, 
-                 int.vars=int.vars, strata.var=strata.var, ProbG1.var=ProbG1.var, op=op), silent=TRUE)
+                 int.vars=int.vars, strata.var=strata.var, op=op), silent=TRUE)
     if ("try-error" %in% class(fit)) {
       if (print) print(fit)
       if (fileFlag) writeOut(fid, outvec) 
@@ -3588,7 +3594,7 @@ scan.UML_CML <- function(snp.list, pheno.list, op=NULL) {
   out.file    <- op$out.file
   out.base    <- paste(out.file, "_info", sep="")
   temp <- try(snp.logistic(phenoData0, response.var, SNP, main.vars=main.vars, 
-                 int.vars=int.vars, strata.var=NULL, ProbG1.var=NULL, op=op), silent=TRUE)
+                 int.vars=int.vars, strata.var=NULL, op=op), silent=TRUE)
   if ("try-error" %in% class(temp)) {
     print(temp)
     stop()
