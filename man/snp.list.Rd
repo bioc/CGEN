@@ -55,7 +55,7 @@
 
        \bold{Options used with \code{\link{snp.scan.logistic}}:}
        \describe{
-         \item{file.type}{ 1-12 (see details). The default is determined from \code{format} or from
+         \item{file.type}{ 1-8, 11-12 (see details). The default is determined from \code{format} or from
                             the \code{file} extension.}
          \item{id.var}{   (Only for \code{file.type} = 3, 4, 6, 8) The subject id variable.
                              No default.}
@@ -68,12 +68,12 @@
          be specified. If not, then the program will attempt to guess the correct \code{format} and
          \code{file.type} of the genotype data from the file extension of \code{file}.
          Typical values of \code{format} are "ldat" (\code{file.type}=2,7), "tped" (\code{file.type}=11,12), 
-         "impute" (\code{file.type}=9,10), "bed", "ped", "lbat", etc.
+          "bed", "ped", "lbat", etc.
          If \code{format} is a format that \code{\link{GxE.scan}} is not set up to read directly (such as
          "bed", "lbat", "ped"), then either PLINK or GLU 
          will be called to transform the data into either a "tped" or "ldat" format. This automatic transformation
          of the genotype data is not done in \code{\link{snp.scan.logistic}} so that the genotype data must be 
-         of \code{file.type} 1-12 to use the function \code{\link{snp.scan.logistic}}.
+         of \code{file.type} 1-8, 11-12 to use the function \code{\link{snp.scan.logistic}}.
          When the option \code{include.snps} is specified as a file, then the options \code{start.vec} and 
          \code{stop.vec} will be applied to the SNPs in this file. For example, suppose we have the genotype file
          snps.bed which is the PLINK "bed" format. We can set \code{include.snps} to the corresponding ".bim" file: \cr
@@ -118,7 +118,6 @@
           \item \code{Type 6} A file compressed with WinZip.
           \item \code{Type 8} A file compressed with gzip.
       }
-      \code{Types 9 and 10} are for imputed genotype files from IMPUTE2. \cr
       \code{Types 11 and 12} are for .tped and .tped.gz files. \cr
       
 

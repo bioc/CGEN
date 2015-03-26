@@ -28,7 +28,6 @@ Whereas \code{\link{additive.test}}, \code{\link{snp.logistic}} and \code{\link{
 analyzes a collection of SNPs and writes the summary results to an external file.
 With \code{\link{additive.test}} and \code{\link{score.test}}, a data frame is input in which the SNP variable must be coded as 0-1-2 (or 0-1). 
 If not, \code{\link{recode.geno}} can be used for recoding the SNP variable.
-The function \code{\link{snp.logistic}} can also handle imputed genotype data.
 The functions
  \code{\link{getSummary}}, \code{\link{getWaldTest}} and \code{\link{snp.effects}} 
 can be called for creating summary

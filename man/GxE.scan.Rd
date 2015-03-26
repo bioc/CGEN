@@ -21,7 +21,7 @@ GxE.scan(snp.list, pheno.list, op=NULL)
 To use this function, the data must be stored in files as defined in
 \code{\link{snp.list}} and \code{\link{pheno.list}}. See the examples on how to
  create these lists. The format of the genotype data must be a format where the SNPs
- are rows (\code{snp.list$format}="ldat", "tped", "impute") or a format where either the GLU software
+ are rows (\code{snp.list$format}="ldat", "tped") or a format where either the GLU software
  or PLINK software can read and transform the data. 
  Options for setting the path to GLU or PLINK are found in \code{\link{snp.list}}.
  The genotype data is read in from the file 

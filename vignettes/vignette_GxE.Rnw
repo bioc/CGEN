@@ -86,63 +86,13 @@ x <- read.table(out.file, header=1, as.is=TRUE, sep="\t")
 x[1:5, ]
 @
 
-\section*{Example of GxE.scan with an imputed genotype file}
-
-Assume that we have an imputed genotype file from the IMPUTE2 software and a list of ids specifying
-the order of the subjects in the genotype file.
-
-<<Impute files>>=
-geno.file <- system.file("sampleData", "geno_imputed.txt.gz", package="CGEN")
-subject.file <- system.file("sampleData", "subjects_imputed.txt", package="CGEN")
-geno.file
-subject.file
-@
-
-The file subject.file contains a single column of subject ids without a variable header. 
-The subject.list option can be defined either way below. 
-<<Impute subject.list>>=
-subject.list <- list(file=subject.file, id.var=-1, header=0)
-subject.list <- subject.file
-@
-
-Define the snp.list argument. The genotype file corresponds to format="impute" or file.type=10.
-<<snp.list>>=
-snp.list <- list(file=geno.file, format="impute", subject.list=subject.list)
-@
-
-Define the pheno.list argument. The column "Imputed.ID" in pheno.file has ids matching the ids in subject.file.
-<<Impute pheno.list>>=
-pheno.list <- list(file=pheno.file, id.var="Imputed.ID", file.type=3, delimiter="\t", 
-              response.var="CaseControl", int.vars="Exposure",
-              main.vars=c("Gender", "Exposure", "Smoke_CURRENT", "Smoke_FORMER"))
-@
-              
-Let us also use the subsetData option of pheno.list to run the analysis on the subset
-of subjects from study A.
-<<subset data>>=
-temp <- list(var="Study", operator="%in%", value="A")
-pheno.list$subsetData <- list(temp)
-@
-
-Call the scan function and display the first 5 rows of the output file.
-<<Impute scan>>=
-GxE.scan(snp.list, pheno.list, op=op)
-x <- read.table(out.file, header=1, as.is=TRUE, sep="\t")
-x[1:5, ]
-@
-
-
 \section*{User-defined scan}
 
 A customized scan can be run by writing a simple R function that inputs 2 arguments and returns either a named list or
 named vector. The first input argument is a data frame containing all the data, and the second argument is a list
 containing the GxE.scan options, pheno.list and possibly a list named "scan.func.op". 
 The data frame will have a variable called "SNP" (by default) which
-contains the SNP and will be coded as 0-1-2 or NA for directly genotyped files. 
-However if the genotype file was imputed, then the SNP variable would be the
-expected genotype Prob(G=1) + 2*Prob(G=2), and there would be 3 additional columns in the data frame
-called "SNP.ProbG0", "SNP.ProbG1" and "SNP.ProbG2" corresponding to the imputed probabilities Prob(G=0),
-Prob(G=1) and Prob(G=2).
+contains the SNP and will be coded as 0-1-2 or NA. 
 The names in the return list or vector will be column names in the output file. 
 When calling GxE.scan for a user-defined scan, the "model" option in the GxE.scan options list must be set to 0 and
 the "scan.func" option must be set to the name of the user-defined scan function.
