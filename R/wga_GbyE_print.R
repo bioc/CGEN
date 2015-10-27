@@ -307,4 +307,35 @@ print.score.test <- function(x, ...) {
 
 } # END: print.score.test
 
+# Print function for score.wald
+print.score.wald <- function(x, ...) {
+
+  sandFlag <- !is.null(x[["UML_interaction_pval_sandwich", exact=TRUE]])
+  if (sandFlag) {
+    mat           <- matrix(data=NA, nrow=4, ncol=3)
+    colnames(mat) <- c("UML", "CML", "EB")
+    rownames(mat) <- c("Interaction", "Interaction Sandwich", "Joint", "Joint Sandwich")
+    mat[, 1] <- c(x$UML_interaction_pval, x$UML_interaction_pval_sandwich, 
+                  x$UML_joint_pval, x$UML_joint_pval_sandwich)   
+    mat[, 2] <- c(x$CML_interaction_pval, x$CML_interaction_pval_sandwich, 
+                  x$CML_joint_pval, x$CML_joint_pval_sandwich)   
+    mat[, 3] <- c(x$EB_interaction_pval, x$EB_interaction_pval_sandwich, 
+                  x$EB_joint_pval, x$EB_joint_pval_sandwich)   
+  } else {
+    mat           <- matrix(data=NA, nrow=2, ncol=3)
+    colnames(mat) <- c("UML", "CML", "EB")
+    rownames(mat) <- c("Interaction", "Joint")
+    mat[, 1] <- c(x$UML_interaction_pval, x$UML_joint_pval)   
+    mat[, 2] <- c(x$CML_interaction_pval, x$CML_joint_pval)   
+    mat[, 3] <- c(x$EB_interaction_pval, x$EB_joint_pval)   
+  }
+
+
+  cat("P-values:\n")
+  print(mat)
+  
+  invisible(x)
+
+} # END: print.score.test
+
 

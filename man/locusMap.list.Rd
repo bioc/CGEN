@@ -6,7 +6,7 @@
  List to describe the locus map data
 }
 \description{
- The list to describe the locus map data for \code{\link{chromosome.plot}}.
+ The list to describe the locus map data for \code{\link{Manhattan.plot}}.
 }
 \format{
       The format is: List of 8
@@ -27,8 +27,6 @@
                           on the chromosome.
                           This variable should be numeric.
                              No default.}
-           \item{sas.list}{See \code{\link{sas.list}}. The default is NULL.}
-       
        }
     
 }
@@ -36,8 +34,7 @@
          files are described below. 
   \itemize{
     \item \code{Type 1} An .rda file where the saved object was a data frame.
-    \item \code{Type 3} A flat file.
-    \item \code{Type 4} A SAS data set (see \code{\link{sas.list}}).
+    \item \code{Type 3} A delimited file.
   }
 }
 %\examples{}

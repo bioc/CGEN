@@ -982,6 +982,11 @@ getNumGenoVec <- function(snp.info, snp.list) {
     vec.num <- as.numeric(y$vec)
     a       <- y$alleles
   }
+  if (snp.list$MAF) {
+    maf <- 0.5*mean(vec.num, na.rm=TRUE)
+    if (!is.finite(maf)) maf <- -1
+    ret$MAF <- maf
+  }
   ids <- snp.list[["order.vec", exact=TRUE]]
   if (!is.null(ids)) {
     vec.num <- vec.num[ids]  
@@ -1695,10 +1700,11 @@ scan.stream <- function(snp.list, pheno.list, op=NULL) {
   snp.list   <- check.snp.list(snp.list)
 
   if (is.null(pheno.list)) pheno.list <- list()
-  if (!is.list(pheno.list)) stop("ERROR: pheno.list muist be a list")
+  if (!is.list(pheno.list)) stop("ERROR: pheno.list must be a list")
   pheno.list$checkVars <- 0
   snp.list$DEBUG       <- DEBUG
   pheno.list$DEBUG     <- DEBUG
+  pheno.list$snpfile   <- snp.list$file
 
   if (DEBUG) cat("check.pheno.list\n")
   pheno.list <- check.pheno.list(pheno.list)
@@ -1872,6 +1878,11 @@ scan.stream <- function(snp.list, pheno.list, op=NULL) {
   index      <- 1
   snp        <- NULL
   majMin     <- NULL
+  remove.indels <- snp.list[["remove.indels", exact=TRUE]]
+  if (is.null(remove.indels)) remove.indels <- 0 
+  MAF <- snp.list[["MAF", exact=TRUE]]
+  if (is.null(MAF)) snp.list$MAF <- 0
+  MAF <- snp.list$MAF
 
   out.fid    <- file(op$out.file, "w")
   while (1) {
@@ -1882,6 +1893,14 @@ scan.stream <- function(snp.list, pheno.list, op=NULL) {
     if (is.null(retlist)) break
     snp     <- retlist$snp
     majMin  <- substr(retlist$majMin, 1, max.allele.len)
+    if ((remove.indels) && (nchar(majMin) > 3)) {
+      index <- index + 1
+      next
+    }
+    if ((MAF) && (retlist$MAF < MAF)) {
+      index <- index + 1
+      next
+    }
     snp.vec <- retlist$vec.num
 
     data0[[snp.name]] <- snp.vec

@@ -6,7 +6,7 @@
  List to describe the covariate and outcome data 
 }
 \description{
- The list to describe the covariate and outcome data for \code{\link{GxE.scan}} and \code{\link{snp.scan.logistic}}
+ The list to describe the covariate and outcome data for \code{\link{GxE.scan}}.
 }
 
 \format{
@@ -54,7 +54,6 @@
                                           list(var="STUDY", operator="\%in\%", value=c("A", "B", "C"))) \cr
                           will include subjects with AGE > 50 AND in STUDY A, B or C.  
                           The default is NULL.}
-         \item{sas.list}{See \code{\link{sas.list}}. }
          \item{cc.var}{ Name of the \code{cc.var} variable used in \code{\link{snp.matched}}. 
                          The default is NULL.}
          \item{nn.var}{ Name of the \code{nn.var} variable used in \code{\link{snp.matched}}. 

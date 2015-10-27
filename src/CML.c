@@ -106,6 +106,12 @@ extern void additive1(double *theta0, int *nparms, int *x1cols, int *nx1, int *x
 extern void additive1_indep(double *theta0, int *nparms, int *x1cols, int *nx1, int *x2cols, int *nx2, int *Xnrow, int *covCols, int *ncovs, char **method,\
             int *maxit, double *reltol, int *debug, int *genoBinary, int *llmatCols, double *Z0, double *Z1, double *Z2, int *xiCols, int *nxi, int *alphaCol, int *nStrata, double *strDat,\
             double *retParms, double *retLL, int *retFCount, int *retGCount, int *retError);
+extern void infoSmallStandard(double *xmat, int *pnr, int *pnc, double *pphat, double *infoSum);
+extern void getCOV0(int *pncinf, double *phatprod, int *pn, double *pinfoprods, double *retcov);
+extern void getCOV1(int *pnc, int *pn, double *weights, double *twopmu, double *pinfob1, double *pinfoh, int *pinfohnc, double *retcov);
+extern void getScore(int *y, double *score, int *pnr, int *pnc, double *avgscore0, double *avgscore1, double *retcov);
+extern void getScoreEB(int *y, double *score1, double *score2, int *pnr, int *pnc1, int *pnc2, double *avgscore1_0, double *avgscore1_1,\
+            double *avgscore2_0, double *avgscore2_1, double *retcov);
 
 static const R_CMethodDef callMethods[] = {
   {"CML_EB", (DL_FUNC)&CML_EB, 31},
@@ -115,6 +121,11 @@ static const R_CMethodDef callMethods[] = {
   {"fs_clust", (DL_FUNC)&fs_clust, 6},
   {"additive1", (DL_FUNC)&additive1, 25},
   {"additive1_indep", (DL_FUNC)&additive1_indep, 28},
+  {"infoSmallStandard", (DL_FUNC)&infoSmallStandard, 5},
+  {"getCOV0", (DL_FUNC)&getCOV0, 5},
+  {"getCOV1", (DL_FUNC)&getCOV1, 8},
+  {"getScore", (DL_FUNC)&getScore, 7},
+  {"getScoreEB", (DL_FUNC)&getScoreEB, 11},
   {NULL, NULL, 0}
 };
 

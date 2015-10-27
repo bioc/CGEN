@@ -41,6 +41,9 @@
 #         Jan 31 2011  Add wrapper function for gene.plot for perm package
 #         Nov 04 2011  Fix OR.plot for 1 method, length(levels2)=1
 #         Nov 15 2011  Change name of OR.plot to effects.plot
+#         Jun 15 2015  Add new QQ.plot function
+#         Jun 17 2015  Update chromosomePlot function
+#         Sep 11 2015  Rename chromosome.plot to Manhattan.plot
 
 # Function to set a graphics device
 setDevice <- function(file, op=NULL) {
@@ -83,8 +86,197 @@ setDevice <- function(file, op=NULL) {
 
 } # END: setDevice
 
+# Function to get figs option
+getFigs <- function(N) {
+
+  nr <- ceiling(sqrt(N))
+  nc <- nr - 1
+  if (nr*nc < N) nc <- nr
+  ret <- c(nr, nc)
+   
+  ret
+
+} # END: getFigs
+
+# Function to check limits
+getLims <- function(lim) {
+
+  if (is.null(lim)) return(NULL)
+  if (length(lim) != 2) stop("ERROR: incorrect axis limits")
+  if (lim[1] >= lim[2]) stop("ERROR: incorrect axis limits")
+  
+
+
+} # END: getLims
+
 # Function to create a QQ plot on a -log10 scale.
-QQ.plot <- function(pvals, op=NULL) {
+QQ.plot <- function(pvalues, op=NULL) {
+
+  # pvals      Vector or matrix of p-values
+  ###############################################
+  # op         List with the optional fields:
+  #   title    Title for the plot
+  #            The default is "QQ Plot"
+  #   ylim     NULL or vector of length 2.
+  #            ylim=c(0, 10) will cause the y-axis range to be between
+  #            10^{-0} and 10^{-10}
+  #            The default is NULL
+  #   xlim     NULL or vector of length 2.
+  #            xlim=c(0, 10) will cause the x-axis range to be between
+  #            10^{-0} and 10^{-10}
+  #            The default is NULL
+  #   outfile  File to save the plot or NULL.
+  #            The default is NULL
+  #   type     "jpeg", "ps", or "pdf"
+  #            The default is "jpeg"
+  #   inflation  List with names tests, squared, etc
+  #              The default is NULL
+  #   figs     Two-element vecotor for split.screen
+  #            The default is NULL
+  #   min.p    Minimum p-value. The default is 1e-16
+  #   pch      Plot character. The default is 21
+  #   cex.lab  Magnification for x and y labels. The default is 1
+  #   cex      Magnification of plotting symbol. The default is 1
+  #   cex.main For title
+  #   cex.axis For axis marks
+  #   color    Color of title and p-values
+  ###############################################
+
+  op <- default.list(op, c("type", "color", "min.p", "cex.lab", "cex",
+                          "pch", "cex.main", "cex.axis"), 
+                     list("jpeg", "blue", 1e-16, 1, 1,
+                           21, 1, 1))
+  op$type <- tolower(op$type)
+
+  pnames <- colnames(pvalues)
+  N      <- ncol(pvalues)
+  if (is.null(N)) N <- 1
+  pvalues <- as.numeric(pvalues)
+  pvalues <- matrix(data=pvalues, byrow=FALSE, ncol=N)
+  if (is.null(pnames)) pnames <- rep("", N)
+  title <- op[["title", exact=TRUE]]
+  if (!is.null(title)) pnames[] <- title
+  
+  if (N > 1) {
+    screenFlag  <- 1
+    splitScreen <- op[["figs", exact=TRUE]]
+    if (is.null(splitScreen)) splitScreen <- getFigs(N)
+    split.screen(splitScreen)
+  } else {
+    screenFlag <- 0
+  } 
+
+  min.p <- op$min.p
+  if (min.p < 1e-300) min.p <- 1e-300
+  xlim  <- op[["xlim", exact=TRUE]]
+  ylim  <- op[["ylim", exact=TRUE]]
+
+  # Transform
+  MAXP   <- 0
+  MAXEXP <- 0 
+  for (i in 1:N) {
+    vec               <- pvalues[, i]
+    miss              <- !is.finite(vec)
+    temp              <- vec < min.p
+    temp[is.na(temp)] <- FALSE
+    vec[temp]         <- min.p
+    temp              <- vec > 1
+    temp[is.na(temp)] <- FALSE
+    vec[temp]         <- 1
+    vec[!miss]        <- -log10(vec[!miss])
+    vec[miss]         <- NA
+    pvalues[, i]      <- vec 
+    MAXP              <- max(MAXP, max(vec, na.rm=TRUE))
+
+    n                 <- sum(!miss)
+    vec               <- -log10((1:n)/(n+1))
+    MAXEXP            <- max(MAXEXP, max(vec, na.rm=TRUE))
+  }
+
+  # Get xlim, ylim
+  if (is.null(ylim)) ylim <- c(0, ceiling(MAXP))
+  if (is.null(xlim)) xlim <- c(0, ceiling(MAXEXP))
+  xlabel <- expression(-log[10]("Expected P-values"))
+  ylabel <- expression(-log[10]("Observed P-values"))
+
+  maxy <- ceiling(MAXP)
+  maxx <- ceiling(MAXEXP)
+  m    <- max(maxy, maxx)
+  my   <- m
+  if (!is.null(ylim)) my <- max(m, ylim)
+  ypos <- 0:my
+  xpos <- 0:m
+
+  inflation <- op[["inflation", exact=TRUE]]
+  infFlag   <- !is.null(inflation)
+  if (infFlag) {
+    inflation <- default.list(inflation, 
+                   c("squared", "y", "cex", "color", "df"), 
+                   list(0, 0.5, 2, "red", 1))
+    x <- inflation[["x", exact=TRUE]]
+    if (is.null(x)) inflation$x <- floor(MAXEXP/2)
+  }
+
+  for (i in 1:N) {
+    pvals  <- pvalues[, i]
+
+    # Remove non-finite values
+    pvals <- pvals[is.finite(pvals)]
+
+    pvals <- sort(pvals, decreasing=TRUE)
+    n     <- length(pvals)
+    ex    <- -log10((1:n)/(n+1))
+
+    temp <- setDevice(op$outfile, op=list(type=op$type, which=0)) 
+
+    if (screenFlag) screen(i)
+    plot(ex, pvals, axes=FALSE, type="p", xlab=xlabel, ylab=ylabel,
+          lwd=1, col=op$color[1], ylim=ylim, xlim=xlim, cex.lab=op$cex.lab, cex=op$cex,
+          pch=op$pch)
+
+    axis(1, at=xpos, cex.axis=op$cex.axis)
+    axis(2, at=ypos, cex.axis=op$cex.axis)
+    box()
+    title(main=pnames[i], col.main=op$color[1], cex.main=op$cex.main)
+
+    # Add a diagonal line
+    abline(a=0, b=1, col="black", lwd=2)
+
+    # for inflation factor
+    if (infFlag) {
+      tests <- inflation[["tests", exact=TRUE]]
+      if (is.null(tests)) {
+        tests <- qchisq(1/(10^pvals), df=1, lower.tail=FALSE)
+        inflation$squared <- 1
+        inflation$df      <- 1
+      }    
+      infl  <- inflationFactor(tests, squared=inflation$squared, df=inflation$df)
+      str   <- paste("Inflation factor = ", round(infl, digits=4), sep="")
+      text(x=inflation$x , y=inflation$y, labels=str, cex=inflation$cex, col=inflation$color)
+    }
+
+    # See if other p-values need to be plotted
+    pvals <- op[["pvalues", exact=TRUE]]
+    if (!is.null(pvals)) {
+      pvals <- as.numeric(pvals)
+      pvals <- sort(pvals)
+      n     <- length(pvals)
+      ex    <- (1:n)/(n+1)
+      pvals[pvals < min.p] <- min.p
+      pvals <- -log10(pvals)
+      ex    <- -log10(ex)
+      points(ex, pvals, type="p", lwd=1, col=op$color[2])
+    }
+    if (screenFlag) close.screen(i)
+  }
+  temp <- setDevice(op$outfile, op=list(type=op$type, which=1)) 
+
+  0 
+
+} # END: QQ.plot
+
+# Function to create a QQ plot on a -log10 scale.
+QQ.plot_old0 <- function(pvals, op=NULL) {
 
   # pvals      Vector of p-values
   ###############################################
@@ -301,7 +493,7 @@ transform.loc <- function(chromosome, chrms, map, addToEnd=0) {
 } # END: transform.loc
 
 # Function to create a chromosome plot
-chromosome.plot <- function(infile, plot.vars, locusMap.list, op=NULL) {
+Manhattan.plot <- function(infile, plot.vars, locusMap.list, op=NULL) {
 
   # infile           Input data set containing the p-values.
   #                  infile can be the path to the file or a data
@@ -346,11 +538,18 @@ chromosome.plot <- function(infile, plot.vars, locusMap.list, op=NULL) {
   #                  The default depends on x.las
   #  x.las           0-3 for x-axis labels 
   #                  0=parallel, 1=horizontal, 2=perpendicular, 3=vertical
-  #                  The default is 0
+  #                  The default is 2
   #  xlim.add        Vector of length 1 or 2 for adding(subtracting) a 
   #                  value to xlim
   #                  The default is c(0, 0)
   #  xlab            The default is "Chromosome" or "Map Position"
+  #  min.p           The minimum p-value. Default is 1e-30
+  #  figs            Argument for split.screen. Default is NULL
+  #  onePlot         All p-values on 1 plot. The default is 0.
+  #  cex
+  #  cex.lab
+  #  cex.main
+  #  tcl             Length of tick marks. Default is -0.5
   #####################################################################
   #  hline           NULL or list specifying a horizontal line
   #    h             y value
@@ -360,13 +559,34 @@ chromosome.plot <- function(infile, plot.vars, locusMap.list, op=NULL) {
 
   op      <- default.list(op, 
             c("splitScreen", "snp.var", "legend", "cex.axis", "alt.colors",
-              "legend.horiz", "legend.where", "add", "x.las", "xlim.add"), 
-             list(1, "SNP", 1, 0.75, 1, "TRUE", "top", 0, 0, c(0, 0)))
-  subset  <- getListName(op, "subset")
+              "legend.horiz", "legend.where", "add", "x.las", "xlim.add",
+              "min.p", "onePlot", "cex", "cex.lab", "tcl"), 
+             list(0, "SNP", 1, 0.75, 1, 
+                  "TRUE", "top", 0, 2, c(0, 0),
+                  1e-30, 0, 1, 1, -0.5))
+  subset  <- op[["subset", exact=TRUE]]
   subFlag <- !is.null(subset)
 
   plot.vars <- unique(plot.vars)
   nvars     <- length(plot.vars)
+  onePlot   <- op$onePlot
+  figs      <- op[["figs", exact=TRUE]]
+  figsFlag  <- !is.null(figs)
+  if ((onePlot) && (figsFlag)) {
+    print("NOTE: op$figs is ignored since op$onePlot is 1")
+    figsFlag <- 0
+  }
+  if ((nvars > 1) && (!onePlot)) {
+    op$splitScreen <- 0
+    if (is.null(figs)) figs <- getFigs(nvars)
+    figsFlag <- 1
+  }  
+
+  if (nvars == 1) {
+    onePlot   <- 1
+    op$legend <- 0
+  }
+  if (figsFlag) op$legend <- 0
 
   dfFlag  <- is.data.frame(infile) | is.matrix(infile)
 
@@ -435,8 +655,8 @@ chromosome.plot <- function(infile, plot.vars, locusMap.list, op=NULL) {
   maxp <- rep(NA, times=nvars)
   # Transform p-values to a -log10 scale
   for (i in 1:nvars) { 
-    temp <- data[[i]] < 1e-30
-    data[[i]][temp] <- 1e-30
+    temp <- data[[i]] < op$min.p
+    data[[i]][temp] <- op$min.p
     data[[i]]       <- -log10(data[[i]])
     maxp[i]         <- max(data[[i]], na.rm=TRUE)
   } 
@@ -449,7 +669,7 @@ chromosome.plot <- function(infile, plot.vars, locusMap.list, op=NULL) {
   for (i in 1:nvars) data[[i]] <- data[[i]][temp]
 
   # y-axis limits
-  temp <- getListName(op, "yaxis.range")
+  temp <- op[["yaxis.range", exact=TRUE]]
   ylim <- chrm.plot.ylim(maxp, ylim=temp)
 
   rm(maxp, var, snp, snp2)
@@ -479,12 +699,12 @@ chromosome.plot <- function(infile, plot.vars, locusMap.list, op=NULL) {
   nclrs <- nvars
   alt.colors <- op$alt.colors
   if (alt.colors) nclrs <- nchrm
-  colors <- getListName(op, "colors")
+  colors <- op[["colors", exact=TRUE]]
   colors <- chrm.plot.colors(nclrs, colors=colors)
-  pch    <- chrm.plot.pch(nvars, pch=op$pch)
+  pch    <- chrm.plot.pch(nvars, pch=op[["pch", exact=TRUE]])
   if (op$legend) {
     names <- plot.vars
-    temp <- getListName(op, "legend.names")
+    temp  <- op[["legend.names", exact=TRUE]]
     if (!is.null(temp)) names <- temp
     legend <- chrm.plot.legend(names, colors, pch, alt.colors,
                horiz=op$legend.horiz, where=op$legend.where)
@@ -492,8 +712,8 @@ chromosome.plot <- function(infile, plot.vars, locusMap.list, op=NULL) {
     legend <- NULL
   }
 
-  hline  <- getListName(op, "hline")
-  x.padj <- getListName(op, "x.padj") 
+  hline  <- op[["hline", exact=TRUE]]
+  x.padj <- op[["x.padj", exact=TRUE]] 
 
   if (op$splitScreen) {
 
@@ -511,7 +731,8 @@ chromosome.plot <- function(infile, plot.vars, locusMap.list, op=NULL) {
            xlab=xlab, ylab=ylab, transLoc=transLoc, legend=legend,
            colors=colors, pch=op$pch, title=op$title, cex.axis=op$cex.axis,
            alt.colors=alt.colors, add=op$add, hline=hline,
-           x.las=op$x.las, x.padj=x.padj, xlim.add=op$xlim.add)
+           x.las=op$x.las, x.padj=x.padj, xlim.add=op$xlim.add,
+           cex=op$cex, cex.main=op$cex.main, cex.lab=op$cex.lab, tcl=op$tcl)
     #close.screen(scr[1])
 
     # Get the ids for the bottom plot
@@ -522,16 +743,38 @@ chromosome.plot <- function(infile, plot.vars, locusMap.list, op=NULL) {
             xlab=xlab, ylab=ylab, transLoc=transLoc, legend=legend,
             colors=colors, pch=op$pch, title=op$title, cex.axis=op$cex.axis,
             alt.colors=alt.colors, add=op$add, hline=hline,
-            x.las=op$x.las, x.padj=x.padj, xlim.add=op$xlim.add)
+            x.las=op$x.las, x.padj=x.padj, xlim.add=op$xlim.add,
+            cex=op$cex, cex.main=op$cex.main, cex.lab=op$cex.lab, tcl=op$tcl)
     #close.screen(scr[2])
 
   } # END: if (splitScreen)
   else {
-    ret <- chrm.plot.main(data, map, chrm, ids=NULL, ylim=ylim[1:2],
+    if (onePlot) {
+      ret <- chrm.plot.main(data, map, chrm, ids=NULL, ylim=ylim[1:2],
               xlab=xlab, ylab=ylab, transLoc=transLoc, legend=legend,
             colors=colors, pch=op$pch, title=op$title, cex.axis=op$cex.axis,
             alt.colors, add=op$add, hline=hline,
-            x.las=op$x.las, x.padj=x.padj, xlim.add=op$xlim.add)
+            x.las=op$x.las, x.padj=x.padj, xlim.add=op$xlim.add,
+            cex=op$cex, cex.main=op$cex.main, cex.lab=op$cex.lab, op$tcl)
+    } else {
+      pnames <- plot.vars
+      title <- op[["title", exact=TRUE]]
+      if (!is.null(title)) pnames[] <- title
+
+      split.screen(figs)
+      for (i in 1:nvars) {
+        screen(i)
+        temp <- list()
+        temp[[plot.vars[i]]] = data[[i]]
+        ret <- chrm.plot.main(temp, map, chrm, ids=NULL, ylim=ylim[1:2],
+              xlab=xlab, ylab=ylab, transLoc=transLoc, legend=legend,
+            colors=colors, pch=op$pch, title=pnames[i], cex.axis=op$cex.axis,
+            alt.colors, add=op$add, hline=hline,
+            x.las=op$x.las, x.padj=x.padj, xlim.add=op$xlim.add,
+            cex=op$cex, cex.main=op$cex.main, cex.lab=op$cex.lab, tcl=op$tcl)
+        close.screen(i)
+      }
+    }
   }
 
 } # END: chromosome.plot
@@ -540,8 +783,8 @@ chromosome.plot <- function(infile, plot.vars, locusMap.list, op=NULL) {
 chrm.plot.main <- function(pvals, map, chrm, ids=NULL, ylim=c(0, 8),
                   xlab=NULL, ylab=NULL, transLoc=1, legend=NULL,
                   colors=NULL, pch=NULL, title=NULL, cex.axis=0.75,
-                  alt.colors=0, add=0, hline=NULL, x.las=0, x.padj=-1.0,
-                  xlim.add=c(0,0)) {
+                  alt.colors=0, add=0, hline=NULL, x.las=0, x.padj=0,
+                  xlim.add=c(0,0), cex.main=1, cex=1, cex.lab=1, tcl=-0.5) {
 
   # pvals   List
  
@@ -586,33 +829,32 @@ chrm.plot.main <- function(pvals, map, chrm, ids=NULL, ylim=c(0, 8),
   xlim <- c(min(map, na.rm=TRUE)+xlim.add[1], max(map, na.rm=TRUE)+xlim.add[2])
 
   # Initialize the plot
-  if (transLoc) {
-    
+  if (transLoc) {    
     plot(map[1], pvals[[1]][1], xlab=xlab,ylab=ylab, axes=FALSE, xlim=xlim,
-                ylim=ylim, col=col[1], pch=pch[1])
+                ylim=ylim, col=col[1], pch=pch[1], cex.lab=cex.lab, cex=cex)
     mxlog <- floor(ylim[2])
     #if (mxlog == 0) mxlog <- maxp[1]
     if (mxlog < 1) {
-      axis(2, at=c(ylim[1], mxlog))
+      axis(2, at=c(ylim[1], mxlog), cex.axis=cex.axis, tcl=tcl)
     } else {
-      axis(2, at=floor(ylim[1]:mxlog))
+      axis(2, at=floor(ylim[1]:mxlog), cex.axis=cex.axis, tcl=tcl)
     }
 
     # tcl is for tick mark length
     # padj is for moving the labels close/farther from the axis
-    axis(1, at=chpos, labels=uchrms, tcl=-0.5, padj=x.padj, las=x.las,
+    axis(1, at=chpos, labels=uchrms, tcl=tcl, padj=x.padj, las=x.las,
          cex.axis=cex.axis, font=2)
     box()   
 
   } else {
     plot(map, pvals[[1]], xlab=xlab,ylab=ylab, axes=TRUE, xlim=xlim,
-                ylim=ylim, col=col[1], pch=pch[1])
+                ylim=ylim, col=col[1], pch=pch[1], cex.lab=cex.lab)
   }
 
   # Plot the other vars
   if (nvars > 1) {
     for (i in 2:nvars) {
-      points(map, pvals[[i]], col=col[i], pch=pch[i])
+      points(map, pvals[[i]], col=col[i], pch=pch[i], cex=cex)
     }
   }
 
@@ -621,7 +863,7 @@ chrm.plot.main <- function(pvals, map, chrm, ids=NULL, ylim=c(0, 8),
     for (j in 1:nvars) {
       for (i in 1:nchrms) {
         temp <- (chrm == uchrms[i])
-        points(map[temp], pvals[[j]][temp], pch=pch[j], col=col[i])
+        points(map[temp], pvals[[j]][temp], pch=pch[j], col=col[i], cex=cex)
       }
     }
   }
@@ -638,7 +880,7 @@ chrm.plot.main <- function(pvals, map, chrm, ids=NULL, ylim=c(0, 8),
   }
 
   # Add title 
-  if (!is.null(title)) title(title)
+  if (!is.null(title)) title(title, cex.main=cex.main)
 
   if (!is.null(hline)) {
     hline <- default.list(hline, c("h", "lty"), list(7, 2))
@@ -681,9 +923,12 @@ chrm.plot.colors <- function(n, colors=NULL) {
 chrm.plot.pch <- function(n, pch=NULL) {
 
   if (is.null(pch)) {
-    pch <- rep(21, times=n)
+    if (n == 1) {
+      pch <- 21
+    } else {
+      pch  <- 0:(n-1)
+    }
   } else {
-    
     pch <- rep(pch, times=n)
   }
   pch <- pch[1:n]

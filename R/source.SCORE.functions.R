@@ -1901,7 +1901,6 @@ logistic = function(x) {  exp(x)/(1+exp(x))         }
 
 myDummyVar3=function(mat,refer=F,SORT=T){  ### this will create dummy variables with given level
                        ######## the most common one is reference and will be omitted
-
         ans2=NULL
         
         ####### in case it's not matrix make it ######
@@ -1919,14 +1918,14 @@ myDummyVar3=function(mat,refer=F,SORT=T){  ### this will create dummy variables 
 
               x=mat[,u]
               cname=colnames(mat)[u]
-              cname
+              #cname
               
               
               #if(is.null(level)==T) {   # if no level is specified do it
                 if(SORT==T){
                 
                     tb=sort(table(x),decreasing=T)
-                    tb
+                    #tb
                     # 61 62 31 11 64 41 63 
                     #80 77 51 49 48 46 13
                     
@@ -1936,7 +1935,7 @@ myDummyVar3=function(mat,refer=F,SORT=T){  ### this will create dummy variables 
                 if(SORT==F){
                 
                     tb=table(x)
-                    tb
+                    #tb
                     # 61 62 31 11 64 41 63 
                     #80 77 51 49 48 46 13
                                     
@@ -1944,7 +1943,7 @@ myDummyVar3=function(mat,refer=F,SORT=T){  ### this will create dummy variables 
                 }#sort
                 
                 level= names(tb)
-                level
+                #level
                 #[1]  "61" "62" "31" "11" "64" "41" "63"
               
               #}# end of is.null
@@ -1984,7 +1983,7 @@ myDummyVar3=function(mat,refer=F,SORT=T){  ### this will create dummy variables 
 
                    #ans[,where[m]] = (x==level2[m])*1
 
-                   ans[,m] = (x==level2[m])*1
+                   ans[,m] = as.numeric((x==level2[m]))
 
 
               }# end of m loop
@@ -2090,7 +2089,7 @@ myDummyVar3=function(mat,refer=F,SORT=T){  ### this will create dummy variables 
                 ### if indep=T and stratified=T
                 if (indic.st==T & indep==T) keep.indic=(rowSums(is.na(cbind(X1,X2,COVS,X.st)))==0)  ## why COVS also? don't know but i remember i screwed up by not doing it..
 
-                sum(!keep.indic)
+                #sum(!keep.indic)
                 #[1] 71
                 #tm=edit(cbind(X1,X2,COVS)[!keep.indic,])
 
@@ -2107,7 +2106,7 @@ myDummyVar3=function(mat,refer=F,SORT=T){  ### this will create dummy variables 
                 nUni = apply(covs0,2,myUni)
                 covs = covs0[,nUni > 1, drop=FALSE]
 
-                ncol(covs0);ncol(covs)
+                #ncol(covs0);ncol(covs)
                 if(all(nUni==1))   covs=NULL
 
         }# end of
@@ -2377,7 +2376,7 @@ info.small.standard=function(x){
         
         phat0=x[1]
         prod = phat0*(1-phat0)    # phat(1-phat)
-        prod
+        #prod
         
         ##### define x1, y, x1star, ww=(x1star,x21,x22,int)..
                
@@ -2386,7 +2385,8 @@ info.small.standard=function(x){
         #9.355028 1.000000 1.000000 1.000000
 
         outprod = prod*(ww%*%t(ww))
-        outprod
+
+        #outprod
         #> outprod
         #          x1star        X21        X22        int
         #[1,] 0.002576059 0.02444128 0.02444128 0.02444128
@@ -2969,14 +2969,10 @@ convertParams3=function(b0,b2,trueModel,outputModel,cohort=F,prev){
 
 ro.th.small4.tmp =function(xx,phatprod,x1,w,rest,info_rest.rest) {    # ro for each theta
 
-    #x
-    #       theta            v            1            2            3            4
-    # -1.00000000 159.96202930   1.04308166   1.04308166   0.04308166   1.04308166
-    #           5            6            7            8
-    #  0.04308166   0.04308166  -0.04488526   0.25490061
-
     th=xx[1]
-    v=xx[2]
+
+
+    #v=xx[2]
     #infoprod=xx[-c(1:2)] this is h0
     
     #ro = (f2/f) - 0.5*(f1/f)^2 - 0.5*(g2/f) + 3*f*(f1)^2
@@ -2987,7 +2983,7 @@ ro.th.small4.tmp =function(xx,phatprod,x1,w,rest,info_rest.rest) {    # ro for e
     
 	  ####### h0 #####
 	  
-	  newWeight = w^(th); 
+	  newWeight = w^(th)
 	  x1star2 = newWeight*x1
 	  info_b1.rest = colSums(as.vector(phatprod*x1star2)*rest) 
 	  h0 = x1star2 - rest %*% t(info_b1.rest %*% info_rest.rest) 
@@ -3007,17 +3003,15 @@ ro.th.small4.tmp =function(xx,phatprod,x1,w,rest,info_rest.rest) {    # ro for e
 	  h2 = x1star2 - rest %*% t(info_b1.rest.derv2 %*% info_rest.rest) 
 
 	  #### make f0,f1,f2
-	  f = sum(phatprod*h0*h0)  # this should be the same as variance
-	  f1 = sum(phatprod*h1*h0)
-	  f2 = sum(phatprod*h2*h0)
-	  
-	  f;f1;f2
-
-		#> f0;f1;f2
-		#[1] 106.5626
-		#[1] 10.89715
-		#[1] 18.61666
-		
+       temp <- phatprod*h0
+       f  <- sum(temp*h0)  
+	  f1 <- sum(temp*h1)
+	  f2 <- sum(temp*h2)
+ 
+	  #f = sum(phatprod*h0*h0)  # this should be the same as variance
+	  #f1 = sum(phatprod*h1*h0)
+	  #f2 = sum(phatprod*h2*h0)
+	  	
 		
 		#f = v    #variance of Z(th)   # or  f = mySumInfo.small(derivative=0,th,w,x1,phatprod,rest,info_rest.rest,infoprod)
 		#f1 = mySumInfo.small2(derivative=1,th,w,x1,phatprod,rest,info_rest.rest,infoprod)
@@ -3120,9 +3114,13 @@ ro.th.small4.indep.tmp =function(xx,p,mu,x1,w,rest,info_rest.rest) {    # ro for
 
 
 ############ add vector N #####################
-myExpectedGenotype2 = function(x1,x.st){     ### ghis create  a vector where each individual has expected genotype
+myExpectedGenotype2 = function(x1, x.st, strDat=NULL){     ### ghis create  a vector where each individual has expected genotype
 
-        f = rep(NA,length(x1))
+        nx1 <- length(x1)
+        ret <- matrix(data=NA, nrow=nx1, ncol=3)
+        colnames(ret) <- c("E.G", "E.G2", "N")
+
+        f = rep(NA, nx1)
         f2=NN = f
 
         #> cbind(x1,x.st)[1:10,]
@@ -3135,7 +3133,8 @@ myExpectedGenotype2 = function(x1,x.st){     ### ghis create  a vector where eac
 
         #### make dummy variables for each strata
 
-        strDat= myDummyVar3(x.st,refer=T,SORT=F)
+        if (is.null(strDat)) strDat <- myDummyVar3(x.st,refer=T,SORT=F)
+
         #> strDat[1:10,]
         #      x.1 x.2 x.3
         # [1,]   1   0   0
@@ -3151,7 +3150,7 @@ myExpectedGenotype2 = function(x1,x.st){     ### ghis create  a vector where eac
 
         for(j in 1:ncol(strDat)){
 
-                 indic =as.logical(strDat[,j]);sum(indic)  ## strata indication
+                 indic =as.logical(strDat[,j]) #;sum(indic)  ## strata indication
                  x1.tm = x1[indic]     #  x1 values for the given strata 
                  f[indic] = mean(x1.tm)
                  f2[indic] = mean((x1.tm)^2)
@@ -3170,8 +3169,13 @@ myExpectedGenotype2 = function(x1,x.st){     ### ghis create  a vector where eac
         # [7,] 0.986    1
         # [8,] 1.050    2
 
-        cbind(E.G=f,E.G2=f2,N=NN)
+        #cbind(E.G=f,E.G2=f2,N=NN)
+        ret[, 1] <- f
+        ret[, 2] <- f2
+        ret[, 3] <- NN
 
+  ret 
+ 
 }#end of
 
      

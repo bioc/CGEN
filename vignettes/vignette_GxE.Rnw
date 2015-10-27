@@ -10,16 +10,13 @@
 \title{GxE.scan}
 \maketitle
 
-\section*{Comparison with snp.scan.logistic}
-Both GxE.scan and snp.scan.logistic can be used for conducting a GWAS scan, however GxE.scan has additional features.
-GxE.scan can process a GWAS scan using the snp.logistic, additive.test, score.test or snp.matched functions, 
+\section*{Overview}
+GxE.scan can process a GWAS scan using the snp.logistic, additive.test, snp.score or snp.matched functions, 
 whereas snp.scan.logistic only calls snp.logistic.  
-GxE.scan can process more genotype formats by calling PLINK or GLU to automatically transform the genotype data,
-but in snp.scan.logistic the user would have to manually transform the data beforehand.
-GxE.scan streams the genotype data by reading in a single SNP at a time so that there will be no memory issues, but 
-snp.logistic reads in a set of SNPs all at once so that memory could run out if too many SNPs are read.
-GxE.scan also has the capacity for users to run their own customized scan by writing a simple R function; a
-capability not possible with snp.scan.logistic.  
+GxE.scan can process different genotype formats by calling PLINK or GLU to automatically transform the genotype data,
+so that the user does not have to manually transform the data beforehand.
+GxE.scan streams the genotype data by reading in a single SNP at a time so that there will be no memory issues, and
+GxE.scan also has the capacity for users to run their own customized scan by writing a simple R function.  
 
 \section*{Example of GxE.scan with a TPED genotype file}
 
