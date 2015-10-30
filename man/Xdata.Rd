@@ -6,7 +6,7 @@
  Sample covariate and outcome data 
 }
 \description{
- Sample covariate and outcome data for \code{\link{snp.scan.logistic}}
+ Sample covariate and outcome data 
 }
 \details{ The data is taken from an ovarian cancer study. The file Xdata.txt is a
    tab-delimited type 3 data set (see \code{file.type} in \code{\link{pheno.list}}).

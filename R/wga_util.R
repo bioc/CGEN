@@ -613,14 +613,14 @@ check.snp.list <- function(snp.list) {
         "read.n", "genetic.model", "stream", "recode",
         "alreadyChecked", "out.miss", "out.delimiter", "snpNames.keep", "GLU",
         "temp.dir", "id.str", "delete", "impute.method", "impute.cutoff", "PLINK",
-        "glu.checked", "plink.checked"), 
+        "glu.checked", "plink.checked", "MAF"), 
         list("ERROR", -1, 0, 0, 1, 0, NA, "\t", 1, "glu",
              getwd(), "", 1, 1, -1, "plink",
-             0, 0), 
+             0, 0, 0), 
             error=c(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-                    0, 0, 0, 0, 0, 0, 0, 0),
+                    0, 0, 0, 0, 0, 0, 0, 0, 0),
          checkList=list(NA, NA, 0:4, 0:1, 0:1, NA, NA, NA, NA, NA, 
-                        NA, NA, 0:1, 1:2, NA, NA, NA, NA))
+                        NA, NA, 0:1, 1:2, NA, NA, NA, NA, NA))
 
   if (snp.list$alreadyChecked == 1) return(snp.list)
 
@@ -668,7 +668,7 @@ check.snp.list <- function(snp.list) {
     snp.list$plink.format <- 0
   }
   plink.format <- snp.list$plink.format
-  if (format == "impute") stop("The impute genotype format is not currently supported")
+  #if (format == "impute") stop("The impute genotype format is not currently supported")
 
   if (!nchar(snp.list$PLINK)) snp.list$use.PLINK <- 0
   if (!nchar(snp.list$GLU)) snp.list$use.GLU <- 0

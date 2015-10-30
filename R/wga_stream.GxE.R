@@ -8,10 +8,22 @@ GxE.scan <- function(snp.list, pheno.list, op=NULL) {
   
   if (!is.list(snp.list)) stop("snp.list must be a list")  
   op <- default.list(op, 
-          c("model", "UML_CML"), 
-          list(1, 0), 
-          error=c(0, 0), 
-          checkList=list(0:4, 0:1))
+          c("model"), 
+          list(1), 
+          error=c(0), 
+          checkList=list(0:4))
+  scan.func.op <- op[["scan.func.op", exact=TRUE]] 
+  SOPFLAG      <- !is.null(scan.func.op)
+  which        <- op$model
+
+  if (which == 3) {
+    method <- "wald"
+    if (SOPFLAG) {
+      temp <- scan.func.op[["method", exact=TRUE]]
+      if (is.null(temp)) temp <- 0
+      if (temp %in% 1) method <- "max"
+    }
+  }
 
   # Output file
   out.file <- op[["out.file", exact=TRUE]]
@@ -27,11 +39,8 @@ GxE.scan <- function(snp.list, pheno.list, op=NULL) {
   snp.list <- check.snp.list(snp.list)
 
   format <- snp.list$format
-  #if (!(format %in% c("tped", "ldat", "impute"))) {
-  #  stop("ERROR: genotype data is not of the correct type")
-  #}
-
-  which           <- op$model
+  
+  
   scan.func       <- op[["scan.func", exact=TRUE]]
   if ((!which) && (is.null(scan.func))) {
     stop("ERROR with options: scan.func must be specified with model=0")
@@ -39,16 +48,17 @@ GxE.scan <- function(snp.list, pheno.list, op=NULL) {
  
   impute.flag       <- format %in% "impute"
   op$scan.GxE.model <- NULL
-  UML_CML           <- op$UML_CML
+  UML_CML           <- 0
   if (which != 1) UML_CML <- 0
   str2 <- ""
   if (UML_CML) str2 <- "_2"
+  if ((which) && (impute.flag) && (which != 3)) stop("ERROR: Only the score test can be used with imputed genotype data")
+  if ((which == 3) && (method == "wald")) str2 <- "a"
 
   if (which) {
   
     op$scan.setup.func     <- paste("GxE.setup.", which, str2, sep="")
     op$scan.func           <- paste("GxE.scan.", which, str2, sep="") 
-    scan.func.op           <- op[["scan.func.op", exact=TRUE]] 
     pheno.list$remove.miss <- 1
 
     # Set keep.vars
@@ -97,7 +107,17 @@ GxE.setup.1 <- function(data, opList) {
   pheno.list <- opList$pheno.list
   op         <- opList[["scan.func.op", exact=TRUE]]
   if (is.null(op)) op <- list()
-  
+  op <- default.list(op, c("output.parms", "output.methods"), 
+                     list(0, c("UML", "CML", "EB")))  
+  parmFlag <- op$output.parms
+  methods  <- unique(toupper(removeWhiteSpace(op$output.methods)))
+  temp     <- methods %in% c("UML", "CML", "EB") 
+  methods  <- methods[temp]
+  if (!length(methods)) {
+    cat("\nERROR: output.methods must be any of UML, CML or EB\n")
+    stop()
+  }
+
   op$imputed <- opList$impute.flag
   if (op$imputed) {
     op$ProbG0.name <- opList$ProbG0.name
@@ -221,12 +241,14 @@ GxE.setup.1 <- function(data, opList) {
   int.names <- NULL
   if (op$genetic.model != 3) {
     retvars <- snp.var
+    snpvars <- snp.var
     if (int.flag) {
       int.names <- paste(snp.var, ":", int.vars, sep="")
       retvars   <- c(retvars, int.names)
     }
   } else {
     retvars   <- paste(snp.var, 1:2, sep="")
+    snpvars   <- retvars
     if (int.flag) {
       int.names <- paste(snp.var, "1:", int.vars, sep="")
       int.names <- c(int.names, paste(snp.var, "2:", int.vars, sep=""))
@@ -238,21 +260,33 @@ GxE.setup.1 <- function(data, opList) {
   pheno.list$omnibus.vars     <- retvars
   pheno.list$interaction.vars <- int.names
 
-  methods <- c("UML", "CML", "EB")
+  #methods <- c("UML", "CML", "EB")
   vnames  <- paste(methods, ".Omnibus.Pvalue", sep="")
   if (int.flag) vnames <- c(vnames, paste(methods, ".Inter.Pvalue", sep=""))
-  v2 <- c("Beta", "SE")
-  for (method in methods) {
-    for (var in retvars) { 
-      vnames <- c(vnames, paste(method, ".", var, ".", v2, sep=""))
+  if (parmFlag) {
+    # Betas
+    v2 <- "Beta"
+    for (method in methods) {
+      vnames <- c(vnames, paste(method, ".", retvars, ".", v2, sep=""))
     }
+
+    # Cov
+    v2 <- "Cov"
+    nv <- length(retvars)
+    for (method in methods) {
+      for (i in 1:nv) {
+        vnames <- c(vnames, paste(method, ".", retvars[i], "_", retvars[i:nv], ".", v2, sep=""))
+      }
+    }
+
   }
   retvec                      <- rep(NA, length(vnames))
   names(retvec)               <- vnames
-
   pheno.list$return.vec       <- retvec
   pheno.list$omnibus.flag     <- !is.null(pheno.list[["omnibus.vars", exact=TRUE]])
   pheno.list$interaction.flag <- !is.null(pheno.list[["interaction.vars", exact=TRUE]])
+  pheno.list$parmFlag         <- parmFlag
+  pheno.list$methods          <- methods
 
   # Base model
   if (!is.null(X_)) {
@@ -276,7 +310,8 @@ GxE.call.1 <- function(data, op) {
   # data     List of data objects
   # op       snp.logistic options
   
-  imputed <- op$imputed
+  #imputed <- op$imputed
+  imputed <- 0
   if (imputed) {
     snp  <- cbind(data[[op$ProbG0.name]], data[[op$ProbG1.name]],
                   data[[op$ProbG2.name]])
@@ -330,8 +365,12 @@ GxE.scan.1 <- function(data, op) {
   omniFlag   <- pheno.list$omnibus.flag
   intervars  <- pheno.list$interaction.vars
   interFlag  <- pheno.list$interaction.flag
+  parmFlag   <- pheno.list$parmFlag
+  methods    <- pheno.list$methods
+  outvars    <- pheno.list$OUTVARS
 
-  for (method in c("UML", "CML", "EB")) {
+  retvec[]   <- NA
+  for (method in methods) {
     obj <- ret[[method, exact=TRUE]]
     if (!is.null(obj)) {
       parms <- obj$parms
@@ -339,14 +378,17 @@ GxE.scan.1 <- function(data, op) {
       temp  <- retvars %in% colnames(cov)
       vars  <- retvars[temp]
       nvars <- length(vars)
-      if (nvars) {
+      if ((parmFlag) && (nvars)) {
+        # Betas
         names <- paste(method, ".", vars, ".Beta", sep="")
         retvec[names] <- parms[vars]
-        names <- paste(method, ".", vars, ".SE", sep="")
-        if (nvars > 1) {
-          retvec[names] <- sqrt(diag(cov[vars, vars]))
-        } else {
-          retvec[names] <- sqrt(cov[vars, vars])
+
+        # Cov
+        for (i in 1:nvars) {
+          v1    <- vars[i]
+          v2    <- vars[i:nvars]
+          names <- paste(method, ".", v1, "_", v2, ".Cov", sep="")
+          retvec[names] <- cov[v1, v2]
         }
       }
       if (omniFlag) {
@@ -583,9 +625,8 @@ GxE.setup.3 <- function(data, opList) {
   if (is.null(op)) op <- list()
   op <- default.list(op, 
           c("indep", "doGLM", "p.mvn", "do.joint", "df2", "thetas"),
-        list(FALSE, FALSE, TRUE, TRUE, FALSE, seq(-3,3,by=0.1)))
+        list(FALSE, FALSE, TRUE, FALSE, TRUE, seq(-3,3,by=0.1)))
   op$p.mvn <- FALSE
-  op$df2   <- FALSE
   
   indep    <- op$indep
   doGLM    <- op$doGLM
@@ -701,9 +742,9 @@ GxE.scan.3 <- function(data, opList) {
   } 
 
   usnp <- unique(snp)
-  if (!(all(usnp %in% 0:2))) scan.error("ERROR: snp.var must be coded 0-1-2", "GxE.setup.3")
+  #if (!(all(usnp %in% 0:2))) scan.error("ERROR: snp.var must be coded 0-1-2", "GxE.setup.3")
   n1   <- length(usnp)
-  if (n1 < 2) scan.error("After removing rows with missing values, the SNP only has 1 level", "GxE.setup.3")
+  if (n1 < 2) scan.error("After removing rows with missing values, the SNP only has 1 level", "GxE.scan.3")
 
   Y         <- data$Y
   X2        <- data$X2
@@ -732,6 +773,245 @@ GxE.scan.3 <- function(data, opList) {
   retvec
 
 } # END: GxE.scan.3
+
+# Setup function for Minsun's score test
+GxE.setup.3a <- function(data, opList) {
+
+  pheno.list   <- opList$pheno.list
+  op           <- opList[["scan.func.op", exact=TRUE]]
+  if (is.null(op)) op <- list()
+  op           <- default.list(op, c("output.sandwich", "output.parms", "output.methods"),  
+                                   list(0, 0, c("UML", "CML", "EB")))
+  sandFlag <- op$output.sandwich
+  parmFlag <- op$output.parms
+  methods  <- op$methods
+  methods  <- unique(toupper(removeWhiteSpace(op$output.methods)))
+  temp     <- methods %in% c("UML", "CML", "EB") 
+  methods  <- methods[temp]
+  if (!length(methods)) {
+    cat("\nERROR: output.methods must be any of UML, CML or EB\n")
+    stop()
+  }
+
+  response.var <- pheno.list$response.var
+  main.vars    <- pheno.list[["main.vars", exact=TRUE]]
+  strata.var   <- pheno.list[["strata.var", exact=TRUE]] 
+  exposure.var <- pheno.list[["int.vars", exact=TRUE]]
+
+  if (is.null(exposure.var)) {
+    scan.error("pheno.list$int.vars must be specified", "GxE.setup.3a")
+  }
+  if (length(response.var) != 1) scan.error("pheno.list$response.var must be a single variable", "GxE.setup.3a")
+  if (!(length(strata.var) %in% 0:1)) scan.error("strata.var must be NULL or a single variable", "GxE.setup.3a")
+
+  vlist <- list(response.var=response.var, main.vars=main.vars,
+                strata.var=strata.var, exposure.var=exposure.var)
+  vars <- getAllVars(vlist, names=names(vlist))
+  temp <- !(vars %in% colnames(data))
+  if (any(temp)) {
+    print(vars[temp])
+    scan.error("The above variables were not found in the input data", "GxE.setup.3a")
+  }
+
+  # Check variable names
+  mvars <- getAllVars(main.vars) 
+  if (!length(mvars)) scan.error("pheno.list$main.vars cannot be NULL")
+  evars <- getAllVars(exposure.var) 
+
+  if (response.var %in% mvars) scan.error("ERROR: main.vars must not contain response.var", "GxE.setup.3a")
+  if (response.var %in% evars) scan.error("ERROR: exposure.var must not contain response.var", "GxE.setup.3a")
+
+  # Get the response variable 
+  Y <- as.numeric(unfactor(data[, response.var]))
+  if (!(all(Y %in% 0:1))) scan.error("ERROR: response.var must be coded 0-1", "GxE.setup.3a")
+
+  # Get the stratification vector
+  if (!is.null(strata.var)) {
+    strataVec <- as.numeric(factor(makeVector(data[, strata.var])))
+  } else {
+    strataVec <- rep(1, nrow(data))
+  }
+
+  # Get the variables that are factors
+  facVars <- NULL
+  for (temp in vars) {
+    if (is.factor(data[, temp])) facVars <- c(facVars, temp)
+  }
+
+  # Design matrix for exposure
+  X2 <- logistic.dsgnMat(data, evars, facVars, removeInt=1)$designMatrix
+  ev <- colnames(X2)
+  
+  # Get the design matrix for main effects
+  if (!length(mvars)) {
+    COVS <- NULL
+  } else {
+    COVS <- logistic.dsgnMat(data, mvars, facVars, removeInt=1)$designMatrix
+  }
+
+  # Compute the fitted values
+  if (is.null(COVS)) {
+    fit <- glm(Y ~ 1, family=binomial())
+  } else {
+    fit <- glm(Y ~ COVS, family=binomial())
+  }
+  checkBaseModel(fit, opList)
+  fitted_value <- fitted(fit) 
+  rvars        <- NULL
+  names        <- NULL
+  for (meth in methods) {
+    rvars <- c(rvars, paste(meth, c("_joint_pval", "_interaction_pval"), sep=""))
+    names <- c(names, paste(meth, c(".Omnibus.Pvalue", ".Inter.Pvalue"), sep=""))
+  }
+  
+  if (sandFlag) {
+    for (meth in methods) {
+      rvars <- c(rvars, paste(meth, c("_joint_pval_sandwich", "_interaction_pval_sandwich"), sep="")) 
+      names <- c(names, paste(meth, c(".Omnibus.Pvalue", ".Inter.Pvalue"), ".Sand", sep=""))
+    }
+  }
+  pheno.list$return.vars <- rvars
+
+  n.ex     <- ncol(X2)
+  m        <- n.ex + 1  # For SNP + exposure terms
+  meth     <- methods
+  nmeth    <- length(meth)
+  retnames <- names
+  pheno.list$n.ret.parms <- m
+  VARS     <- c("SNP", paste("SNP", ev, sep=":"))
+
+  # Parameter estimates
+  if (parmFlag) {
+    for (i in 1:nmeth) {
+      temp     <- paste(meth[i], VARS, "Beta", sep=".")
+      retnames <- c(retnames, temp) 
+    }
+  }  
+
+  # Cov parameters
+  cov.ij <- NULL
+  cp     <- list()
+  for (i in 1:m) {
+    cp[[i]] <- paste(VARS[i], VARS[i:m], sep="_")
+    cov.ij  <- c(cov.ij, i:m + m*(i - 1)) 
+  }
+  if (parmFlag) {
+    for (i in 1:nmeth) {
+      for (j in 1:m) {
+        temp     <- paste(meth[i], cp[[j]], "Cov", sep=".")
+        retnames <- c(retnames, temp)
+      } 
+    }
+  }
+
+  # Sandwich cov
+  if (sandFlag) {
+    for (i in 1:nmeth) {
+      for (j in 1:m) {
+        temp     <- paste(meth[i], cp[[j]], "Cov.Sand", sep=".")
+        retnames <- c(retnames, temp)
+      } 
+    }
+  }
+
+  len                   <- length(retnames)
+  vec                   <- rep("", len)
+  names(vec)            <- retnames
+  pheno.list$return.vec <- vec
+  pheno.list$cov.ij     <- cov.ij
+  pheno.list$parmFlag   <- parmFlag
+  pheno.list$sandFlag   <- sandFlag
+  pheno.list$output.methods <- methods
+
+  retdata <- list(Y=Y, X2=X2, COVS=COVS, strataVec=strataVec, fitted_value=fitted_value)
+  pheno.list$response.name <- "Y"
+
+  list(data=retdata, pheno.list=pheno.list, scan.func.op=op)
+
+} # END: GxE.setup.3a
+
+# Scan function for score test
+GxE.scan.3a <- function(data, opList) {
+
+  snp.var <- opList$snp.name
+
+  # Get the snp variable
+  snp  <- as.numeric(makeVector(data[[snp.var]]))
+  temp <- is.na(snp)
+  miss <- any(temp)
+  
+  Y         <- data$Y
+  X2        <- data$X2
+  COVS      <- data[["COVS", exact=TRUE]]
+  strataVec <- data$strataVec
+  fitted    <- data$fitted
+  if (miss) {
+    temp <- !temp
+    Y    <- Y[temp]
+    X2   <- X2[temp, , drop=FALSE]
+    if (!is.null(COVS)) COVS <- COVS[temp, , drop=FALSE]
+    strataVec <- strataVec[temp]
+    fitted    <- fitted[temp]
+    snp       <- snp[temp]
+  }
+  pheno.list   <- opList$pheno.list
+  sandFlag     <- pheno.list$sandFlag
+
+  rlist <- Modified_Wald_Test(Y, snp, X2, COVS, strataVec, fitted, sandwich=sandFlag)
+  rvec  <- unlist(rlist)
+  
+  retvec       <- pheno.list$return.vec
+  retvec[]     <- ""
+  pvars        <- pheno.list$return.vars
+  np           <- length(pvars)
+  retvec[1:np] <- rvec[pvars]
+  parmFlag     <- pheno.list$parmFlag
+  
+    
+  meth     <- pheno.list$output.methods
+  nmeth    <- length(meth)
+  m        <- pheno.list$n.ret.parms
+  b        <- np  
+
+  # Parameter estimates
+  if (parmFlag) {
+    parms <- paste(meth, "_parm", sep="")
+    for (i in 1:nmeth) {
+      a    <- b + 1
+      b    <- a + m - 1
+      temp <- rlist[[parms[i], exact=TRUE]]
+      if (is.null(temp)) next
+      retvec[a:b] <- temp
+    }
+  }
+
+  # Covariance
+  cov.ij <- pheno.list$cov.ij 
+  n      <- m*(m+1)/2
+  if (parmFlag) {
+    parms  <- paste(meth, "_var", sep="")
+    for (i in 1:nmeth) {
+      a    <- b + 1
+      b    <- a + n - 1
+      p2   <- paste(parms[i], cov.ij, sep="")
+      retvec[a:b] <- rvec[p2]
+    }
+  }
+
+  # Sandwich covariance
+  if (sandFlag) {
+    parms  <- paste(meth, "_var_sandwich", sep="")
+    for (i in 1:nmeth) {
+      a    <- b + 1
+      b    <- a + n - 1
+      p2   <- paste(parms[i], cov.ij, sep="")
+      retvec[a:b] <- rvec[p2]
+    }
+  }
+  
+  retvec
+
+} # END: GxE.scan.3a
 
 # Setup function for snp.logistic returning all UML-CML estimates
 GxE.setup.1_2 <- function(data, opList) {
@@ -1303,6 +1583,12 @@ scan.check.transform <- function(snp.list, op) {
   transform  <- snp.list[["transform", exact=TRUE]]
   njobs      <- op$nFiles
   nfiles     <- length(snp.list$file)
+
+  if (is.null(op[["include.snps.files", exact=TRUE]])) {
+    op$include.snps.files <- snp.list[["include.snps", exact=TRUE]] 
+    snp.list$include.snps <- NULL
+  }
+
   if (njobs < nfiles) stop("ERROR: njobs < nfiles")
   if (njobs < 2) return(list(snp.list=snp.list, op=op))
 
@@ -1513,6 +1799,7 @@ GxE.scan.genfile <- function(snp.list, pheno.list, op) {
     if (length(include.snps.files) == 1) include.snps.files <- rep(include.snps.files, nFiles)
     if (length(include.snps.files) != nFiles) stop("ERROR: with include.snps.files") 
   }
+  snp.list$alreadyChecked <- 0
 
   # Create files
   for (i in 1:nFiles) {
@@ -1593,7 +1880,8 @@ GxE.scan.genfile <- function(snp.list, pheno.list, op) {
       }
 
       # snp file
-      temp <- paste('snp.list$file <- "', snp.file[index], '" \n', sep="")
+      BNAME <- basename(snp.file[index])
+      temp  <- paste('snp.list$file <- "', snp.file[index], '" \n', sep="")
       cat(temp, file=fid) 
 
       # include.snps
@@ -1644,7 +1932,7 @@ GxE.scan.genfile <- function(snp.list, pheno.list, op) {
       cat(temp, file=fid)
 
       # Output file 
-      out.b0 <- paste(outString, "_job", i, "_", outIndex, "_", jjindex, ".txt", sep="")
+      out.b0 <- paste(outString, BNAME, "_job", i, "_", outIndex, "_", jjindex, ".txt", sep="")
       temp   <- paste('op.list$out.file <- "', out.out, out.b0, '" \n \n', sep="")
       cat(temp, file=fid)
 

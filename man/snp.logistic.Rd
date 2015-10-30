@@ -167,7 +167,7 @@ Bhattacharjee S, Wang Z, Ciampa J, Kraft P, Chanock S, Yu K, Chatterjee N
   
  }
 %\author{ }
-\seealso{ \code{\link{snp.scan.logistic}}, \code{\link{snp.matched}}}
+\seealso{ \code{\link{snp.score}}, \code{\link{snp.matched}}}
 \examples{
  # Use the ovarian cancer data
  data(Xdata, package="CGEN")

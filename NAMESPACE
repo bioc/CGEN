@@ -1,13 +1,15 @@
 useDynLib(CGEN)
 import(survival, mvtnorm)
-export(snp.scan.logistic, snp.logistic, recode.geno, getSummary, getWaldTest, 
-       QQ.plot, chromosome.plot, snp.effects, getMatchedSets, snp.matched, printEffects,
-       additive.test, snp.effects.plot, GxE.scan, score.test, GxE.scan.combine, GxE.scan.partition)
+export(snp.logistic, getSummary, getWaldTest, 
+       QQ.plot, Manhattan.plot, snp.effects, getMatchedSets, snp.matched, printEffects,
+       additive.test, snp.effects.plot, GxE.scan, GxE.scan.combine, GxE.scan.partition,
+       snp.score)
 S3method(print,snp.effects)
 S3method(print,snp.effects.method)
 S3method(print,snp.logistic)
 S3method(print,snp.matched)
 S3method(print,additive.test)
 S3method(print,score.test)
+S3method(print,score.wald)
 S3method(summary,snp.logistic)
 S3method(summary,snp.matched)

@@ -3,7 +3,7 @@
 \alias{additive.test}
 \title{A test for gene-environment interaction under an additive risk model for case-control data }
 \description{
- Performs a likelihood ratio test for gene-environment interaction under an additive risk model for case-control data using a standard logistic regression. A set of contrasts is imposed to regression parameters to approximate the null model of no interaction under additive risk models. The additive interaction test under gene-environment independence assumption can be performed by utilizing the retrospective likelihood by Chatterjee and Carroll (2005).           
+ Performs a likelihood ratio test for gene-environment interaction under an additive risk model for case-control data using a standard logistic regression. A set of constraints is imposed to log-odds-ratio parameters to approximate the null model of no interaction under additive risk models. The additive interaction test under gene-environment independence assumption is performed by utilizing the retrospective likelihood by Chatterjee and Carroll (2005).           
 }
 \usage{
 additive.test(data, response.var, snp.var, exposure.var, main.vars=NULL, 
@@ -21,8 +21,10 @@ additive.test(data, response.var, snp.var, exposure.var, main.vars=NULL,
   \item{main.vars}{Character vector of variable names or a formula for all covariates of interest 
                    which need to be included in the model as main effects.
                  The default is NULL.}
-  \item{strata.var}{Name of the stratification variable for a retrospective likelihood. For example, a 
-                    study variable or population variable.
+  \item{strata.var}{Name of the stratification variable for a retrospective likelihood.
+                    This option allows the genotype frequency to vary by the discrete level of the 
+                    stratification variable. Ethnic or geographic origin of subjects, for example,
+                    could be used to define strata. 
                     The default is NULL. }
   \item{op}{ A list of options with possible names \code{genetic.model}, \code{optim.method}, \code{indep}, \code{maxiter} and
           \code{reltol} (see details). The default is NULL.
@@ -31,6 +33,7 @@ additive.test(data, response.var, snp.var, exposure.var, main.vars=NULL,
 \value{
    A list containing the following: \cr
   \itemize{
+   \item \code{pval.add} P-value of the additive interaction likelihood ratio test.
    \item \code{tb} The frequency table defined by \code{table(snp.var, exposure.var)}.
    \item \code{lm.full}  The output for the full model using a logistic regression model under the 
                           retrospective (\code{indep}=TRUE) or the prospective likelihood (\code{indep}=FALSE).
@@ -41,7 +44,6 @@ additive.test(data, response.var, snp.var, exposure.var, main.vars=NULL,
    \item \code{DF} The degrees of freedom of the additive or multiplicative interaction test.                     
    \item \code{LRT.add} Likelihood ratio test value for the additive interaction. 
    \item \code{LRT.mult} Likelihood ratio test value for the multiplicative interaction. 
-   \item \code{pval.add} P-value of the additive interaction likelihood ratio test.
    \item \code{pval.mult} P-value of the multiplicative interaction likelihood ratio test.
    \item \code{pval.wald.mult} P-value of the multiplicative interaction test (Wald test).
    \item \code{pval.UML} P-value of the multiplicative interaction test under the prospective likelihood (Wald test).
@@ -60,7 +62,7 @@ additive.test(data, response.var, snp.var, exposure.var, main.vars=NULL,
   }
 }
 \details{
-   A maximum likelihood for a full model is obtained by optimizing a logistic regression model using a standard binomial likelihood (i.e. prospective likelihood) while a maximum likelihood for a null model is obtained by fitting a reduced model with a set of contrasts imposed on logistic regression parameters to approximate the null model of no interaction in an additive risk model. 
+   A maximum likelihood for a full model is obtained by optimizing a logistic regression model using a standard binomial likelihood (i.e. prospective likelihood) while a maximum likelihood for a null model is obtained by fitting a reduced model with a set of constaints imposed on logistic regression parameters to approximate the null model of no interaction in an additive risk model. 
 The additive interaction test under the gene-environment independence assumption can be conducted by utilizing the retrospective likelihood by Chatterjee and Carroll (2005). The following is the definition of the likelihood under the gene-environment independence assumption:
   
 
@@ -68,7 +70,7 @@ The additive interaction test under the gene-environment independence assumption
 
   
 Let D = 0, 1 be the case-control status, G = 0, 1, 2 denote the SNP genotype, S = 1, ..., k
-  denote the stratification and Z be the design matrix for all the covariates including G, the interactions, and a column for the intercept parameter. 
+  denote the levels of the stratification variable and Z be the design matrix for all the covariates including G, the interactions, and a column for the intercept parameter. 
    If \eqn{f_s}{f_s} denotes the allele frequency for stratum s, then
   \deqn{P(G = 0) = (1 - f_s)^2}{P(G = 0) = (1 - f_s)^2,}
   \deqn{P(G = 1) = 2f_s(1 - f_s)}{P(G = 1) = 2*f_s*(1 - f_s),}
@@ -103,10 +105,8 @@ where the sum is taken over the 6 combinations of d and g.
 } % END: details
 \references{ 
 
- Han, S. S, Rosenberg P. S, Garcia-Closas M, Figueroa J. D, Silverman D, Chanock S. J, Rothman N, and Chatterjee N.   Likelihood ratio test for detecting gene (G) environment (E) interactions under the additive risk model exploiting G-E independence for case-control data (in submission).  
-
-  Mukherjee B, Chatterjee N. Exploiting gene-environment independence in analysis of case-control studies: 
-  An empirical Bayes approach to trade-off between bias and efficiency. Biometrics 2008, 64(3):685-94.
+ Han, S. S, Rosenberg P. S, Garcia-Closas M, Figueroa J. D, Silverman D, Chanock S. J, Rothman N, and Chatterjee N.   Likelihood ratio test for detecting gene (G) environment (E) interactions under the additive risk model exploiting G-E independence for case-control data. 
+ Am J of Epidemiol, 2012; 176:1060-7.  
 
  Chatterjee, N. and Carroll, R. Semiparametric maximum likelihood estimation
   exploting gene-environment independence in case-control studies.
@@ -114,7 +114,7 @@ where the sum is taken over the 6 combinations of d and g.
      
  }
 %\author{ }
-\seealso{ \code{\link{snp.logistic}}, \code{\link{score.test}} }
+\seealso{ \code{\link{snp.logistic}}, \code{\link{snp.score}} }
 \examples{
  # Use the ovarian cancer data
  data(Xdata, package="CGEN")

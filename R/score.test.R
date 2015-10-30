@@ -1,7 +1,24 @@
-# History: Jul 23 2013  Initial coding
-#        
+# History: Jul 23 2013 Initial coding
+#          Jun 09 2015 Add code for Minsun's score function
 
-# Function to call the socre test
+# Top level function for score test
+snp.score <- function(data, response.var, snp.var, exposure.var, main.vars, strata.var=NULL, op=NULL) {
+
+  if (is.null(op)) op <- list()
+  op <- default.list(op, c("method"), list(2))
+  if (op$method == 1) {
+    ret <- score.test(data, response.var, snp.var, exposure.var, main.vars=main.vars,
+                  strata.var=strata.var, op=op) 
+  } else {
+    ret <- score.wald(data, response.var, snp.var, exposure.var, main.vars=main.vars,
+                  strata.var=strata.var, op=op)
+  }
+
+  ret
+
+} # END: snp.score
+
+# Function to call the score test
 score.test <- function(data, response.var, snp.var, exposure.var, main.vars=NULL,
                   strata.var=NULL, op=NULL) {
 
@@ -105,7 +122,6 @@ score.test <- function(data, response.var, snp.var, exposure.var, main.vars=NULL
 
   ret <- scoreTest.general9(Y, snp, X2, COVS, thetas, df2, indep, strataVec,
                doGLM, p.mvn, do.joint=do.joint)
-
   keep <- c("maxTheta", "pval.logit", "pval.joint", "pval", 
             "pval.add", "maxScore")
   for (nn in names(ret)) {
@@ -120,6 +136,109 @@ score.test <- function(data, response.var, snp.var, exposure.var, main.vars=NULL
 
 } # END: score.test
 
+# Function to call the score test
+score.wald <- function(data, response.var, snp.var, exposure.var, main.vars=NULL,
+                  strata.var=NULL, op=NULL) {
+
+  # Check for errors
+  if (length(response.var) != 1) stop("response.var must be a single variable")
+  if (!(length(snp.var) %in% c(1, 3))) stop("snp.var must be a single variable for genotyped data or 3 variables for imputed data")
+  if (is.null(exposure.var)) stop("exposure.var must be specified")
+  if (!is.data.frame(data)) stop("data must be a data frame")
+  if (!(length(strata.var) %in% 0:1)) stop("strata.var must be NULL or a single variable")
+
+  # Check the options list
+  if (is.null(op)) op <- list()
+  op <- default.list(op, c("sandwich"), list(FALSE))
+  
+  vlist <- list(response.var=response.var, snp.var=snp.var, main.vars=main.vars,
+                strata.var=strata.var, exposure.var=exposure.var)
+  vars <- getAllVars(vlist, names=names(vlist))
+  temp <- !(vars %in% colnames(data))
+  if (any(temp)) {
+    print(vars[temp])
+    stop("The above variables were not found in the input data")
+  }
+
+  # Check variable names
+  mvars <- getAllVars(main.vars) 
+  evars <- getAllVars(exposure.var) 
+
+  if (any(snp.var %in% mvars)) stop("ERROR: main.vars must not contain snp.var")
+  if (any(snp.var %in% evars)) stop("ERROR: exposure.var must not contain snp.var")
+  if (response.var %in% mvars) stop("ERROR: main.vars must not contain response.var")
+  if (response.var %in% evars) stop("ERROR: exposure.var must not contain response.var")
+  if (!length(mvars)) stop("ERROR: main.vars should not be NULL")
+
+  # Remove missing values
+  temp <- getFormulas(vlist)
+  miss <- c(NA, NaN, Inf, -Inf)
+  if (length(temp)) data <- applyFormulas(data, temp, remove=miss)
+  data <- removeMiss.vars(data, vars=vars, miss=miss)
+  if (!nrow(data)) stop("ERROR: Zero rows in the input data after removing rows with missing values")
+
+  # Get the response variable 
+  Y <- as.numeric(unfactor(data[, response.var]))
+  if (!(all(Y %in% 0:1))) stop("ERROR: response.var must be coded 0-1")
+
+  vec <- as.numeric(unfactor(data[, snp.var]))
+  if (length(snp.var) == 1) {
+    snp  <- matrix(data=0, nrow=length(vec), ncol=3)
+    temp <- vec %in% 0
+    snp[temp, 1] <- 1
+    temp <- vec %in% 1
+    snp[temp, 2] <- 1
+    temp <- vec %in% 2
+    snp[temp, 3] <- 1
+  } 
+
+  # Get the stratification vector
+  if (!is.null(strata.var)) {
+    strataVec <- as.numeric(factor(data[, strata.var]))
+  } else {
+    strataVec <- rep(1, nrow(data))
+  }
+
+  # Get the variables that are factors
+  facVars <- NULL
+  for (temp in vars) {
+    if (is.factor(data[, temp])) facVars <- c(facVars, temp)
+  }
+
+  # Design matrix for exposure
+  X2 <- logistic.dsgnMat(data, evars, facVars, removeInt=1)$designMatrix
+  
+  # Get the design matrix for main effects
+  if (!length(mvars)) {
+    COVS <- NULL
+  } else {
+    COVS <- logistic.dsgnMat(data, mvars, facVars, removeInt=1)$designMatrix
+  }
+
+  # Compute the fitted values
+  if (is.null(COVS)) {
+    fit <- glm(Y ~ 1, family=binomial())
+  } else {
+    fit <- glm(Y ~ COVS, family=binomial())
+  }
+  if (!fit$converged) stop("ERROR: glm failed")
+  fitted_value <- fitted(fit) 
+
+  ret <- Modified_Wald_Test(Y, snp, X2, COVS, strataVec, fitted_value, sandwich=op$sandwich)
+
+
+  ret$model.info <- list(response.var=response.var, snp.var=snp.var, exposure.var=evars,
+                         main.vars=mvars, strata.var=strata.var, op=op)
+  class(ret)     <- "score.wald"
+
+  ret
+
+} # END: score.wald
+
+
+
+          
+  
 
 
           

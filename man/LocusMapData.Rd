@@ -6,10 +6,9 @@
  Locus map data 
 }
 \description{
- Locus map data for \code{\link{chromosome.plot}}
+ Locus map data for \code{\link{Manhattan.plot}}
 }
-\details{ LocusMapData.txt is a tab delimited file that contains the chromosome and location information for each SNP
- in \code{\link{SNPdata}}.  
+\details{ LocusMapData.txt is a tab delimited file that contains sample chromosome and location information.  
  The first 5 rows look like: 
 \tabular{lll}{
   \bold{SNP} \tab \bold{CHROMOSOME} \tab \bold{LOCATION} \cr
