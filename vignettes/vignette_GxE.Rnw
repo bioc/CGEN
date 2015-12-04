@@ -109,7 +109,7 @@ myscan <- function(data, lists) {
  # Extract the CML log-odds ratio and standard error
  temp <- fit$CML
  beta <- temp$parms["SNP:Exposure"]
- se   <- temp$cov["SNP:Exposure", "SNP:Exposure"] 
+ se   <- sqrt(temp$cov["SNP:Exposure", "SNP:Exposure"]) 
 
  # Compute the odds-ratio and 95 percent confidence interval
  or   <- exp(beta)
