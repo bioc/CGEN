@@ -20,7 +20,7 @@ if (is.null(nc)) nc <- 0
 if (nc > 1) {
   expected_g <- as.numeric(as.vector(Prob_G[,2]))+2*as.numeric(as.vector(Prob_G[,3]))
 } else {
-  expected_g <- Prob_G
+  expected_g <- as.numeric(Prob_G)
 }
 
 etaha               <- matrix(0,nrow=n,ncol=num_of_study)

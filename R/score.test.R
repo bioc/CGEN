@@ -181,16 +181,12 @@ score.wald <- function(data, response.var, snp.var, exposure.var, main.vars=NULL
   Y <- as.numeric(unfactor(data[, response.var]))
   if (!(all(Y %in% 0:1))) stop("ERROR: response.var must be coded 0-1")
 
-  vec <- as.numeric(unfactor(data[, snp.var]))
   if (length(snp.var) == 1) {
-    snp  <- matrix(data=0, nrow=length(vec), ncol=3)
-    temp <- vec %in% 0
-    snp[temp, 1] <- 1
-    temp <- vec %in% 1
-    snp[temp, 2] <- 1
-    temp <- vec %in% 2
-    snp[temp, 3] <- 1
-  } 
+    snp  <- as.numeric(unfactor(data[, snp.var]))
+  } else {
+    snp <- data[, snp.var, drop=FALSE]
+    for (i in 1:ncol(snp)) snp[, i] <- as.numeric(unfactor(snp[, i]))
+  }
 
   # Get the stratification vector
   if (!is.null(strata.var)) {
