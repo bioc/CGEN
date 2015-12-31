@@ -1,4 +1,4 @@
-CHANGES IN VERSION 3.5
+CHANGES IN VERSION 3.6
 ----------------------
 
 USER VISIBLE CHANGES
@@ -9,6 +9,7 @@ USER VISIBLE CHANGES
 BUG FIXES
 
     o The function snp.logistic checks that the snp variable is used in main.vars or int.vars.
+    o Fix to snp.score to work correctly with imputed genotypes
 
 PLANS
 
