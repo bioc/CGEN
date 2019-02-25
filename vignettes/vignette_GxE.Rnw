@@ -1,4 +1,4 @@
-%\VignetteIndexEntry{CGEN Vignette}
+%\VignetteIndexEntry{CGEN Scan Vignette}
 %\VignettePackage{CGEN}
 %\VigetteDepends{CGEN}
 
