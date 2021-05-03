@@ -35,7 +35,7 @@
       NRXX    <- nrow(xx)
       NTHETAS <- length(thetas)
       if (indep) {
-        if (is.null(x.st)==T) { 
+        if (is.null(x.st)==TRUE) { 
           x.st    <- rep(1,length(x1)) 
           nStrata <- 1
         }
@@ -50,7 +50,7 @@
         tt1      <- p*datS
         temp     <- tt1==0
         tt1[temp] <- NA
-	   Ps        <- apply(tt1,2,mean,na.rm=T)
+	   Ps        <- apply(tt1,2,mean,na.rm=TRUE)
         diag(info_h.h)[1:nStrata] = (Ps*(1-Ps))/(2*Ns)
         TEMP2     <- twop*phat*((1+p)-twop*phat)
         TEMP3     <- twop*phatprod
@@ -81,10 +81,10 @@
             ####### make expected genotype vector where each individual has its own population's allele frequency ########
             #p=NULL
           
-            if(indep==T){
+            if(indep==TRUE){
                 
                 ## Let p is MAF:  E(G)= 0 +1*2p(1-p) + 2* p^2 = 2p ,  E(G^2) = 0 + 1^2p(1-p) + 4*p^2 = 2p-2p^2+4p^2 = 2p + 2p^2
-                #if(is.null(x.st)==T) { x.st=rep(1,length(x1)) ; nStrata=1}
+                #if(is.null(x.st)==TRUE) { x.st=rep(1,length(x1)) ; nStrata=1}
 		     #Ns=as.vector(table(x.st))
                 #tt2 = myExpectedGenotype2(x1,x.st)
 
@@ -108,7 +108,7 @@
             }#end of 
             
             
-            if(indep==F){   
+            if(indep==FALSE){   
               #score = sum(weight*x1*(y-phat)) 
                score <- sum(weight*x1yphat) 
             } #[1] 146.3
@@ -159,12 +159,12 @@
              
             V=NA
         
-            if(indep==F){     ##### the procedure is written at "11_0913_generalTest.pdf"
+            if(indep==FALSE){     ##### the procedure is written at "11_0913_generalTest.pdf"
 
                     ################### [3.1]  calculate fisher information matrix (standard) to calculate info_b1.rest, info_rest.rest ######################3
                     
                     ##### Make a standard information matrix with outer product of each variable vectors: I just need Info_betaG_h   & Info_h_h
-                    ##### but for indep=T, for x1 genotype should be replaced not by weight*x1, but weight*f   (expected genotype)!
+                    ##### but for indep=TRUE, for x1 genotype should be replaced not by weight*x1, but weight*f   (expected genotype)!
                     ##where h=c(x2,covs), info[1,-1](=Info_betaG_h) & info[-1,-1](=Info_h_h)
                     ## if I do additive=F for the following function, it's going to be standard information
                     
@@ -194,7 +194,7 @@
                   
                     #### then make a final information matrix ###
                   
-                    infomat=matrix(infoSum,byrow=T,ncol=k)
+                    infomat=matrix(infoSum,byrow=TRUE,ncol=k)
                     #dim(infomat)
                     colnames(infomat)=row.names(infomat)=colnames(xx)[-1]
                     #          x1star       X21       X22      int
@@ -236,13 +236,13 @@
                     #   X21    X22    int     Z1     Z2 
                     # 29.61  30.14 350.01   6.93  -4.29 
                     #info2 = NA
-                    #try(info2 <- solve(infomat[-1,-1]),silent=T)   # i confirmed it's not solve(infomat)[-1,-1] ##take out first and then invert
+                    #try(info2 <- solve(infomat[-1,-1]),silent=TRUE)   # i confirmed it's not solve(infomat)[-1,-1] ##take out first and then invert
         
                     info_rest.rest = NA
-                    try(info_rest.rest <- solve(infomat[-1,-1]),silent=T)   # i confirmed it's not solve(infomat)[-1,-1] ##take out first and then invert
+                    try(info_rest.rest <- solve(infomat[-1,-1]),silent=TRUE)   # i confirmed it's not solve(infomat)[-1,-1] ##take out first and then invert
                     
                     #info2 = NA
-                    #try(info2 <- solve(infomat[-1,-1]),silent=T)   # i confirmed it's not solve(infomat)[-1,-1] ##take out first and then invert
+                    #try(info2 <- solve(infomat[-1,-1]),silent=TRUE)   # i confirmed it's not solve(infomat)[-1,-1] ##take out first and then invert
                     #          X21       X22       int        Z1        Z2
                     #X21  0.012004  1.09e-03 -2.98e-03  1.24e-04  1.61e-04
                     #X22  0.001093  1.27e-02 -2.94e-03  9.48e-05 -8.92e-05
@@ -253,7 +253,7 @@
                     info1=info_b1.rest
                     info2=info_rest.rest
                     
-                    if( any(is.na(info2)) ==T) { info1=NA    ; rest=NA  ; x1star=NA}
+                    if( any(is.na(info2)) ==TRUE) { info1=NA    ; rest=NA  ; x1star=NA}
 
                     
                     x1star_info = x1star - (rest %*% info2) %*% info1
@@ -281,8 +281,8 @@
 
 
                     ############## inefficient using apply() ##########################
-                    doThis=F
-                    if(doThis==T){
+                    doThis=FALSE
+                    if(doThis==TRUE){
 
                           #### make a k by k information matrix for one subject
                 
@@ -328,8 +328,8 @@
                           V=sum(core[,1]*(core[,2])^2)   # V = p*phat*(x1star - info[1,rest]*invinfo[-1,-1]*w)^2
                           # V #[1] 151.3418
                  
-                           doThis=F
-                           if(doThis==T){   ##### this should match
+                           doThis=FALSE
+                           if(doThis==TRUE){   ##### this should match
                            
                                 V2= apply(xx,1,effScoreVar_small,info1=info1,info2=info2,ncolx2=ncolx2,theta=theta)
                                 V22=sum(V2); #V22
@@ -346,7 +346,7 @@
             
             }#end of  indep=F
 
-            if(indep==T){
+            if(indep==TRUE){
            
                   w= xx[,-1] 
                   #w[1:5,]
@@ -359,7 +359,7 @@
                   ################### [3.1]  calculate fisher information matrix (standard) to calculate info_b1.rest, info_rest.rest ######################3
                   
                   ##### Make a standard information matrix with outer product of each variable vectors: I just need Info_betaG_h   & Info_h_h
-                  ##### but for indep=T, for x1 genotype should be replaced not by weight*x1, but weight*f   (expected genotype)!
+                  ##### but for indep=TRUE, for x1 genotype should be replaced not by weight*x1, but weight*f   (expected genotype)!
                   ##where h=c(x2,covs), info[1,-1](=Info_betaG_h) & info[-1,-1](=Info_h_h)
                   ## if I do additive=F for the following function, it's going to be standard information
                   # h = (h1, h2) = (p, beta.e, beta.covariate)
@@ -388,7 +388,7 @@
                   }#3nd of 
                   
                  
-                 #matrix(myInfoStandard(xx[1,]),byrow=T,ncol=k)
+                 #matrix(myInfoStandard(xx[1,]),byrow=TRUE,ncol=k)
     
                  # Old code
                  #tm0 = apply(xx,1,myInfoStandard)# exclude x1star
@@ -400,7 +400,7 @@
                  temp    <- .C("infoSmallStandard", as.double(txx), as.integer(NRXX), 
                                 as.integer(NC), as.double(phatprod), infoSum=infoSum, PACKAGE="CGEN")
                  tm0     <- temp$infoSum
-                 tm2     <-  matrix(tm0,byrow=T,ncol=k) 
+                 tm2     <-  matrix(tm0,byrow=TRUE,ncol=k) 
 
                  colnames(tm2)=row.names(tm2) = colnames(xx)[-1] #; tm2
                   #          X21       X22      int
@@ -411,7 +411,7 @@
                 ### invert it ###
            
                 info_h2.h2=NA
-                try(info_h2.h2 <- solve(tm2),silent=T)  #; info_h2.h2 
+                try(info_h2.h2 <- solve(tm2),silent=TRUE)  #; info_h2.h2 
                 # i confirmed it's not solve(infomat)[-1,-1] ##take out first and then invert
                 # >                info_n2.n2
                 #             X21          X22          int
@@ -443,7 +443,7 @@
 				#[3,] 0.000 0.0000 0.541
 
 				#tt1[tt1==0]=NA
-				#Ps= apply(tt1,2,mean,na.rm=T)
+				#Ps= apply(tt1,2,mean,na.rm=TRUE)
 
 				#   x.1    x.2    x.3 
 				#0.5640 0.5205 0.5410 
@@ -461,9 +461,9 @@
 				#[6,] 0.000000000 0.0000000000 0.0000000000 -0.004966426 -0.004966426  0.004966426
 
            
-                    doThis=F
+                    doThis=FALSE
                     N <- NULL
-                    if(doThis==T){    ## OK just to make sure..
+                    if(doThis==TRUE){    ## OK just to make sure..
                     
                             #### original first and then inverse to see if the result is the same
                             info_h.h2=matrix(0,nrow=nrow(info_h2.h2)+1,ncol=ncol(info_h2.h2)+1)
@@ -563,14 +563,14 @@
                  #vs = V
                  #stats = stat
                  #pvals = pval
-                 if(indep==F &  any(is.na(info2)) ==F) { 
+                 if(indep==FALSE &  any(is.na(info2)) ==FALSE) { 
                    infoprods     = x1star_info 
                    info_b1.rests = info_b1.rest 
                  }       
-                 if(indep==F &  any(is.na(info2)) ==T) { 
+                 if(indep==FALSE &  any(is.na(info2)) ==TRUE) { 
                    infoprods = rep(NA,length(phatprod)) 
                  }
-                 if(indep==T) { 
+                 if(indep==TRUE) { 
                    info_b1.hs = info_b1.h  
                  }
                  weights=weight 
@@ -604,17 +604,17 @@
                  stats[i]  <- stat
                  pvals[i]  <- pval
                                                       
-                 if(indep==F &  any(is.na(info2)) ==F) { 
+                 if(indep==FALSE &  any(is.na(info2)) ==FALSE) { 
                    #infoprods = cbind(infoprods, x1star_info)  
                    #info_b1.rests= cbind(info_b1.rests,info_b1.rest) 
                    infoprods[, i]     <- x1star_info
                    info_b1.rests[, i] <- info_b1.rest
                  }   
-                 if(indep==F &  any(is.na(info2)) ==T) { 
+                 if(indep==FALSE &  any(is.na(info2)) ==TRUE) { 
                    #infoprods = cbind(infoprods, rep(NA,length(phatprod)))   
                    infoprods[, i] <- rep(NA,length(phatprod))
                  }   
-                 if(indep==T) { 
+                 if(indep==TRUE) { 
                    #info_b1.hs = cbind(info_b1.hs, info_b1.h)
                    info_b1.hs[, i] <- info_b1.h
                  }
@@ -626,15 +626,15 @@
           }#end of   i   loop
           
           
-          if(indep==F) if(is.matrix(infoprods)==F) { dim(infoprods)=c(length(infoprods),1) ; dim(weights)=c(length(weights),1) }
-          if(indep==T) if(is.matrix(info_b1.hs)==F) { dim(info_b1.hs)=c(length(info_b1.hs),1)}# ;  dim(info_b1.h.derv1s)=c(length(info_b1.h.derv1s),1); dim(info_b1.h.derv2s)=c(length(info_b1.h.derv2s),1); dim(weights)=c(length(weights),1) }
+          if(indep==FALSE) if(is.matrix(infoprods)==FALSE) { dim(infoprods)=c(length(infoprods),1) ; dim(weights)=c(length(weights),1) }
+          if(indep==TRUE) if(is.matrix(info_b1.hs)==FALSE) { dim(info_b1.hs)=c(length(info_b1.hs),1)}# ;  dim(info_b1.h.derv1s)=c(length(info_b1.h.derv1s),1); dim(info_b1.h.derv2s)=c(length(info_b1.h.derv2s),1); dim(weights)=c(length(weights),1) }
             
     
            Names=paste("th",thetas,sep=".")
            names(scores)=names(vs)=names(stats)=names(pvals)=colnames(weights)=Names
-           if(indep==F) {if(any(is.na(info2)) ==F) {colnames(infoprods)= Names ; colnames(info_b1.rests)=Names } }
-           if(indep==T) { if(any(is.na(info_b1.hs)) ==F) { colnames(info_b1.hs)=Names } }
-           #if(indep==T) { if(any(is.na(info_b1.hs)) ==F) { colnames(info_b1.hs)=colnames(info_b1.h.derv1s)=colnames(info_b1.h.derv2s)=Names } }
+           if(indep==FALSE) {if(any(is.na(info2)) ==FALSE) {colnames(infoprods)= Names ; colnames(info_b1.rests)=Names } }
+           if(indep==TRUE) { if(any(is.na(info_b1.hs)) ==FALSE) { colnames(info_b1.hs)=Names } }
+           #if(indep==TRUE) { if(any(is.na(info_b1.hs)) ==FALSE) { colnames(info_b1.hs)=colnames(info_b1.h.derv1s)=colnames(info_b1.h.derv2s)=Names } }
                
            
           
@@ -648,15 +648,15 @@
           COR = do.indic = NA
           ncinf <- ncol(infoprods)
 
-          if(indep==F) do.indic = ncinf>1
-          if(indep==T) do.indic = ncol(info_b1.hs)>1
+          if(indep==FALSE) do.indic = ncinf>1
+          if(indep==TRUE) do.indic = ncol(info_b1.hs)>1
           #do.indic
           
-          indic.keep=rep(T,length(thetas))
+          indic.keep=rep(TRUE,length(thetas))
          
-          if(do.indic==T){
+          if(do.indic==TRUE){
                 
-                if(indep==F){
+                if(indep==FALSE){
                
                      #COV=matrix(NA,ncol=ncinf,nrow=ncinf)
                      #colnames(COV)=row.names(COV)=colnames(infoprods)
@@ -684,7 +684,7 @@
                  
                 mu=phat
                  
-                if(indep==T){    
+                if(indep==TRUE){    
           
                      #COV=matrix(NA,ncol=ncol(info_b1.hs),nrow=ncol(info_b1.hs))
                      #colnames(COV)=row.names(COV)=colnames(info_b1.hs)
@@ -722,11 +722,11 @@
                 COV2=t(COV)
                 COV2[upper.tri(COV2)] = COV[(upper.tri(COV))]
 
-                indic.keep=!(colSums(is.na(COV2)==T)==length(thetas)) #
+                indic.keep=!(colSums(is.na(COV2)==TRUE)==length(thetas)) #
                 COV3=COV2[indic.keep,indic.keep]
                 
                 
-                if(all(is.na(COV))==F & is.null(dim(COV3))==F) COR=cov2cor(COV3) #; COR
+                if(all(is.na(COV))==FALSE & is.null(dim(COV3))==FALSE) COR=cov2cor(COV3) #; COR
                 #           th-1     th0.5       th1       th2       th3       th4
                 #th-1  1.0000000 0.7238465 0.4926928 0.2060813 0.1432605 0.1290698
                 #th0.5 0.7238465 1.0000000 0.9087854 0.5350346 0.3844740 0.3389143
@@ -740,11 +740,11 @@
           
 
 
-          if(indep==F) ans=list( infomat = infomat[-1,-1], x1=x1, rest=rest, w=we, info_rest.rest=info_rest.rest, 
+          if(indep==FALSE) ans=list( infomat = infomat[-1,-1], x1=x1, rest=rest, w=we, info_rest.rest=info_rest.rest, 
                       info_b1.rests = info_b1.rests,infoprods=infoprods[,indic.keep], phat=phat, phatprod=phatprod,
                       scores=scores[indic.keep], vs=vs[indic.keep], stats=stats[indic.keep], thetas=thetas[indic.keep],
                       COV=COV3,COR=COR, pvals=pvals[indic.keep])
-         if(indep==T) ans=list( mu=mu,p=p, w=we,rest=w,x1=x1, info_h.h = info_h.h, info_b1.hs=info_b1.hs, scores=scores, 
+         if(indep==TRUE) ans=list( mu=mu,p=p, w=we,rest=w,x1=x1, info_h.h = info_h.h, info_b1.hs=info_b1.hs, scores=scores, 
                            vs=vs, stats=stats, thetas=thetas,COV=COV2,COR=COR, pvals=pvals)
           
           ans

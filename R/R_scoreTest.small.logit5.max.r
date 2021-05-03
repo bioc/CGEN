@@ -27,8 +27,8 @@
             #> length(x1star)
             #[1] 3000            
 
-                  doThis2=F
-                  if(doThis2==T){   ###### checking variables
+                  doThis2=FALSE
+                  if(doThis2==TRUE){   ###### checking variables
     
                       x2[1:5]
                       exp(-b2*x2)[1:5]
@@ -97,7 +97,7 @@
             
                 
             #### make a k by k information matrix for one subject
-            if(doThis2==T){
+            if(doThis2==TRUE){
     
                 x=xx[4,] # one subject
                 x
@@ -106,7 +106,7 @@
                 tt1=info.small.add2(x,additive,ncolx2)
                 #tt1=info.small.add(x)    #  p*(1-p)*(x%*%t(x))
                 tt1
-                tt1=info.small.add2(x,additive=F,ncolx2)
+                tt1=info.small.add2(x,additive=FALSE,ncolx2)
                 tt1
                 #          x1star        X21        X22        int
                 #[1,] 0.002576059 0.02444128 0.02444128 0.02444128
@@ -114,7 +114,7 @@
                 #[3,] 0.024441285 0.23189543 0.23189543 0.23189543
                 #[4,] 0.024441285 0.23189543 0.23189543 0.23189543
                 
-                tt1=info.small.add2(x,additive=T,ncolx2)  #------------> variance for x1star and x2 are increased (first row and first column)
+                tt1=info.small.add2(x,additive=TRUE,ncolx2)  #------------> variance for x1star and x2 are increased (first row and first column)
                 tt1
                 #         x1star       X21       X22        int
                 #[1,] 0.04515301 0.0629586 0.0629586 0.02444128
@@ -128,7 +128,7 @@
     
             ##### apply() to get "STANDARD" information matrix for all subjects ###############
           
-            info0=apply(xx,1,info.small.add2,additive=F,ncolx2=ncolx2,theta=theta)  ####### standard outer product without extra terms other than cross-product
+            info0=apply(xx,1,info.small.add2,additive=FALSE,ncolx2=ncolx2,theta=theta)  ####### standard outer product without extra terms other than cross-product
             #> info0=apply(xx,1,info.small)                                         ####### additive=T is wrong...
             dim(info0)
             #[1]   25 3000
@@ -148,7 +148,7 @@
             # [9,]  0.021044665 0.00000000 0.12752631  0.27464793 0.0003444538 0 0  0.00000000
             #[10,] -0.103103715 0.00000000 0.09155462 -0.15165666 0.1394329313 0 0  0.00000000
           
-            #ans=matrix(info0[,4],byrow=T,ncol=5) ----->same as the first individual matrix
+            #ans=matrix(info0[,4],byrow=TRUE,ncol=5) ----->same as the first individual matrix
             #ans
             #             [,1]        [,2]        [,3]         [,4]        [,5]
             #[1,]  0.017555061  0.05909876  0.05909876  0.006251238 -0.03062657
@@ -168,7 +168,7 @@
           
             #### then make a final information matrix ###
           
-            infomat=matrix(infoSum,byrow=T,ncol=k)
+            infomat=matrix(infoSum,byrow=TRUE,ncol=k)
             dim(infomat)
             colnames(infomat)=row.names(infomat)=colnames(xx)[-c(1:3)];infomat
             #> infomat
@@ -185,7 +185,7 @@
             
              
              #invInfo=NA
-             #try(invInfo <- solve(infomat[-1,-1]),silent=T)
+             #try(invInfo <- solve(infomat[-1,-1]),silent=TRUE)
              #invInfo
             
             
@@ -198,7 +198,7 @@
             #   X21    X22    int     Z1     Z2 
             # 29.61  30.14 350.01   6.93  -4.29 
             info2 = NA
-            try(info2 <- solve(infomat[-1,-1]),silent=T)   # i confirmed it's not solve(infomat)[-1,-1] ##take out first and then invert
+            try(info2 <- solve(infomat[-1,-1]),silent=TRUE)   # i confirmed it's not solve(infomat)[-1,-1] ##take out first and then invert
             #          X21       X22       int        Z1        Z2
             #X21  0.012004  1.09e-03 -2.98e-03  1.24e-04  1.61e-04
             #X22  0.001093  1.27e-02 -2.94e-03  9.48e-05 -8.92e-05
@@ -207,10 +207,10 @@
             #Z2   0.000161 -8.92e-05  1.58e-05 -1.19e-05  2.21e-03
                    
             
-            if(is.na(info2)==T) info1=NA
+            if(is.na(info2)==TRUE) info1=NA
             
             #### make a k by k information matrix for one subject
-            if(doThis2==T){
+            if(doThis2==TRUE){
     
                 x=xx[4,] # one subject
                 x
@@ -249,8 +249,8 @@
             V=sum(core[,1]*(core[,2])^2)   # V = p*phat*(x1star - info[1,rest]*invinfo[-1,-1]*w)^2
            
            
-           doThis=F
-           if(doThis==T){   ##### this should match
+           doThis=FALSE
+           if(doThis==TRUE){   ##### this should match
            
                 #V2= apply(xx,1,effScoreVar_small,info1=info1,info2=info2,ncolx2=ncolx2,theta=theta)
                 #V22=sum(V2);V22
@@ -284,8 +284,8 @@
                  
                  
                  phatprod = core[,"phatprod.phat"]
-                 if(is.na(info2)==F) x1starInfos = core[,"x1star_info"]
-                 if(is.na(info2)==T) x1starInfos = rep(NA,nrow(core))
+                 if(is.na(info2)==FALSE) x1starInfos = core[,"x1star_info"]
+                 if(is.na(info2)==TRUE) x1starInfos = rep(NA,nrow(core))
                  
             
             }#end of i=1
@@ -298,8 +298,8 @@
                  pvals = c(pvals,pval)
                  phatprod = core[,"phatprod.phat"]
                  
-                 if(is.na(info2)==F) x1starInfos = cbind(x1starInfos,core[,"x1star_info"])
-                 if(is.na(info2)==T) x1starInfos = cbind(x1starInfos,rep(NA,nrow(core)) )
+                 if(is.na(info2)==FALSE) x1starInfos = cbind(x1starInfos,core[,"x1star_info"])
+                 if(is.na(info2)==TRUE) x1starInfos = cbind(x1starInfos,rep(NA,nrow(core)) )
 
                  #x1starInfos = cbind(x1starInfos,core[,"x1star_info"])
             
@@ -312,7 +312,7 @@
           
           }#end of   i
           
-          if(is.matrix(x1starInfos)==F) dim(x1starInfos)=c(length(x1starInfos),1)
+          if(is.matrix(x1starInfos)==FALSE) dim(x1starInfos)=c(length(x1starInfos),1)
           
     
            Names=paste("th",thetas,sep=".")
@@ -341,9 +341,9 @@
           #        1         2         3         4         5 
           #0.1307672 0.1307672 0.1307672 0.2318954 0.1307672           
 
-          doThis=F
+          doThis=FALSE
           
-          if(doThis==T){
+          if(doThis==TRUE){
               colSums(phatprod*(x1starInfos)^2)
               #     th-1     th0.5       th1 
               # 151.3418  486.3087 1869.5923 

@@ -46,7 +46,7 @@ static double numr_grad(double *gr, int start, int len, double *beta, Rdata *rda
 static void tree_traverse(tnode *node, int u, int t_offset, double *beta, CDAT *cdat, LSUM *lsum, Rdata *rda, int is_root) ;
 
 
-static void tree_print(tnode *node, int is_root);
+/* static void tree_print(tnode *node, int is_root); */
 static void tree_free(tnode *node);
 static void tree_create(tnode *node, int S);
 static void invert(double **J, double **JInv, double **aug, int p);
@@ -372,13 +372,13 @@ static double rel_error(double *beta, double *delta, int p)
 
 /********************************** utils.c *******************************/
 
-static void tree_print(tnode *node, int is_root)
+/* static void tree_print(tnode *node, int is_root)
 {
 	Rprintf(" (%d, %d) ", node -> g , node -> h ) ;
 	if(is_root==0 && node -> next != NULL) tree_print(node -> next, 0) ;	
 	else Rprintf("\n") ;
 	if(node -> child != NULL) tree_print(node -> child, 0) ;
-}
+} */
 
 static void tree_free(tnode *node)
 {

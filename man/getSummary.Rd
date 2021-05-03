@@ -29,7 +29,7 @@
  getSummary(list(parms=parms, cov=cov))
 
  # Compare to summary()
- set.seed(123)
+ # set.seed(123)
  n <- 100
  y <- rbinom(n, 1, 0.5)
  x <- cbind(runif(n), rbinom(n, 1, 0.5))

@@ -41,7 +41,7 @@
           The limits should be on the original scale. The default is NULL.
   }
  }
-%\value{}
+\value{Returns nothing. Creates a Manhattan plot.}
 %\references{ }
 %\author{ }
 \seealso{ \code{\link{QQ.plot}}, \code{\link{locusMap.list}}}
@@ -51,7 +51,7 @@
 data(LocusMapData, package="CGEN") 
 
 # For illustrative purposes, add some hypothetical p-values to x
-set.seed(123)
+# set.seed(123)
 LocusMapData[, "pvalue"] <- runif(nrow(LocusMapData))
 
 # Define the input list locusMap.list

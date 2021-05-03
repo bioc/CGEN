@@ -1,7 +1,7 @@
 
 Modified_Wald_Test <- function(Y,Prob_G,X,COVS,strata.var,fitted_value, sandwich=FALSE){
 
-if(is.vector(X)==T) X<-matrix(X,ncol=1)
+if(is.vector(X)==TRUE) X<-matrix(X,ncol=1)
 
 n<-length(Y)
 

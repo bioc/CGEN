@@ -40,7 +40,7 @@
              The default is 0.}
   }
  }
-%\value{}
+\value{Returns nothing. Creates a snp effect plot.}
 %\references{ }
 %\author{ }
 \seealso{ \code{\link{snp.effects}}}
@@ -50,7 +50,7 @@
  data(Xdata, package="CGEN")
 
  # Add some fake SNPs
- set.seed(636)
+ # set.seed(636)
  Xdata[, "rs123"] <- rbinom(nrow(Xdata), 1, 0.4)
  Xdata[, "rs456"] <- rbinom(nrow(Xdata), 1, 0.4)
  Xdata[, "rs789"] <- rbinom(nrow(Xdata), 1, 0.4)

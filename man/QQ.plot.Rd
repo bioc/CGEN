@@ -33,12 +33,12 @@
   }
 
 } % END: details
-%\value{}
+\value{Returns 0. Creates a QQ plot.}
 %\references{ }
 %\author{ }
 \seealso{ \code{\link{Manhattan.plot}}}
 \examples{
-  set.seed(123)
+  # set.seed(123)
   p <- runif(1000)
   QQ.plot(p)
 }

@@ -7,7 +7,7 @@
 #          Jun 03 2008 Add test2.vars for a user specified Wald test.
 #          Jun 04 2008 Add tests.init (standard logistic reg.)
 #          Jun 06 2008 Add parameter estimates and standard errors
-#                      to out.file. 
+#                      to out.file.
 #                      Make vnames a seperate function
 #          Jun 07 2008 Combine GbyE.1snp and GbyE.irls
 #          Jun 09 2008 Change input argument names, function names.
@@ -32,18 +32,18 @@
 #          Jul 22 2008 Change code to call getTest function
 #          Jul 26 2008 Add tests and tests.1df options
 #                      The tests option will replace the test2.vars option
-#          Aug 07 2008 Check for constant variables in getDsgnMat 
+#          Aug 07 2008 Check for constant variables in getDsgnMat
 #          Aug 11 2008 Define classes for return objects
-#          Aug 21 2008 Add option for joint and stratified effects 
+#          Aug 21 2008 Add option for joint and stratified effects
 #          Aug 25 2008 Rename snp.logistic to snp.main
 #                      Add snp.logistic function
 #          Aug 29 2008 Update for change in getWaldTest
 #          Oct 08 2008 Allow for different family if only.UML = 1
 #          Oct 10 2008 Allow for no recoding of genotypes when stream = 1
 #          Oct 21 2008 Make more efficient for only.UML = 1
-#          Oct 29 2008 Change the line in snp.scan.logistic from 
+#          Oct 29 2008 Change the line in snp.scan.logistic from
 #                      snp <- as.integer(snp) to
-#                      snp <- as.numeric(snp)   
+#                      snp <- as.numeric(snp)
 #          Dec 10 2008 Allow the user to specify formulas in
 #                      snp.logistic.
 #          Jan 30 2009 Add option to output UML base model
@@ -103,13 +103,14 @@
 #          Oct 22 2013 Return full CML covariance matrix from snp.main
 #          Oct 25 2013 Add function to return strat matrix
 ######################################################################
-# TO DO: 
+# TO DO:
 # Modify the different tests for the different genetic models
 # Update test2 code for factors
 # Check for consistent input arguments (out.est, only.UML,...)
 ######################################################################
 
-sMatrix.logistic <- function(data, strata.var, facVars) {
+sMatrix.logistic <- function(data, strata.var, facVars) 
+{
 
   sflag    <- !is.null(strata.var)
   sform    <- "formula" %in% class(strata.var)
@@ -146,14 +147,15 @@ sMatrix.logistic <- function(data, strata.var, facVars) {
 } # END: sMatrix.logistic
 
 # Function to perform SNP by environment interaction analysis.
-snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) {
+snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) 
+{
 
   # INPUT:
   # snp.list      (See snp.list.wordpad)
   #################################################################
   # pheno.list    (See pheno.list.wordpad)
   #               This list must include the name "response.var",
-  #               and can also include the names "strata.var", 
+  #               and can also include the names "strata.var",
   #               "main.vars", "int.vars" (see below)
   #  response.var Name of the response variable. This variable
   #               must be coded as 0 and 1.
@@ -174,18 +176,18 @@ snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) {
   #               the MAF based on controls.
   #               The default is NULL.
   #################################################################
-  # op            List with the following names.  
+  # op            List with the following names.
   #  genetic.model  0-2
   #                 0: trend
   #                 1: dominant
   #                 2: recessive
   #                 3: general
-  #                 The default is 0. 
+  #                 The default is 0.
   #  reltol       Stopping tolerance
   #               The default is 1e-8
   #  maxiter      Maximum number of iterations
   #               The default is 100
-  #  optimizer    One of : "BFGS", "Nelder-Mead", "BFGS", "CG", 
+  #  optimizer    One of : "BFGS", "Nelder-Mead", "BFGS", "CG",
   #               "L-BFGS-B", "SANN".
   #               The default is "BFGS"
   #  print        0 or 1 to print each list of output
@@ -203,7 +205,7 @@ snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) {
   #               will be used in Wald tests.
   #               The default is NULL.
   #  tests.1df    Character vector of variable names to use for 1 df
-  #               Wald tests. 
+  #               Wald tests.
   #               The default is NULL.
   #  tests.UML    NULL or a list with at least one of the following
   #               names: "omnibus", "main", or "inter". These names
@@ -216,27 +218,27 @@ snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) {
   #               The default value for each name is "WALD"
   #               The default is NULL.
   #  tests.CML    0 or 1 for computing the WALD tests using the
-  #               conditional ML estimates. 
+  #               conditional ML estimates.
   #               The default is 1.
   #  tests.EB     0 or 1 for computing the WALD tests using the
   #               empirical bayes estimates
   #               The default is 0.
   #  geno.counts  0 or 1 to add the genotype counts to out.file
   #               The default is 0.
-  #  subject.counts  0 or 1 to add the number of cases and controls to 
+  #  subject.counts  0 or 1 to add the number of cases and controls to
   #                  out.file.
-  #                  The default is 0.  
+  #                  The default is 0.
   #  allele.cc    1 or 2 to use all subjects
-  ###############################################################   
+  ###############################################################
   #  effects      List for joint/stratified effects
-  #               Names in the list must be "var", "type", 
+  #               Names in the list must be "var", "type",
   #                "var.levels", "snp.levels", "var.base"
   #               The default is NULL.
   #  var          Variable name to compute the effects with the SNP
   #               No default
   #  type         1 or 2 or c(1, 2) , 1 = joint, 2 = stratified
   #               The default is 1.
-  #  var.levels   (Only for continuous var) Numeric vector of the 
+  #  var.levels   (Only for continuous var) Numeric vector of the
   #               levels to be used in the calculation.
   #               The default is 0.
   #  var.base     (Only for continuous var) Baseline level.
@@ -251,7 +253,7 @@ snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) {
   #  out.est      List with the names "parms" and "method".
   #               Use this option if you want to save parameter
   #               estimates and standard errors to out.file.
-  #  parms        1-3 or a character vector of the parameters to 
+  #  parms        1-3 or a character vector of the parameters to
   #               save statistics on.
   #               1: Main effect is saved.
   #               2: Main effect and interactions are saved.
@@ -309,11 +311,11 @@ snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) {
       if (model == "EB") return(list(test=NA, df=NA, pvalue=NA))
 
       if ((model == "CML") && (which %in% c(1, 2))) return(list(test=NA, df=NA, pvalue=NA))
- 
+
     } else if (test == "SCORE") {
       if ((model == "CML") && (which %in% c(1, 2))) return(list(test=NA, df=NA, pvalue=NA))
     }
-  
+
     # Determine if interactions are in the model
     if (which == 2) {
       X.int <- design.V
@@ -384,7 +386,7 @@ snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) {
     # ret     Return list
     # which   "UML", "CML", "EB"
 
-    if (which == "UML") { 
+    if (which == "UML") {
       # tests.UML.vec is actually a list
       test <- tests.UML.vec
     } else {
@@ -394,11 +396,11 @@ snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) {
     field <- paste(which, c(".omnibus", ".main", ".inter"), sep="")
     temp <- ret[[which]]
     if (!is.null(temp)) {
-      if (omniFlag) ret[[field[1]]]  <- 
+      if (omniFlag) ret[[field[1]]]  <-
           getTest(temp, omni.vars[[vListIndex]], test[1], 1, which)
-      if (mainFlag) ret[[field[2]]]  <- 
+      if (mainFlag) ret[[field[2]]]  <-
           getTest(temp, main.vars[[vListIndex]], test[2], 2, which)
-      if (interFlag) ret[[field[3]]] <- 
+      if (interFlag) ret[[field[3]]] <-
           getTest(temp, inter.vars[[vListIndex]], test[3], 3, which)
       # tests will start from field 4
       if (test2Flag) {
@@ -413,11 +415,11 @@ snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) {
       if (interFlag) ret[[field[3]]] <- list(test=NA, pvalue=NA, df=NA)
       if (test2Flag) {
         temp <- list(test=NA, pvalue=NA, df=NA)
-        for (i in 1:n.tests) ret[[field2[i]]] <- temp 
+        for (i in 1:n.tests) ret[[field2[i]]] <- temp
       }
     }
     ret
-  
+
   } # END: addTest
 
   # Function to tests to the output vector
@@ -434,7 +436,7 @@ snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) {
       t <- paste("UML.", tname, sep="")
       p <- paste("UML.", pname, sep="")
       d <- paste("UML.", dname, sep="")
-      r <- paste("UML.", which, sep="") 
+      r <- paste("UML.", which, sep="")
       outVec[t] <- ret[[r]]$test
       outVec[p] <- ret[[r]]$pvalue
       outVec[d] <- ret[[r]]$df
@@ -443,7 +445,7 @@ snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) {
       t <- paste("CML.", tname, sep="")
       p <- paste("CML.", pname, sep="")
       d <- paste("CML.", dname, sep="")
-      r <- paste("CML.", which, sep="") 
+      r <- paste("CML.", which, sep="")
       outVec[t] <- ret[[r]]$test
       outVec[p] <- ret[[r]]$pvalue
       outVec[d] <- ret[[r]]$df
@@ -452,7 +454,7 @@ snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) {
       t <- paste("EB.", tname, sep="")
       p <- paste("EB.", pname, sep="")
       d <- paste("EB.", dname, sep="")
-      r <- paste("EB.", which, sep="") 
+      r <- paste("EB.", which, sep="")
       outVec[t] <- ret[[r]]$test
       outVec[p] <- ret[[r]]$pvalue
       outVec[d] <- ret[[r]]$df
@@ -472,7 +474,7 @@ snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) {
     temp <- cntrl[notMiss]
     nn   <- sum(temp)
     return(c(length(temp)-nn, nn))
-    
+
   } # END: getCCcounts
 
   # Function to get variables for main test
@@ -482,7 +484,7 @@ snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) {
     v1 <- getVarNames.snp(prefix=op$snpName, genetic.model=genetic.model)
     if (genetic.model == 3) {
       v2 <- getVarNames.snp(prefix=op$snpName, genetic.model=0)
-    } 
+    }
     list(v1, v2)
 
   } # END: getMain.vars
@@ -492,8 +494,8 @@ snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) {
 
     # Combine main effect and interaction vars
     mvars <- getMain.vars()
-    
-    temp <- getInter.vars() 
+
+    temp <- getInter.vars()
     v1 <- c(mvars[[1]], temp[[1]])
     v2 <- c(mvars[[2]], temp[[2]])
 
@@ -509,7 +511,7 @@ snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) {
     v1 <- getVarNames.int(design.V0, prefix=op$snpName, genetic.model=genetic.model, sep=":")
     if (genetic.model == 3) {
       v2 <- getVarNames.int(design.V0, prefix=op$snpName, genetic.model=0, sep=":")
-    } 
+    }
     list(v1, v2)
 
   } # END: getInter.vars
@@ -540,7 +542,7 @@ snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) {
           # Get the dummy variable names in one of the lists
           temp3 <- getListName(X.newVars, temp2)
           if (!is.null(temp3)) {
-            test2.vars <- c(test2.vars, temp3)  
+            test2.vars <- c(test2.vars, temp3)
           } else {
             temp3 <- getListName(V.newVars, temp2)
             test2.vars <- c(test2.vars, temp3)
@@ -549,7 +551,7 @@ snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) {
       }
 
       # Check the variable names
-      temp <- check.vec.char(test2.vars, "tests", len=NULL, 
+      temp <- check.vec.char(test2.vars, "tests", len=NULL,
               checkList=log.vnames$all)
       if (temp) stop("ERROR with op$tests")
 
@@ -579,7 +581,7 @@ snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) {
 
     # Create an output vector
     vnames <- NULL
-    vec    <- c(".test", ".pvalue", ".df") 
+    vec    <- c(".test", ".pvalue", ".df")
     if (omniFlag) {
       temp                  <- paste("omnibus", vec, sep="")
       if (tests.CML) vnames <- c(vnames, paste("CML.", temp, sep=""))
@@ -598,7 +600,7 @@ snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) {
       if (tests.UML) vnames <- c(vnames, paste("UML.", temp, sep=""))
       if (tests.EB ) vnames <- c(vnames, paste("EB.",  temp, sep=""))
     }
-    if (test2Flag) {       
+    if (test2Flag) {
       for (i in 1:n.tests) {
         temp                  <- paste("test", i, vec, sep="")
         if (tests.CML) vnames <- c(vnames, paste("CML.", temp, sep=""))
@@ -612,7 +614,7 @@ snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) {
     est.corr <- NULL
     if (out.est.flag) {
       if ((out.est$parms == 2) && (!Vflag)) out.est$parms <- 1
-      
+
       # Vector to hold parm names
       what <- out.est$what
       temp <- NULL
@@ -660,13 +662,13 @@ snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) {
       for (method in effects$method) {
         for (type in effects$type) {
           for (i in 1:nr) {
-            temp   <- paste(method, ".eff", type, ".", 
+            temp   <- paste(method, ".eff", type, ".",
                              names[i,], sep="")
             vnames <- c(vnames, temp)
           }
           # Standard errors
           for (i in 1:nr) {
-            temp   <- paste(method, ".eff", type, ".", 
+            temp   <- paste(method, ".eff", type, ".",
                              names[i,], ".se", sep="")
             vnames <- c(vnames, temp)
           }
@@ -680,10 +682,10 @@ snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) {
     # geno and subject counts
     if (subj.counts) vnames <- c("N.cases", "N.controls", vnames)
     if (geno.counts) vnames <- c("Hom.common", "Heter",  "Hom.uncommon", vnames)
-    
+
     vnames <- c("SNP", "Alleles", "MAF", vnames)
 
-    fid <- writeVecToFile(vnames, op$out.file, colnames=NULL, type=3, 
+    fid <- writeVecToFile(vnames, op$out.file, colnames=NULL, type=3,
                           close=0, sep="\t")
 
     list(fid=fid, outVec=outVec, est.se=est.se,
@@ -704,9 +706,9 @@ snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) {
         design  <- temp$data
         newVars <- temp$newVars
       }
-    } 
+    }
     design <- as.matrix(design)
-    
+
     # Check for constant variables
     design <- checkForConstantVar(design, msg=1)$data
 
@@ -732,19 +734,19 @@ snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) {
     if (out.est.flag) {
       parms <- est.p[[vListIndex]]
       for (method in out.est$method) {
-        temp  <- getListName(ret, method)      
+        temp  <- getListName(ret, method)
         if (out.est.beta) temp1 <- paste(method, ".", est.parms[[vListIndex]], sep="")
         if (out.est.se)   temp2 <- paste(method, ".", est.se[[vListIndex]], sep="")
         if (out.est.test) temp3 <- paste(method, ".", est.test[[vListIndex]], sep="")
         if (out.est.pval) temp4 <- paste(method, ".", est.pval[[vListIndex]], sep="")
         if (out.est.corr) temp5 <- paste(method, ".", est.corr, sep="")
-        if (!is.null(temp)) {  
+        if (!is.null(temp)) {
           # NOTE: Names that are not found in a named vector
           # get assigned a missing value (NA) to them.
           se             <- sqrt(diag(temp$cov))[parms]
           p              <- temp$parms[parms]
           if (out.est.beta) outVec[temp1]  <- p
-          if (out.est.se)   outVec[temp2]  <- se    
+          if (out.est.se)   outVec[temp2]  <- se
           if (out.est.test) outVec[temp3]  <- p/se
           if (out.est.pval) outVec[temp4]  <- 2*pnorm(abs(p/se), lower.tail=FALSE)
           if (out.est.corr) {
@@ -762,39 +764,39 @@ snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) {
           if (out.est.pval) outVec[temp4]  <- NA
           if (out.est.corr) outVec[temp5]  <- NA
         }
-     
+
       } # END: for (method in out.est$method)
-    
+
     } # END: if (out.est.flag)
 
     # Effects
     if (effectsFlag) {
       names  <- effects$out.names
       nr     <- nrow(names)
-      lnames <- effects$list.names 
+      lnames <- effects$list.names
       for (method in effects$method) {
         i <- 0
         for (type in effects$type) {
           i <- i + 1
-         
+
           # Get the list of effects and standard errors
           temp <- paste(method, lnames[i], sep="")
           leff <- ret[[temp]]
           if (is.null(leff)) next
-         
+
           eff  <- leff$logEffects
           for (j in 1:nr) {
             temp <- paste(method, ".eff", type, ".", names[j, ], sep="")
             outVec[temp] <- eff[j, ]
-          } 
+          }
 
           # Standard errors
           eff  <- leff$logEffects.se
           for (j in 1:nr) {
             temp <- paste(method, ".eff", type, ".", names[j, ], ".se", sep="")
             outVec[temp] <- eff[j, ]
-          } 
-        }        
+          }
+        }
       }
 
     } # END: if (effectsFlag)
@@ -811,7 +813,7 @@ snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) {
     flag <- !is.null(corr)
     new  <- corr
     if (flag) {
-      if (class(corr) != "list") {
+      if (!is.list(corr)) {
         corr <- unique(corr)
         n    <- length(corr)
         if (n > 1) {
@@ -836,7 +838,7 @@ snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) {
       list(1, "CML", c("beta", "se")),
       checkList=list(NA, c("UML", "CML", "EB"),
                        c("beta", "se", "test", "pvalue")) )
-    }             
+    }
     out.est
 
   } # END: check.out.est
@@ -856,8 +858,8 @@ snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) {
     omni  <- getListName(u, "omnibus")
     main  <- getListName(u, "main")
     inter <- getListName(u, "inter")
-    temp  <- c(omni, main, inter)  
-                      
+    temp  <- c(omni, main, inter)
+
     temp  <- match(temp, tests)
     if (any(is.na(temp))) stop("ERROR with tests.UML")
 
@@ -878,7 +880,7 @@ snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) {
     if (!is.null(tests.1df)) {
       op$out.est <- list(parms=tests.1df, what=c("test", "pvalue"))
       op$tests.1df <- NULL
-    }    
+    }
 
     # Check tests list
     tests <- getListName(op, "tests")
@@ -904,9 +906,9 @@ snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) {
   checkEffects <- function(eff) {
 
     if (is.null(eff)) return(NULL)
-    eff <- default.list(eff, 
+    eff <- default.list(eff,
         c("var", "type", "var.levels", "snp.levels", "method", "var.base"),
-             list("ERROR", 1, 0, 1, c("UML", "CML", "EB"), 0), 
+             list("ERROR", 1, 0, 1, c("UML", "CML", "EB"), 0),
             error=c(1, 0, 0, 0, 0, 0))
     temp <- eff$method %in% c("UML", "CML", "EB")
     if (any(temp)) {
@@ -931,11 +933,11 @@ snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) {
           } else {
             name <- paste(method, ".StratEffects", sep="")
           }
-          ret[[name]] <- try(effects.init(temp$parms, temp$cov, eff$var1, 
-                         eff$var2, eff$snp.levels, eff$var.levels, 
+          ret[[name]] <- try(effects.init(temp$parms, temp$cov, eff$var1,
+                         eff$var2, eff$snp.levels, eff$var.levels,
                          base1=0, base2=eff$var.base, int.var=eff$int.var,
                          effects=type, sep1=eff$sep), silent=TRUE)
-          if (class(ret[[name]]) == "try-error") ret[[name]] <- NULL
+          if (inherits(ret[[name]],"try-error")) ret[[name]] <- NULL
         }
       }
     }
@@ -978,14 +980,14 @@ snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) {
 
       # Get the dummy variable names
       eff$var2 <- paste(eff$var, "_", temp, sep="")
- 
+
       flag <- 1
-      
+
     } else {
       eff$var2 <- eff$var
       flag     <- 0
     }
- 
+
     # Check if var is also an interaction
     temp <- eff$var %in% V.vars
     if (all(temp)) {
@@ -994,11 +996,11 @@ snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) {
         eff$int.var <- paste(eff$var1, eff$var, sep="")
       } else {
         eff$int.var <- paste(eff$var1, eff$var2, sep="")
-      } 
+      }
     } else {
       eff$int.var <- NULL
     }
-  
+
     # Get the names for the output data set
     n1 <- length(eff$snp.levels)
     n2 <- length(eff$var.levels)
@@ -1006,18 +1008,18 @@ snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) {
     names <- matrix(data=" ", nrow=n1, ncol=n2)
     if (!flag) {
       for (i in 1:n1) {
-        names[i,] <- paste(eff$var1, eff$snp.levels[i], "_", 
+        names[i,] <- paste(eff$var1, eff$snp.levels[i], "_",
                          eff$var2, "_", eff$var.levels, sep="")
       }
     } else {
       temp <- c(baseline, eff$var2)
       for (i in 1:n1) {
-        names[i,] <- paste(eff$var1, eff$snp.levels[i], "_", 
+        names[i,] <- paste(eff$var1, eff$snp.levels[i], "_",
                            temp, sep="")
       }
     }
     eff$out.names <- names
-     
+
     # Get the list names
     temp <- character(length(eff$type))
     i <- 1
@@ -1026,7 +1028,7 @@ snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) {
         temp[i] <- ".JointEffects"
       } else {
         temp[i] <- ".StratEffects"
-      } 
+      }
       i <- i + 1
     }
     eff$list.names <- temp
@@ -1037,8 +1039,8 @@ snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) {
 
   # Check the input lists
   snp.list   <- check.snp.list(snp.list)
-  pheno.list <- default.list(pheno.list, 
-                c("response.var"), list("ERROR"), error=c(1)) 
+  pheno.list <- default.list(pheno.list,
+                c("response.var"), list("ERROR"), error=c(1))
 
   # Rename main.vars to X.vars, int.vars to V.vars
   pheno.list$X.vars <- pheno.list[["main.vars", exact=TRUE]]
@@ -1069,11 +1071,11 @@ snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) {
   temp.list <- check.temp.list(temp.list)
   temp <- c("BFGS", "Nelder-Mead", "BFGS", "CG", "L-BFGS-B", "SANN", "IRLS")
 
-  op <- default.list(op, 
+  op <- default.list(op,
         c("id", "print", "optimizer", "snpName", "tests.CML",
           "tests.EB", "genetic.model", "geno.counts", "subject.counts",
           "test.omnibus", "test.main", "test.inter", "tests.UML",
-          "allele.cc"), 
+          "allele.cc"),
         list(1, 0, "BFGS", "SNP_", 1, 1, 0, 0, 0, 0, 0, 0, 1, 1),
        checkList=list(NA, 0:1, temp, NA, 0:1, 0:1, 0:3,
                       0:1, 0:1, 0:1, 0:1, 0:1, NA, 1:2))
@@ -1109,15 +1111,15 @@ snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) {
   stream <- snp.list[["stream", exact=TRUE]]
 
   # All the variables must be given by variable name (not column number)
-  if ((is.numeric(pheno.list$response.var)) || 
+  if ((is.numeric(pheno.list$response.var)) ||
       (is.numeric(pheno.list$strata.var)) ||
       (is.numeric(pheno.list$factor.vars)) ||
       (is.numeric(pheno.list$id.var)) ) {
     stop("ERROR: variables must be specified by name, not column number")
   }
-  if ((!main.form) && (is.numeric(pheno.list$X.vars))) 
+  if ((!main.form) && (is.numeric(pheno.list$X.vars)))
     stop("ERROR: variables must be specified by name, not column number")
-  if ((!int.form) && (is.numeric(pheno.list$V.vars))) 
+  if ((!int.form) && (is.numeric(pheno.list$V.vars)))
     stop("ERROR: variables must be specified by name, not column number")
 
   # Keep only the variables we need
@@ -1141,12 +1143,12 @@ snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) {
     tlist$file.index <- 1
     temp             <- paste("TMP_", temp.list$id, sep="")
     tempfile         <- getTempfile(temp.list$dir, temp)
-    tlist$outfile    <- tempfile 
+    tlist$outfile    <- tempfile
   }
 
   temp  <- try(getData.1(snp.list, pheno.list, temp.list, op=tlist),
                silent=TRUE)
-  if (class(temp) == "try-error") {
+  if (inherits(temp,"try-error")) {
     print(temp)
     stop("ERROR loading data")
   }
@@ -1192,14 +1194,14 @@ snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) {
     stop.stream     <- temp$stop.stream
     snp             <- temp$snp
     control.ids     <- getListName(temp, "control.ids")
-    codes           <- getInheritanceVec(snp.list$genetic.model, 
+    codes           <- getInheritanceVec(snp.list$genetic.model,
                            recode=snp.list$recode)
   }
 
   rm(temp, tlist, snp.list, phenoData.list, controls)
   temp <- gc(verbose=FALSE)
 
-  # Get the response variable 
+  # Get the response variable
   response0 <- as.numeric(phenoData0[, pheno.list$response.var])
   if (!any(response0 %in% 0:1)) stop("ERROR: response must be 0-1")
 
@@ -1263,11 +1265,11 @@ snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) {
   genetic.model <- op$genetic.model
 
   # Check for effects
-  op$effects  <- setupEffects(getListName(op, "effects"), facVars, 
-                             pheno.list$X.vars, pheno.list$V.vars) 
+  op$effects  <- setupEffects(getListName(op, "effects"), facVars,
+                             pheno.list$X.vars, pheno.list$V.vars)
   effects     <- getListName(op, "effects")
-  effectsFlag <- !is.null(effects) 
- 
+  effectsFlag <- !is.null(effects)
+
   # Get a logical vector for obtaining the cc counts
   if (op$subject.counts) {
     cntrl      <- (pheno.list$cc.var == 0)
@@ -1284,7 +1286,7 @@ snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) {
   } else {
     out.dir <- NULL
   }
- 
+
   # Determine if tests will be computed
   omniFlag  <- op$test.omnibus
   mainFlag  <- op$test.main
@@ -1305,7 +1307,7 @@ snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) {
   }
 
   # Get the variable names that will be used
-  log.vnames <- logistic.vnames(design.X0, design.V0, nStrata, 
+  log.vnames <- logistic.vnames(design.X0, design.V0, nStrata,
                          snpName=op$snpName, out.est=out.est,
                          genetic.model=genetic.model)
   est.p  <- log.vnames[["est.p", exact=TRUE]]
@@ -1321,7 +1323,7 @@ snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) {
     op$test2.vars <- NULL
     n.tests       <- length(test2.vars)
   }
-  rm(facFlag, facVars, X.newVars, V.newVars) 
+  rm(facFlag, facVars, X.newVars, V.newVars)
 
   # Open the output file
   fileFlag   <- 1 - is.null(op$out.file)
@@ -1333,7 +1335,7 @@ snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) {
     est.test <- temp$est.test
     est.pval <- temp$est.pval
     est.corr <- temp$est.corr
-  } 
+  }
 
   rm(log.vnames)
 
@@ -1367,7 +1369,7 @@ snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) {
       } else {
         majMin <- "  "
       }
-     
+
       # Get the MAF
       if (maf.flag) {
         maf <- maf.vec[i]
@@ -1378,19 +1380,19 @@ snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) {
       # For imputed data
       if (ProbG1.flag) ProbG1.vec <- as.numeric(getVecFromStr(ProbG1[i], delimiter=delimiter))
     } else {
-      if (i > 1) { 
+      if (i > 1) {
 
         start.stream <- start.stream + 1
 
         snp <- getNextObs(i, snpFid, snpFlag, snpNames, tempfile, delete,
-                          start.stream, stop.stream, delimiter) 
+                          start.stream, stop.stream, delimiter)
         if (is.null(snp)) break
       }
       snp.name <- snp[1]
       if (snpFlag) snpNames <- update.snpNames(snpNames, snp.name)
-      
+
       # Get the correct order and recode
-      temp <- orderSNP(snp[-1], snp.name, subj.order2, total.nsubjects, 
+      temp <- orderSNP(snp[-1], snp.name, subj.order2, total.nsubjects,
                      in.miss, heter.codes, subjFlag=subjFlag, subj.ids=subj.ids,
                      out.genotypes=codes, control.ids=control.ids)
 
@@ -1424,7 +1426,7 @@ snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) {
     # Get the genotype counts
     genoCounts <- getGenoCounts(snp)
     n.genos    <- sum(genoCounts > 0)
- 
+
     # Make sure that there is more than 1 genotype
     if (n.genos < 2) {
       # Do not call snp.logistic
@@ -1437,7 +1439,7 @@ snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) {
       } else {
         op$geno.binary   <- 0
         op$genetic.model <- genetic.model
-      } 
+      }
 
       # Fit the model
       ret <- try(snp.main(response, snp, X.main=design.X, X.int=design.V,
@@ -1449,14 +1451,14 @@ snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) {
     vListIndex <- getVListIndex(n.genos)
 
     # Add the snp name
-    ret$snp <- snp.name 
+    ret$snp <- snp.name
 
     # Compute tests
     if (tests) {
       if (tests.UML) ret <- addToList(ret, "UML")
       if (tests.CML) ret <- addToList(ret, "CML")
       if (tests.EB)  ret <- addToList(ret, "EB")
-    } 
+    }
 
     # Effects
     if (effectsFlag) ret <- calcEffects(effects, ret)
@@ -1470,7 +1472,7 @@ snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) {
       save(ret, file=temp)
     }
     if (fileFlag) temp <- outputRow()
- 
+
   } # END: while(1)
 
   if (fileFlag) close(fid)
@@ -1479,23 +1481,24 @@ snp.scan.logistic <- function(snp.list, pheno.list, op=NULL) {
 
 } # END: snp.scan.logistic
 
-# Function to permform a SNP by environment interaction analysis for 1 SNP.
-snp.logistic <- function(data, response.var, snp.var, main.vars=NULL, 
-                         int.vars=NULL, strata.var=NULL, op=NULL) {
+# Function to permform a SNP by environment interaction analysis for 1 SNP, with a trend model.
+snp.logistic <- function(data, response.var, snp.var, main.vars=NULL,
+                         int.vars=NULL, strata.var=NULL, op=NULL, additive.trend = FALSE) 
+{
 
   # INPUT:
   # data           Data frame containing all the data.
   #                No default
-  # response.var   Name of the binary response variable coded 
+  # response.var   Name of the binary response variable coded
   #                as 0 (controls) and 1 (cases)
   #                No default.
-  # snp.var        Name of the genotype variable coded as 0, 1, 2 (or 0, 1)
+  # snp.var        Name of the genotype variable coded as 0, 1, 2
   #                No default.
   # main.vars      Character vector of the main effects variables or
   #                a formula.
   #                The default is NULL
   # int.vars       Names of all covariates of interest that will
-  #                interact with the SNP variable or a formula. 
+  #                interact with the SNP variable or a formula.
   #                The default is NULL
   # strata.var     Name of the stratification variable(s) or a formula.
   #                Any character variable or factor will be considered
@@ -1503,38 +1506,41 @@ snp.logistic <- function(data, response.var, snp.var, main.vars=NULL,
   #                continuous. An intercept column will be automatically
   #                included.
   #                The default is NULL (1 stratum)
-  # ProbG1.var     Variable for Prob(G = 1) or NULL. Not needed if snp.var  
+  # ProbG1.var     Variable for Prob(G = 1) or NULL. Not needed if snp.var
   #                is of length 3.
   #                The default is NULL.
+  # additive.trend T or F, if T, use the additive trend implementation.
   #####################################################################
-  # op              List with the following names. 
+  # op              List with the following names.
   #  genetic.model  0-2
   #                 0: trend
   #                 1: dominant
   #                 2: recessive
   #                 3: general
-  #                 The default is 0. 
+  #                 The default is 0.
   #                 This option has no effect if the snp is binary.
   #  reltol         Stopping tolerance
   #                 The default is 1e-8
   #  maxiter        Maximum number of iterations
   #                 The default is 100
-  #  optimizer      One of :"Nelder-Mead", "BFGS", "CG", "L-BFGS-B", 
+  #  optimizer      One of :"Nelder-Mead", "BFGS", "CG", "L-BFGS-B",
   #                 "SANN", "IRLS"
   #                 The default is "BFGS"
   #  snpName        Name to be used in the SNP variable and interaction
   #                 variables.
   #                 The default is "SNP_".
   #  debug          0 or 1 to show the IRLS iterations.
-  #                 The default is 0 
-  #  fit.null       0 or 1 to fit a NULL model which excludes the snp, 
+  #                 The default is 0
+  #  indep          0 or 1, if 1, then we fit the CML model
+  #  fit.null       0 or 1 to fit a NULL model which excludes the snp,
   #                 interactions with the snp, and the interacting covariates
   #                 This option takes precedence over zero.vars.
   #                 The default is 0.
+  #  reparam        0 or 1 , 1 for fitting under NULL hypothesis
   #  zero.vars      Character vector of variable names to fix or a list
   #                 with names "snp.var", "main.vars", int.vars", and
   #                 "strata.var".
-  #                 If zero.vars is a list, then the names is the list can 
+  #                 If zero.vars is a list, then the names is the list can
   #                 either be formulas or character vectors.
   #                 The default is 0.
   ######################################################################
@@ -1544,6 +1550,8 @@ snp.logistic <- function(data, response.var, snp.var, main.vars=NULL,
   if (!is.data.frame(data)) stop("data must be a data frame")
   ProbG1.var <- NULL
 
+  #print("DEBUG: Var names for data, snplog")
+  #print(colnames(data))
   n.snp.var <- length(snp.var)
   #if (!(n.snp.var %in% c(1, 3))) {
   #  stop("snp.var must be a single variable or 3 variables for imputed genotypes")
@@ -1552,7 +1560,7 @@ snp.logistic <- function(data, response.var, snp.var, main.vars=NULL,
 
   # Check variable names
   vlist <- list(response.var=response.var, snp.var=snp.var, main.vars=main.vars,
-               int.vars=int.vars, strata.var=strata.var, ProbG1.var=ProbG1.var)
+                int.vars=int.vars, strata.var=strata.var, ProbG1.var=ProbG1.var)
   vars <- getAllVars(vlist, names=names(vlist))
   temp <- !(vars %in% colnames(data))
   if (any(temp)) {
@@ -1567,36 +1575,26 @@ snp.logistic <- function(data, response.var, snp.var, main.vars=NULL,
   main.call   <- main.vars
   int.call    <- int.vars
   strata.call <- strata.var
-  
-  op <- default.list(op, c("snpName", "fit.null", "imputed", "genetic.model"), 
-                     list("SNP_", 0, 0, 0))
+
+  op <- default.list(op, c("snpName", "fit.null", "imputed", "genetic.model","indep"),
+                     list("SNP_", 0, 0, 0, 1))
   op$imputed <- 0
   if ((!is.numeric(snp.var)) && (n.snp.var == 1)) op$snpName <- snp.var
   zeroFlag  <- 0
   zero.vars <- NULL
   #if ((n.snp.var > 1) || (!is.null(ProbG1.var))) {
   #  op$imputed <- 1
-  #} 
+  #}
   if (n.snp.var == 1) {
     snp <- as.numeric(unfactor(data[, snp.var]))
-    snp <- snp[is.finite(snp)] 
+    snp <- snp[is.finite(snp)]
     #if (!all(snp %in% 0:2)) op$imputed <- 1
     if (!all(snp %in% 0:2)) stop("snp.var must be coded 0-1-2")
   }
 
   imputed       <- op$imputed
   genetic.model <- op$genetic.model
-  if (!(genetic.model %in% 0:3)) stop("op$genetic.model must be 0-3")
-  #if ((imputed) && (genetic.model == 3)) stop("op$genetic.model must be 0-2 for imputed genotypes")
-  #if ((imputed) && (n.snp.var == 1) && (genetic.model != 0)) {
-  #  stop("op$genetic.model must be 0 for imputed genotypes and length(snp.var) = 1")
-  #}
-  #if ((imputed) && (n.snp.var == 1) && (is.null(ProbG1.var))) {
-  #  stop("ProbG1.var must be specified for imputed genotypes and length(snp.var) = 1")
-  #}
-  #if ((imputed) && (length(ProbG1.var) > 1)) stop("ProbG1.var must be NULL or of length 1")
-
-
+  if (!(genetic.model %in%c(0,1,2,3) )) stop("op$genetic.model must be 0-3")
   main.form <- ("formula" %in% class(main.vars))
   int.form  <- ("formula" %in% class(int.vars))
   s.form    <- ("formula" %in% class(strata.var))
@@ -1608,7 +1606,7 @@ snp.logistic <- function(data, response.var, snp.var, main.vars=NULL,
   #  snp2 <- as.numeric(unfactor(data[, snp.var[2]]))
   #  snp3 <- as.numeric(unfactor(data[, snp.var[3]]))
   #  temp <- (snp1 %in% 0) & (snp2 %in% 0) & (snp3 %in% 0)
-  #  if (any(temp)) data[temp, snp.var] <- NA 
+  #  if (any(temp)) data[temp, snp.var] <- NA
   #}
 
   # Remove missing values
@@ -1620,7 +1618,7 @@ snp.logistic <- function(data, response.var, snp.var, main.vars=NULL,
   rm(vlist, vars)
   temp <- gc(verbose=FALSE)
 
-  # Get the response variable 
+  # Get the response variable
   D    <- unfactor(data[, response.var])
   nobs <- length(D)
 
@@ -1631,26 +1629,26 @@ snp.logistic <- function(data, response.var, snp.var, main.vars=NULL,
   if (n.snp.var == 1) {
     snp  <- as.numeric(unfactor(data[, snp.var]))
   } else {
-  #  snp1 <- as.numeric(unfactor(data[, snp.var[1]]))
-  #  snp2 <- as.numeric(unfactor(data[, snp.var[2]]))
-  #  snp3 <- as.numeric(unfactor(data[, snp.var[3]]))
+    #  snp1 <- as.numeric(unfactor(data[, snp.var[1]]))
+    #  snp2 <- as.numeric(unfactor(data[, snp.var[2]]))
+    #  snp3 <- as.numeric(unfactor(data[, snp.var[3]]))
 
-  #  if (genetic.model == 0) {
-  #    snp <- snp2 + 2*snp3
-  #  } else if (genetic.model == 1) {
-  #    snp <- snp2 + snp3
-  #  } else if (genetic.model == 2) {
-  #    snp <- snp3
-  #  } 
+    #  if (genetic.model == 0) {
+    #    snp <- snp2 + 2*snp3
+    #  } else if (genetic.model == 1) {
+    #    snp <- snp2 + snp3
+    #  } else if (genetic.model == 2) {
+    #    snp <- snp3
+    #  }
 
     # Add it ot the data frame
-  #  data[, op$snpName] <- snp
+    #  data[, op$snpName] <- snp
 
     # Save Prob(G = 1) if needed
-  #  if (is.null(ProbG1)) ProbG1 <- snp2
- 
-  #  rm(snp1, snp2, snp3)
-  #  gc()
+    #  if (is.null(ProbG1)) ProbG1 <- snp2
+
+    #  rm(snp1, snp2, snp3)
+    #  gc()
   }
   #if (imputed) op$genetic.model <- 0
 
@@ -1680,10 +1678,11 @@ snp.logistic <- function(data, response.var, snp.var, main.vars=NULL,
   int.vars  <- colnames(design.V0)
 
   # For fitting a null model
+  # TODO: Implement this in the trend case
   if (op$fit.null) {
     # Remove interaction vars, snp
     temp         <- getAllVars(int.call)
-    temp         <- unique(temp, int.vars) 
+    temp         <- unique(temp, int.vars)
     zero.vars    <- temp
     int.vars     <- NULL
     design.V0    <- NULL
@@ -1714,7 +1713,11 @@ snp.logistic <- function(data, response.var, snp.var, main.vars=NULL,
   }
 
   main.vars   <- colnames(design.X0)
-  strata.var  <- colnames(design.S0)
+  strata.var  <- 1:ncol(design.S0)
+  colnames(design.S0)<-strata.var
+  #print("DEBUG: design.S0")
+  #print(head(design.S0))
+  #print(strata.var)
 
   # Check for non-dummy continuous variables ant print a warning
   wflag <- 0
@@ -1724,8 +1727,15 @@ snp.logistic <- function(data, response.var, snp.var, main.vars=NULL,
   if (wflag) warning("For stability of the algorithm, continuous variables should be scaled")
 
   # Call the core function
-  ret <- snp.main(D, snp, X.main=design.X0, X.int=design.V0,
-                      X.strata=design.S0, ProbG1=ProbG1, op=op) 
+
+  if(additive.trend){
+    ret <- snp.main.additiveTrend(D, snp, X.main=design.X0, X.int=design.V0,
+                    X.strata=design.S0, ProbG1=ProbG1, op=op)
+  }else{
+    ret <- snp.main(D, snp, X.main=design.X0, X.int=design.V0,
+                    X.strata=design.S0, ProbG1=ProbG1, op=op)
+  }
+
 
   # Add model info
   model <- list(data=data, response.var=response.var, snp.var=op$snpName,
@@ -1739,21 +1749,21 @@ snp.logistic <- function(data, response.var, snp.var, main.vars=NULL,
 
 } # END: snp.logistic
 
-# Function to permform a SNP by environment interaction analysis for 1 SNP.
+# The core function
 snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
-                      X.strata=NULL, ProbG1=NULL, op=NULL) {
-
+                      X.strata=NULL, ProbG1=NULL, op=NULL) 
+{
   # INPUT:
   # D           Binary response vector coded as 0 (controls) and 1 (cases)
   #             No default.
   # snp         Vector of genotypes or 3 column matrix for imputed snp
   #             No default.
   # X.main      Design matrix for all covariates of interest, excluding
-  #             the SNP variable. This matrix should NOT include an 
+  #             the SNP variable. This matrix should NOT include an
   #             intercept column.
   #             The default is NULL
   # X.int       Design matrix for all covariates of interest that will
-  #             interact with the SNP variable. 
+  #             interact with the SNP variable.
   #             This matrix should NOT include an intercept column.
   #             The default is NULL
   # X.strata    NULL or a design matrix for the stratification.
@@ -1761,26 +1771,26 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
   # ProbG1      Vector of Prob(G=1) for imputed SNPs
   #             The default is NULL
   #####################################################################
-  # op              List with the following names. 
+  # op              List with the following names.
   #  genetic.model  0-3
   #                 0: trend
   #                 1: dominant
   #                 2: recessive
-  #                 3: general 
-  #                 The default is 0. 
+  #                 3: general
+  #                 The default is 0.
   #                 This option has no effect if the snp is binary.
   #  reltol         Stopping tolerance
   #                 The default is 1e-8
   #  maxiter        Maximum number of iterations
   #                 The default is 100
-  #  optimizer      One of :"Nelder-Mead", "BFGS", "CG", "L-BFGS-B", 
+  #  optimizer      One of :"Nelder-Mead", "BFGS", "CG", "L-BFGS-B",
   #                 "SANN"
   #                 The default is "BFGS"
   #  snpName        Name to be used in the SNP variable and interaction
   #                 variables.
   #                 The default is "SNP_".
   #  debug          0 or 1 to show the IRLS iterations.
-  #                 The default is 0 
+  #                 The default is 0
   #  errorCheck     0 or 1 to check for errors with the input arguments
   #                 The default is 1
   #  use.C.code     0 or 1 to call the C code for the BFGS optimizer
@@ -1792,7 +1802,7 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
   #  num.deriv      0 or 1 to use numerical derivatives.
   #                 Numerical derivatives will be used if genetic.model > 0
   #                 The default is 0
-  #  imputed        0 or 1 for imputed SNPs 
+  #  imputed        0 or 1 for imputed SNPs
   #  s.1catVar      0 or 1 for 1 categorical strata var
   #                 The default is 0
   ###################################################################
@@ -1807,11 +1817,11 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
   #  A list with sublists named UML (standard logistic regression),
   #  CML (conditional ML), and EB (empirical bayes).
   #  Each sublist contains the parameter estimates and covariance
-  #  matrix. The lists UML and CML also contain the log-likelihood. 
+  #  matrix. The lists UML and CML also contain the log-likelihood.
 
   # Local function to return the initial estimates
-  getInit <- function() {
-
+  getInit <- function() 
+  {
     # Define the formula
     ff <- "D ~ 1"
     if (nx) ff <- paste(ff, " + X.main ", sep="")
@@ -1828,7 +1838,7 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
     ff <- as.formula(ff)
 
     # Get variable names for Z
-    v <- logistic.vnames(X.main, X.int, nStrata, snpName=op$snpName, 
+    v <- logistic.vnames(X.main, X.int, nStrata, snpName=op$snpName,
            genetic.model=genetic.model, fit.null=fit.null, zeroSNP=zeroSNP)
 
     # Call after snp was multiplied by V
@@ -1840,7 +1850,7 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
     UML.parms <- fit$coefficients
     loglike   <- getLoglike.glm(fit)
     cov       <- summary(fit)$cov.scaled
-    cnames    <- v$UML.names
+    cnames    <- v$UML.names.full
     #all       <- v$all.names
     names(UML.parms) <- cnames
     parms <- UML.parms
@@ -1866,7 +1876,7 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
     temp    <- is.na(UML.parms)
     cnames  <- cnames[!temp]
     colnames(cov) <- cnames
-    rownames(cov) <- cnames 
+    rownames(cov) <- cnames
     if (any(temp)) {
       naFlag <- 1
 
@@ -1878,12 +1888,12 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
       temp2  <- (naPos <= nx + 1)
       if (any(temp2)) naXPos <- naPos[temp2] - 1
       temp2 <- !temp2
-      if (any(temp2)) naVPos <- naPos[temp2] - nx - 2 
-      
+      if (any(temp2)) naVPos <- naPos[temp2] - nx - 2
+
       UML.parms <- UML.parms[!temp]
       parms <- parms[!is.na(parms)]
     }
-    
+
 
     # Remove the special character "`" that glm will sometimes
     #  put in the variable names
@@ -1891,9 +1901,9 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
     cov   <- changeStr.names(cov, "`", replace="")
 
     alpha <- parms[1]
-    beta  <- parms[-1]    
+    beta  <- parms[-1]
 
-    # Vector for xi parms. Only intercept will be non zero 
+    # Vector for xi parms. Only intercept will be non zero
     xi <- rep(0, times=nStrata)
 
     total <- 2*length(D)
@@ -1909,7 +1919,7 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
           maxi <- c(maxi, i)
         } else {
           xi[i] <- log(freq/(1-freq))
-        }    
+        }
         if (!is.finite(xi[i])) xi[i] <- 0
         if (!is.null(mini)) xi[mini] <- min(xi, -5)
         if (!is.null(maxi)) xi[maxi] <- max(xi, 5)
@@ -1922,7 +1932,7 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
         xi[1] <- 1
       } else {
         xi[1] <- log(freq/(1-freq))
-      }    
+      }
       if (!is.finite(xi[1])) xi[1] <- 0
     }
 
@@ -1936,8 +1946,8 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
   } # END: getInit
 
   # Function to compute Pdg.xs = P(D=d, G=g | X, S)
-  Pdg.xs <- function(ret, alpha, beta, xi) {
- 
+  Pdg.xs <- function(ret, alpha, beta, xi) 
+  {
     # Get the xi parameters for each observation
     if (nStrata == 1) {
       temp.xi <- xi
@@ -1955,31 +1965,33 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
     ret[, d0g2.col] <- 2*temp.xi
     ret[, d1g0.col] <- alpha + (Z0 %*% beta)
     ret[, d1g1.col] <- alpha + (Z1 %*% beta) + log2 + temp.xi
-    ret[, d1g2.col] <- alpha + (Z2 %*% beta) + 2*temp.xi 
+    ret[, d1g2.col] <- alpha + (Z2 %*% beta) + 2*temp.xi
     ret             <- exp(ret)
 
     # For a binary snp that the user input
     if (geno.binary) ret[, g2.col] <- 0
 
-    # Compute the sum over (d,g) 
+    # Compute the sum over (d,g)
     sum <- rowSums(ret)
 
     # Divide by sum
     ret <- matrixDivideVec(ret, sum)
 
     list(Pdg.matrix=ret, Pdg.rowSums=sum)
-    
+
   } # END: Pdg.xs
 
   # Function to compute P(D=1 | X,S)
-  Pd1.xs <- function(pmat) {
+  Pd1.xs <- function(pmat) 
+  {
 
     rowSums(pmat[, d1.col])
 
   } # END: Pd1.xs
 
   # Function to compute E(DG | X,S)
-  Edg.xs <- function(pmat) {
+  Edg.xs <- function(pmat) 
+  {
 
     if (gmodel3) {
       return(pmat[, c(d1g1.col, d1g2.col)])
@@ -1992,19 +2004,21 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
   } # END: Edg.xs
 
   # Function to compute E(G | X,S)
-  Eg.xs <- function(pmat) {
+  Eg.xs <- function(pmat) 
+  {
 
     temp <- pmat
     temp[, g2.col] <- 2*temp[, g2.col]
     temp <- temp[, c(g1.col, g2.col)]
-    
+
     rowSums(temp)
 
   } # END: Eg.xs
 
   # Function to compute E(DG^2 | X,S) = E(D^2G^2 | X,S)
-  Edgg.xs <- function(pmat) {
-    
+  Edgg.xs <- function(pmat) 
+  {
+
     if (geno.binary) {
       return(pmat[, d1g1.col])
     } else {
@@ -2014,19 +2028,21 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
   } # END: Edgg.xs
 
   # Function to compute E(G^2 | X,S)
-  Egg.xs <- function(pmat) {
-    
+  Egg.xs <- function(pmat) 
+  {
+
     temp <- pmat
     temp[, g2.col] <- 4*temp[, g2.col]
     temp <- temp[, c(g1.col, g2.col)]
-    
+
     rowSums(temp)
- 
+
   } # END: Egg.xs
 
   # Function to return a logical matrix to make the computation of
-  # the log-likelihood easier. 
-  getLoglike.mat <- function() {
+  # the log-likelihood easier.
+  getLoglike.mat <- function() 
+  {
 
     ret <- matrix(data=FALSE, nrow=n, ncol=nlevels)
 
@@ -2042,7 +2058,8 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
   } # END: getLoglike.mat
 
   # Function to compute the log-likelihood (or testing)
-  loc.getLoglike <- function(eta) {
+  loc.getLoglike <- function(eta) 
+  {
     alpha <- eta[alpha.row]
     beta  <- eta[beta.row]
     xi    <- eta[xi.row]
@@ -2076,19 +2093,19 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
   } # END: loc.getLoglike
 
   # Function to compute a Z matrix
-  getZ <- function(gvalue) {
-
+  getZ <- function(gvalue) 
+  {
     temp.V   <- NULL
     if (gmodel3) {
-      temp.snp <- matrix(data=0, nrow=n, ncol=2) 
+      temp.snp <- matrix(data=0, nrow=n, ncol=2)
       if (gvalue) temp.snp[, gvalue] <- 1
-      
+
       if (nv) {
         temp.V <- cbind(matrixMultVec(X.int, temp.snp[, 1]),
                         matrixMultVec(X.int, temp.snp[, 2]))
       }
     } else {
-      temp.snp <- rep(gvalue, times=n) 
+      temp.snp <- rep(gvalue, times=n)
       if (nv) temp.V <- matrixMultVec(X.int, temp.snp)
     }
     ret <- as.matrix(cbind(X.main, temp.snp, temp.V))
@@ -2098,23 +2115,23 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
   } # END: getZ
 
   # Function to compute Z matrix for imputed snp
-  getZ.imp <- function(genovec) {
-
+  getZ.imp <- function(genovec) 
+  {
     temp.V <- NULL
     if (nv) temp.V <- matrixMultVec(X.int, genovec)
     ret <- as.matrix(cbind(X.main, genovec, temp.V))
 
-    ret  
+    ret
 
   } # END: getZ.imp
 
   # Function to compute W(Y - mu)
-  getWtYmu <- function(eta=NULL, which=1) {
-
+  getWtYmu <- function(eta=NULL, which=1) 
+  {
     # eta     Vector of parms
-    #         Only needed for which = 1 
+    #         Only needed for which = 1
     # which   0 or 1, 1 is for the optimizer
-    #         The default is 1 
+    #         The default is 1
 
     # Get the matrix of probabilities
     if (fixFlag) eta <- fixGetEta(eta)
@@ -2125,10 +2142,10 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
     temp3 <- snp - Eg.xs(pmat)
 
     dim(temp1) <- c(1, n)
-    temp1      <- temp1 %*% X.main   
+    temp1      <- temp1 %*% X.main
     if (gmodel3) {
       dim(temp2) <- c(2, n)
-    } else { 
+    } else {
       dim(temp2) <- c(1, n)
     }
     temp2      <- temp2 %*% X.int
@@ -2143,17 +2160,17 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
   } # END: getWtYmu
 
   # Function to call the optimizer
-  callOptim <- function() {
-
+  callOptim <- function() 
+  {
     # Set the control list
     control <- list(fnscale=-1, maxit=op$maxiter, reltol=op$reltol)
 
     # Call the optimizer
     if (op$num.deriv) {
-      ret <- optim(eta0, loc.getLoglike, method=op$optimizer, 
+      ret <- optim(eta0, loc.getLoglike, method=op$optimizer,
                control=control, hessian=TRUE)
     } else {
-      ret <- optim(eta0, loc.getLoglike, gr=getWtYmu, method=op$optimizer, 
+      ret <- optim(eta0, loc.getLoglike, gr=getWtYmu, method=op$optimizer,
                control=control, hessian=TRUE)
     }
 
@@ -2179,8 +2196,8 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
   } # END: callOptim
 
   # Function to compute empirical bayes estimates
-  getEB <- function() {
-
+  getEB <- function() 
+  {
     #if (fixFlag) return(NULL)
 
     ids   <- c(alpha.row, beta.row)
@@ -2214,7 +2231,7 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
       temp <- removeOrKeepCols(X.int, 1, which=-1)
       if (gmodel3) {
         temp <- cbind(matrixMultVec(temp, fsnp[, 1]),
-                      matrixMultVec(temp, fsnp[, 2])) 
+                      matrixMultVec(temp, fsnp[, 2]))
       } else {
         temp <- matrixMultVec(temp, fsnp)
       }
@@ -2230,7 +2247,7 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
     # Compute the scores for UML
     temp   <- D - fitted.values
     score1 <- matrixMultVec(Z, temp)
- 
+
     # Get the matrix of probabilities P(D=d, G=g|X,S)
     parm2 <- ret$CML$parms
     if (fixFlag) parm2 <- fixGetEta(parm2)
@@ -2264,7 +2281,7 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
       score2 <- cbind(temp1, temp2, temp3)
     } else {
       score2 <- cbind(temp1, temp3)
-    } 
+    }
 
     # Free memory
     rm(temp1, temp2, temp3, Z, pmat, parm2)
@@ -2280,7 +2297,7 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
       dim(temp1) <- dim1
       dim(temp2) <- dim2
       temp <- temp + (temp1 %*% temp2)
-    } 
+    }
 
     cov12 <- cov1 %*% temp %*% ret$CML$cov
 
@@ -2289,7 +2306,7 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
 
     rm(score1, score2)
     temp <- gc(verbose=FALSE)
-    
+
     # Initialize the covariance matrix
     nb   <- length(parms)
     nb2  <- 2*nb
@@ -2312,11 +2329,11 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
 
     list(parms=parms, cov=cov, UML.CML.cov=UML.CML.cov)
 
-  } # END: getEB 
+  } # END: getEB
 
   # Function to call before returning the return list
-  setReturn <- function(ret) {
-
+  setReturn <- function(ret) 
+  {
     class(ret) <- "snp.logistic"
     if (!is.null(ret$UML)) {
       class(ret$UML) <- "UML"
@@ -2381,8 +2398,8 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
   } # END: setReturn
 
   # Function to call glm for a factor snp (for now)
-  fitGLM <- function() {
-
+  fitGLM <- function() 
+  {
     snp  <- factor(snp)
     temp <- callGLM(D, X.main=X.main, X.int=X.int, int.vec=snp,
                     family=op$family, prefix=op$snpName)
@@ -2390,7 +2407,7 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
     if (temp$converged) {
       uml         <- list(parms=temp$coefficients)
       uml$cov     <- summary(temp)$cov.scaled
-      uml$loglike <- getLoglike.glm(temp)  
+      uml$loglike <- getLoglike.glm(temp)
     }
 
     list(UML=uml)
@@ -2398,8 +2415,8 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
   } # END: fitGLM
 
   # Function to get a new eta from fixEta0
-  fixGetEta <- function(eta) {
-
+  fixGetEta <- function(eta) 
+  {
     ret <- fixEta0
     ret[fixMap] <- eta
     ret
@@ -2407,8 +2424,8 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
   } # END: fixGetEta
 
   # Wrapper for the C function
-  CML_EB.R <- function() {
-
+  CML_EB.R <- function() 
+  {
     if (op$use.C.code == 0) return(NULL)
     if (!is.loaded("CML_EB")) {
       warning("CML_EB function is not loaded")
@@ -2423,7 +2440,7 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
     }
 
     error <- 1
- 
+
     # Make the matrices vectors by row
     if (!nx) X.main <- 0
     if (!nv) X.int  <- 0
@@ -2450,8 +2467,8 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
       temp <- match(op$snpName, names(eta0))
       if (!is.na(temp)) {
         eta0   <- eta0[-temp]
-        nparms <- length(eta0) 
-        nbeta  <- nbeta - 1 
+        nparms <- length(eta0)
+        nbeta  <- nbeta - 1
       }
     }
 
@@ -2482,7 +2499,7 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
     names(cml.parms) <- cnames
     colnames(cml.cov) <- cnames
     rownames(cml.cov) <- cnames
-   
+
     cnames <- cnames[1:(1+nbeta)]
     eb.parms <- temp$eb.parms
     names(eb.parms) <- cnames
@@ -2496,14 +2513,14 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
     colnames(uml.cml.cov) <- paste("CML.", names(eta0), sep="")
 
     # Return list
-    list(CML=list(parms=cml.parms, cov=cml.cov, loglike=temp$cml.ll), 
+    list(CML=list(parms=cml.parms, cov=cml.cov, loglike=temp$cml.ll),
          EB=list(parms=eb.parms, cov=eb.cov, UML.CML.cov=uml.cml.cov))
 
   } # END: CML_EB.R
 
   # Function to check the initial estimates of CML
-  check_init <- function() {
-
+  check_init <- function() 
+  {
     new <- eta0
 
     # If initial estimates were passed in, then use them
@@ -2512,7 +2529,7 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
       if (length(op_eta0) != nparms) stop("ERROR: init.parms has the wrong length")
       new[] <- op_eta0
     }
-   
+
     maxll <- loc.getLoglike(eta0)
 
     maxit <- 100
@@ -2560,10 +2577,10 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
   } # END: check_init
 
   # Check the options list
-  op <- default.list(op, c("reltol", "maxiter", "optimizer", 
+  op <- default.list(op, c("reltol", "maxiter", "optimizer",
         "snpName", "debug", "genetic.model", "errorCheck", "geno.binary",
         "use.C.code", "only.UML", "fit.null", "num.deriv", "imputed",
-        "s.1catVar"), 
+        "s.1catVar"),
          list(1e-8, 100, "BFGS", "SNP_", 0, 0, 1, 0, 1, 0, 0, 0, 0, 0))
 
   snp.nc   <- ncol(snp)
@@ -2574,17 +2591,22 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
   fixFlag  <- 0
   fit.null <- op$fit.null
   imputed  <- op$imputed
-  if (imputed) {
-    if (snp.nc == 3) {
+  if (imputed) 
+  {
+    if (snp.nc == 3) 
+    {
       ProbG1 <- snp[, 2]
- 
+
       # Create snp vector
       gmodel <- op$genetic.model
-      if (gmodel == 0) {
+      if (gmodel == 0) 
+      {
         snp <- snp[, 2] + 2*snp[, 3]
-      } else if (gmodel == 1) {
+      } else if (gmodel == 1) 
+      {
         snp <- snp[, 2] + snp[, 3]
-      } else if (gmodel == 2) {
+      } else if (gmodel == 2) 
+      {
         snp <- snp[, 3]
       } else {
         stop("Incorrect genetic.model with imputed data")
@@ -2593,87 +2615,102 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
 
     op$genetic.model <- 0
     if (is.null(ProbG1)) stop("ERROR: ProbG1 is NULL")
-  } else {
+  } else 
+  {
     ProbG1 <- 0
   }
   zeroSNP <- FALSE
-  if (fit.null) {
+  if (fit.null) 
+  {
     X.int <- NULL
     op$fixParms <- list(parms=op$snpName, values=0)
     zeroSNP <- TRUE
     fixFlag <- 1
-  } else {
+  } else 
+  {
     fixFlag <- !is.null(op[["fixParms", exact=TRUE]])
-    if (fixFlag) {
-      if (op$snpName %in% op$fixParms$parms) zeroSNP <- TRUE 
+    if (fixFlag) 
+    {
+      if (op$snpName %in% op$fixParms$parms) zeroSNP <- TRUE
     }
   }
   if (zeroSNP) op$genetic.model <- 0
   genetic.model <- op$genetic.model
   geno.binary   <- 0
-  
+
   if (!(genetic.model %in% c(0, 1, 2, 3))) stop("genetic.model must be 0-3")
-  
+
   # Get the number of genotypes
   snp  <- unfactor(snp, fun=as.numeric)
   usnp <- sort(unique(snp))
   n    <- length(usnp)
 
-  # If the input SNP is binary 0-1, set genetic.model to 0 
-  if (!imputed) {
+  # If the input SNP is binary 0-1, set genetic.model to 0
+  if (!imputed) 
+  {
     if (!all(usnp %in% c(0, 1, 2))) stop("snp is not coded correctly")
   }
-  if (n == 1) {
+  if (n == 1) 
+  {
     stop("snp only has 1 value")
-  } else if (n == 2) {
+  } else if (n == 2) 
+  {
     if (genetic.model) warning("genetic.model is set to 0")
-    genetic.model <- 0  
-       
+    genetic.model <- 0
+
     if (all(usnp %in% 0:1)) geno.binary <- 1
   }
   if (genetic.model %in% 1:2) geno.binary <- 1
-    
+
   # Check D
   if (!all(unique(D) %in% c(0, 1))) stop("D is not coded correctly")
 
-  if (!is.null(X.strata)) {
+  if (!is.null(X.strata)) 
+  {
     if (!is.matrix(X.strata)) stop("X.strata is not a matrix")
   }
 
-  gmodel3 <- (genetic.model == 3) 
+  gmodel3 <- (genetic.model == 3)
   n       <- length(D)
   if (op$optimizer != "BFGS") op$use.C.code <- 0
   #if (imputed) dim(ProbG1) <- c(n, 1)
 
   # See if X and V were given
-  if (is.null(X.main)) {
+  if (is.null(X.main)) 
+  {
     nx <- 0
-  } else {
+  } else 
+  {
     nx <- ncol(X.main)
   }
-  if (is.null(X.int)) {
+  if (is.null(X.int)) 
+  {
     nv <- 0
-  } else {
+  } else 
+  {
     nv <- ncol(X.int)
   }
 
   # Get the SNP vector for the specific genetic model
   fsnp <- snp
-  if (genetic.model == 1) {
+  if (genetic.model == 1) 
+  {
     # Dominant
     temp <- snp == 2
-    fsnp[temp] <- 1 
-  } else if (genetic.model == 2) {
+    fsnp[temp] <- 1
+  } else if (genetic.model == 2) 
+  {
     temp <- snp == 1
     fsnp[temp] <- 0
     temp <- snp == 2
     fsnp[temp] <- 1
-  } else if (genetic.model == 3) {
+  } else if (genetic.model == 3) 
+  {
     fsnp <- cbind(as.integer(snp == 1), as.integer(snp == 2))
   }
 
-  # Check the strata 
-  if (is.null(X.strata)) X.strata <- matrix(data=1, nrow=n, ncol=1) 
+  # Check the strata
+  if (is.null(X.strata)) X.strata <- matrix(data=1, nrow=n, ncol=1)
   nStrata <- ncol(X.strata)
 
   # Get the initial estimates
@@ -2697,28 +2734,37 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
   fitted.values <- temp$fitted.values
 
   # If there were NAs in UML, modify the design matrices
-  if (temp$naFlag) {
-    if (nx) {
+  if (temp$naFlag) 
+  {
+    if (nx) 
+    {
       pos <- temp$naXPos
       len <- length(pos)
-      if (len) {
-        if (len == nx) {
+      if (len) 
+      {
+        if (len == nx) 
+        {
           nx     <- 0
           X.main <- NULL
-        } else {
+        } else 
+        {
           X.main <- removeOrKeepCols(X.main, pos, which=-1)
           nx     <- ncol(X.main)
         }
       }
     }
-    if (nv) {
+    if (nv) 
+    {
       pos <- temp$naVPos
       len <- length(pos)
-      if (len) {
-        if (len == nv) {
+      if (len) 
+      {
+        if (len == nv) 
+        {
           nv    <- 0
           X.int <- NULL
-        } else {
+        } else 
+        {
           X.int <- removeOrKeepCols(X.int, pos, which=-1)
           nv    <- ncol(X.int)
         }
@@ -2727,7 +2773,8 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
   }
 
   # Determine if parameters are to be fixed
-  if (fixFlag) {
+  if (fixFlag) 
+  {
     #op$use.C.code <- 0
     temp <- op$fixParms
 
@@ -2745,12 +2792,14 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
     # Get the updated xi.row
     temp <- sum(xi.row %in% temp2)
     nxi  <- length(xi.row) - temp
-    if (nxi) {
+    if (nxi) 
+    {
       temp <- length(eta0)
       fix_xi.row <- (temp-nxi+1):temp
-    } else {
+    } else 
+    {
       fix_xi.row <- 0
-    } 
+    }
   }
   if (genetic.model) op$num.deriv <- 1
 
@@ -2758,7 +2807,8 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
   clist <- try(CML_EB.R(), silent=TRUE)
 
   if (checkTryError(clist, conv=0)) return(setReturn(ret))
-  if (!is.null(clist)) {
+  if (!is.null(clist)) 
+  {
     if (!length(clist)) return(setReturn(ret))
     ret$CML <- clist$CML
     ret$EB  <- clist$EB
@@ -2790,9 +2840,11 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
   Pdg <- matrix(data=0, nrow=n, ncol=nlevels)
 
   # Compute D*snp
-  if (gmodel3) {
+  if (gmodel3) 
+  {
     Dsnp <- matrixMultVec(fsnp, D)
-  } else {
+  } else 
+  {
     Dsnp <- D*fsnp
   }
 
@@ -2818,106 +2870,1731 @@ snp.main <- function(D, snp, X.main=NULL, X.int=NULL,
   ret    <- setReturn(ret)
 
   ret
-  
+
 } # END: snp.main
 
+
+# Function to permform a SNP by environment interaction analysis for 1 SNP, additive trend case.
+snp.main.additiveTrend = function(D, snp, X.main=NULL, X.int=NULL,
+                     X.strata=NULL, ProbG1=NULL, op=NULL) 
+{
+
+  # INPUT:
+  # D           Binary response vector coded as 0 (controls) and 1 (cases)
+  #             No default.
+  # snp         Vector of genotypes or 3 column matrix for imputed snp
+  #             No default.
+  # X.main      Design matrix for all covariates of interest, excluding
+  #             the SNP variable. This matrix should NOT include an
+  #             intercept column.
+  #             The default is NULL
+  # X.int       Design matrix for all covariates of interest that will
+  #             interact with the SNP variable.
+  #             This matrix should NOT include an intercept column.
+  #             The default is NULL
+  # X.strata    NULL or a design matrix for the stratification.
+  #             The default is NULL (1 stratum)
+  # ProbG1      Vector of Prob(G=1) for imputed SNPs
+  #             The default is NULL
+  #####################################################################
+  # op              List with the following names.
+  #  genetic.model  0-3
+  #                 0: trend
+  #                 1: dominant
+  #                 2: recessive
+  #                 3: general
+  #                 The default is 0.
+  #                 This option has no effect if the snp is binary.
+  #  reltol         Stopping tolerance
+  #                 The default is 1e-8
+  #  maxiter        Maximum number of iterations
+  #                 The default is 100
+  #  optimizer      One of :"Nelder-Mead", "BFGS", "CG", "L-BFGS-B",
+  #                 "SANN"
+  #                 The default is "BFGS"
+  #  snpName        Name to be used in the SNP variable and interaction
+  #                 variables.
+  #                 The default is "SNP_".
+  #  debug          0 or 1 to show the IRLS iterations.
+  #                 The default is 0
+  #  errorCheck     0 or 1 to check for errors with the input arguments
+  #                 The default is 1
+  #  use.C.code     0 or 1 to call the C code for the BFGS optimizer
+  #                 The default is 1
+  #  fit.null       0 or 1 for fitting a null model. All the necessary
+  #                 variables should already be removed from the design
+  #                 matrices.
+  #                 The default is 0
+  #
+  #  reparam        0 or 1 , 1 for fitting under NULL hypothesis
+  #  indep          0 or 1, 1 to include the CML
+  #  num.deriv      0 or 1 to use numerical derivatives.
+  #                 Numerical derivatives will be used if genetic.model > 0
+  #                 The default is 0
+  #  imputed        0 or 1 for imputed SNPs
+  #  s.1catVar      0 or 1 for 1 categorical strata var
+  #                 The default is 0
+  ###################################################################
+  #  fixParms       List with names "parms" and "value".
+  #                 The default is NULL
+  #    parms        Vector of parm names to fix
+  #                 No default
+  #    values       Numeric vector of fixed values
+  #                 No default
+  ######################################################################
+  # RETURN:
+  #  A list with sublists named UML (standard logistic regression),
+  #  CML (conditional ML), and EB (empirical bayes).
+  #  Each sublist contains the parameter estimates and covariance
+  #  matrix. The lists UML and CML also contain the log-likelihood.
+  #print("stepping into the main")
+  
+
+  # This function is used to enforce constraints (T1) and (T2), in case they are not satisfied already,
+  # by adjusting the values of beta_G1 and beta_G1E.
+  enforceConstraints <- function(eta0)
+  {
+    new <- eta0
+    if( (2 * eta0["x11"] - 1 < 0) | (2 * exp(eta0["x11"] + eta0["x11:x2_1"])-1 < 0))
+    {
+      new["x11"] <- log( (1 + exp(eta0["x12"])) / 2.0 )
+      new["x11:x2_1"] <- log( ( 1 + exp( eta0["x12:x2_1"] + eta0["x12"] ) ) / ( 1 + exp(eta0["x12"] )) )
+    }
+    new
+  }
+  
+  # Local function to return the initial estimates
+  getInit <- function(indep = FALSE) 
+  {
+    # Define the formula
+    ff <- "D ~ 1"
+    if (nx) ff <- paste(ff, " + X.main ", sep="")
+    if (!fit.null) 
+    {
+      if (!zeroSNP) ff <- paste(ff, "+ fsnp ", sep="")
+      if (nv) 
+      {
+        if (!gmodel3) 
+        {
+          ff <- paste(ff, "+ fsnp:X.int", sep="")
+        } else 
+        {
+          ff <- paste(ff, "+ fsnp[,1]:X.int + fsnp[,2]:X.int", sep="")
+        }
+      }
+    }
+    ff <- as.formula(ff)
+
+    # Get variable names for Z
+    v <- logistic.vnames(X.main, X.int, nStrata, snpName=op$snpName,
+                         genetic.model=3, fit.null=fit.null, zeroSNP=zeroSNP)
+
+    # Call after snp was multiplied by V
+    fit <- glm(ff, family=binomial(), model=FALSE, x=FALSE, y=FALSE)
+
+    # Check the convergence
+    if (!fit$converged) return(NULL)
+
+    UML.parms <- fit$coefficients
+    loglike   <- getLoglike.glm(fit)
+    cov       <- summary(fit)$cov.scaled
+    cnames    <- v$UML.names
+    #all       <- v$all.names
+    names(UML.parms) <- v$UML.names.full
+    parms <- UML.parms
+
+    if (zeroSNP) 
+    {
+      # Add the snp back in
+      pos   <- nx + 1
+      len   <- length(parms)
+      temp  <- c(parms[1:pos], 0)
+      temp2 <- c(cnames[1:pos], v$snp)
+      if (nv) 
+      {
+        temp  <- c(temp, parms[(pos+1):len])
+        temp2 <- c(temp2, cnames[(pos+1):len])
+      }
+      parms <- temp
+      names(parms) <- temp2
+    }
+
+    # Check for NAs
+    naFlag  <- 0
+    naXPos  <- NULL
+    naVPos  <- NULL
+    temp    <- is.na(UML.parms)
+    cnames  <- cnames[!temp]
+    colnames(cov) <- cnames
+    rownames(cov) <- cnames
+    if (any(temp)) 
+    {
+      naFlag <- 1
+
+      # Stop if snp was not estimated
+      if (temp[nx+2]) stop("ERROR: SNP was not estimated for the UML method")
+
+      # Get the NA positions in the design matrices
+      naPos  <- (1:length(UML.parms))[temp]
+      temp2  <- (naPos <= nx + 1)
+      if (any(temp2)) naXPos <- naPos[temp2] - 1
+      temp2 <- !temp2
+      if (any(temp2)) naVPos <- naPos[temp2] - nx - 2
+
+      UML.parms <- UML.parms[!temp]
+      parms <- parms[!is.na(parms)]
+    }
+
+
+    # Remove the special character "`" that glm will sometimes
+    #  put in the variable names
+    parms <- changeStr.names(parms, "`", replace="")
+    cov   <- changeStr.names(cov, "`", replace="")
+
+    alpha <- parms[1]
+
+    ##Make sure constraints are enforced
+    parms<-enforceConstraints(parms)
+
+    excluded = c(1,which(names(parms)%in%c("x12","x12:x2_1")))
+    if(reparam)
+    {
+      excluded<-c(excluded,which(names(parms)=="x11:x2_1"))
+    }
+    beta  <- parms[-excluded]
+    #print("DEBUG: INIT IS :")
+    #print(beta)
+    #print("DEBUG: nstrata is ")
+    #print(nStrata)
+    # Vector for xi parms. Only intercept will be non zero
+    xi <- rep(0, times=nStrata)
+
+    total <- 2*length(D)
+    if (op$s.1catVar) 
+    {
+      mini  <- NULL
+      maxi  <- NULL
+      for (i in 1:ncol(X.strata)) {
+        temp <- X.strata[, i] == 1
+        freq <- sum(snp[temp])/total
+        if (freq == 0) 
+        {
+          mini <- c(mini, i)
+        } else if (freq == 1) 
+        {
+          maxi <- c(maxi, i)
+        } else 
+        {
+          xi[i] <- log(freq/(1-freq))
+        }
+        if (!is.finite(xi[i])) xi[i] <- 0
+        if (!is.null(mini)) xi[mini] <- min(xi, -5)
+        if (!is.null(maxi)) xi[maxi] <- max(xi, 5)
+      }
+    } else 
+    {
+      freq <- sum(snp)/total
+      if (freq == 0) 
+      {
+        xi[1] <- -1
+      } else if (freq == 1) 
+      {
+        xi[1] <- 1
+      } else 
+      {
+        xi[1] <- log(freq/(1-freq))
+      }
+      if (!is.finite(xi[1])) xi[1] <- 0
+    }
+
+    if(indep)
+    {
+      eta <- c(alpha, beta, xi)
+      names(eta) <- c(names(alpha),names(beta), v$strata)
+    }else
+    {
+      eta <- c(alpha, beta)
+      names(eta) <- c(names(alpha),names(beta))
+    }
+
+
+    list(eta=eta, alpha=alpha, beta=beta, xi=xi, fit=fit, parms=parms,
+         loglike=loglike, cov=cov, fitted.values=fit$fitted.values, UML.parms=UML.parms,
+         naFlag=naFlag, naXPos=naXPos, naVPos=naVPos)
+  } # END: getInit
+
+  #Function to get extended beta with trend constraints
+  getExtendedBeta = function(beta)
+  {
+    i.x11 <- which(names(beta)=="x11")
+    i.x20 <- which(names(beta)=="x2_1")
+    if(reparam)  # under H0
+    {
+      if(exp(beta[i.x11]) + exp(beta[i.x20]) < 1)   # Checking constarint (NH1)
+      {
+        beta.inter<- -Inf
+      } else
+      {
+        beta.inter <- log( (exp(beta[i.x11]) + exp(beta[i.x20])-1) / (exp(beta[i.x11] + beta[i.x20])) )
+      }
+
+    } else
+    {
+      i.xinter <- which(names(beta)=="x11:x2_1")
+      beta.inter <- beta[i.xinter]
+    }
+
+    beta.x12 <- 0.0
+    if( (2.0 * exp(beta[i.x11]) < 1) | (2 * exp(beta[i.x11] + beta.inter) - 1) < 0 )    # Checking constraint (T1) and (T2)
+    {
+      beta.x12 <- -Inf
+      beta.x2inter <- -Inf
+    } else
+    {
+      beta.x12 <- log( 2.0 * exp(beta[i.x11]) - 1 )
+      beta.x2inter <- log( ( 2 * exp(beta[i.x11] + beta[i.x20] + beta.inter ) - exp(beta[i.x20]) ) / ( exp(beta.x12) * exp(beta[i.x20]) ) )
+    }
+
+    #print(beta.x12)
+    if(reparam)
+    {
+      extendedbeta <- c(beta[1:i.x11], beta.x12, beta.inter, beta.x2inter)
+      names(extendedbeta) <- c(names(beta)[1:i.x11], "x12", "x11:x2_1", "x12:x2_1")
+      if (i.x11 < length(beta))
+      {
+        extendedbeta <- c(extendedbeta, beta[(1+i.x11):(length(beta))])
+      }
+    } else
+    {
+      extendedbeta <- c(beta[1:i.x11], beta.x12, beta[(i.x11+1):i.xinter], beta.x2inter)
+      names(extendedbeta) <- c(names(beta)[1:i.x11], "x12", names(beta)[(i.x11+1):i.xinter], "x12:x2_1")
+      if (i.xinter < length(beta))
+      {
+        extendedbeta <- c(extendedbeta, beta[(1+i.xinter):(length(beta))])
+      }
+    }
+    extendedbeta  
+  }# END: getExtendedBeta
+
+  # Function to get the gradients Delta_beta (beta_full)
+  getExtendedBetaGradient <- function(extendedbeta)
+  {
+    if(reparam)
+    {
+      excluded.params <- c("x12","x11:x2_1","x12:x2_1")
+    } else
+    {
+      excluded.params <- c("x12","x12:x2_1")
+    }
+    elem.beta <- extendedbeta[ !names(extendedbeta) %in% excluded.params ]
+    ext.grads <- matrix(data = 0.0, nrow = length(elem.beta),ncol = length(extendedbeta))
+    rownames(ext.grads) <- names(elem.beta)
+    colnames(ext.grads) <- names(extendedbeta)
+
+    ext.grads[names(elem.beta),names(elem.beta)] <- diag(length(elem.beta))
+    i.x11 <- which(names(elem.beta)=="x11")
+    i.x20 <- which(names(elem.beta)=="x2_1")
+    ext.grads["x11","x12"] <- 1.0 / (1.0 - 0.5 * exp(-elem.beta[i.x11]))
+    if(reparam)
+    {
+      ext.grads["x11","x12:x2_1"] <- exp(elem.beta[i.x11]) / ( exp(elem.beta[i.x11]) + 0.5 * exp(elem.beta[i.x20]) - 1.0) - 1.0 / (1.0 - 0.5 * exp(-elem.beta[i.x11]))
+      ext.grads["x2_1","x12:x2_1"] <- (1.0 - exp(elem.beta[i.x11])) / (exp(elem.beta[i.x11]) + 0.5 * exp(elem.beta[i.x20]) - 1.0)
+
+      ext.grads["x11","x11:x2_1"] <- exp(elem.beta[i.x11]) / (exp(elem.beta[i.x11]) + exp(elem.beta[i.x20]) - 1.0) - 1.0
+      ext.grads["x2_1","x11:x2_1"] <- exp(elem.beta[i.x20]) / ( exp(elem.beta[i.x11]) + exp(elem.beta[i.x20]) - 1.0 ) - 1.0
+
+    } else
+    {
+      i.xinter <- which(names(elem.beta)=="x11:x2_1")
+      ext.grads["x11","x12:x2_1"] <- 1.0 / (1.0 - 0.5 * exp(-(elem.beta[i.x11] + elem.beta[i.xinter]))) - 1.0 / (1.0 - 0.5 * exp(-elem.beta[i.x11]))
+      ext.grads["x11:x2_1","x12:x2_1"] <- 1.0 / (1.0 - 0.5 * exp(-(elem.beta[i.x11] + elem.beta[i.xinter])))
+    }
+    ext.grads
+  }# END: getExtendedBetaGradient
+
+  # Function to compute Pdg.xs = P(D=d, G=g | X, S)
+  Pdg.xs <- function(ret, alpha, beta, xi) 
+  {
+    # Get the xi parameters for each observation
+    if (nStrata == 1) 
+    {
+      temp.xi <- xi
+    } else 
+    {
+      dim(xi) <- c(nStrata, 1)
+      temp.xi <- X.strata %*% xi
+    }
+
+    ## Get the extended beta using the trend effect constraints
+    extended.beta<-getExtendedBeta(beta)
+    if(any(is.infinite(extended.beta)))
+    {
+      #print("extbeta failed")
+      ret <-ret - Inf
+      sum <- rowSums(ret)
+    } else
+    {
+      #print("worked")
+      # Make sure that beta is a column vector
+      dim(extended.beta) <- c(length(extended.beta), 1)
+
+      # Get theta for each d, g combination
+      ret[, d0g0.col] <- 0
+      ret[, d0g1.col] <- log2 + temp.xi
+      ret[, d0g2.col] <- 2*temp.xi
+      ret[, d1g0.col] <- alpha + (Z0 %*% extended.beta)
+      ret[, d1g1.col] <- alpha + (Z1 %*% extended.beta) + log2 + temp.xi
+      ret[, d1g2.col] <- alpha + (Z2 %*% extended.beta) + 2*temp.xi
+      ret             <- exp(ret)
+
+      # For a binary snp that the user input
+      if (geno.binary) ret[, g2.col] <- 0
+
+      # Compute the sum over (d,g)
+      sum <- rowSums(ret)
+
+      # Divide by sum
+      ret <- matrixDivideVec(ret, sum)
+    }
+    list(Pdg.matrix=ret, Pdg.rowSums=sum)
+  } # END Pdg.xs
+
+  # Function to return a logical matrix to make the computation of
+  # the log-likelihood easier.
+  getLoglike.mat <- function() 
+  {
+    ret <- matrix(data=FALSE, nrow=n, ncol=nlevels)
+
+    if (gmodel3) 
+    {
+      col <- 3*D + 1 + snp
+    } else 
+    {
+      col <- 3*D + 1 + fsnp
+    }
+
+    for (i in 1:n) ret[i, col[i]] <- TRUE
+    ret
+  } # END: getLoglike.mat
+
+  # Function to compute the log-likelihood (or testing)
+  loc.getLoglike.vector <- function(eta) 
+  {
+    alpha <- eta[alpha.row]
+    beta  <- eta[beta.row]
+    xi    <- eta[xi.row]
+
+    ## Get the extended beta using the trend effect constraints
+
+    extended.beta <- getExtendedBeta(beta)
+
+    # Make sure that beta is a column vector
+    dim(extended.beta) <- c(length(extended.beta), 1)
+    if (fixFlag) eta <- fixGetEta(eta)
+    if (!imputed) 
+    {
+      logits <- alpha + Zdesign %*% extended.beta
+      probs <- 1.0 / (1.0 + exp(-logits))
+      ret <- (D * log(probs) + (1-D) * log(1-probs))
+      if(any(is.infinite(extended.beta)))
+      {
+        ret <- ret-Inf
+        #print("Fail")
+      }
+      if(nStrata>1)
+      {
+        #stop("Strata not yet implemented")
+      }
+    } else 
+    { #TODO: Handle this case for the trend effect
+      stop("Not implemented yet")
+    }
+    ret
+  }
+
+  getFittedValuesUML<-function(eta)
+  {
+    alpha <- eta[alpha.row]
+    beta  <- eta[beta.row]
+    xi    <- eta[xi.row]
+    extended.beta <- getExtendedBeta(beta)
+
+    # Make sure that beta is a column vector
+    dim(extended.beta) <- c(length(extended.beta), 1)
+    logits <- alpha + Zdesign %*% extended.beta
+    probs <- 1.0 / (1.0 + exp(-logits))
+    probs
+  }
+
+  loc.getLoglike <- function(eta)
+  {
+      return(sum(loc.getLoglike.vector(eta)))
+  }# END: loc.getLoglike
+
+  loc.getLoglike.indep.vector <- function(eta) 
+  {
+    alpha <- eta[alpha.row]
+    beta  <- eta[beta.row]
+    xi    <- eta[xi.row]
+
+    if (fixFlag) eta <- fixGetEta(eta)
+    Pdg <- Pdg.xs(Pdg, eta[alpha.row], eta[beta.row], eta[xi.row])
+
+    if (!imputed) 
+    {
+      if(!any(is.infinite(Pdg$Pdg.matrix)))
+      {
+        Pdg <- Pdg$Pdg.matrix
+        ret <- log(Pdg[loglike.mat])
+      } else
+      {
+        ret<--Inf
+      }
+    } else 
+    { #TODO: Handle this case for the trend effect
+      stop("Not implemented yet")
+      # Get the xi parameters for each observation
+      if (nStrata == 1) 
+      {
+        temp.xi <- xi
+      } else 
+      {
+        dim(xi) <- c(nStrata, 1)
+        temp.xi <- X.strata %*% xi
+      }
+
+      # Make sure that beta is a column vector
+      dim(beta) <- c(nbeta, 1)
+
+      vec <- D * (alpha + Z.imp %*% beta) + fsnp * temp.xi + log2 * ProbG1
+      vec <- exp(vec)/Pdg$Pdg.rowSums
+      ret <- log(vec)
+    }
+
+    ret
+
+  } # END: loc.getLoglike
+
+  loc.getLoglike.indep <- function(eta)
+  {
+    return(sum(loc.getLoglike.indep.vector(eta)))
+  }
+
+  # Function to compute a Z matrix
+  getZ <- function(gvalue) 
+  {
+    temp.V   <- NULL
+    if (gmodel3) 
+    {
+      temp.snp <- matrix(data=0, nrow=n, ncol=2)
+      if (gvalue) temp.snp[, gvalue] <- 1
+
+      if (nv) 
+      {
+        temp.V <- cbind(matrixMultVec(X.int, temp.snp[, 1]),
+                        matrixMultVec(X.int, temp.snp[, 2]))
+      }
+    } else 
+    {
+      temp.snp <- rep(gvalue, times=n)
+      if (nv) temp.V <- matrixMultVec(X.int, temp.snp)
+    }
+    ret <- as.matrix(cbind(X.main, temp.snp, temp.V))
+
+    ret
+
+  } # END: getZ
+
+  #Compute a full design matrix for the no independence case
+  getDMatrix <- function() 
+  {
+    temp.V   <- NULL
+    if (gmodel3) 
+    {
+      temp.snp <- matrix(data=0, nrow=n, ncol=2)
+      temp.snp[snp==1, 1] <- 1
+      temp.snp[snp==2, 2] <- 1
+
+      if (nv) 
+      {
+        temp.V <- cbind(matrixMultVec(X.int, temp.snp[, 1]),
+                        matrixMultVec(X.int, temp.snp[, 2]))
+      }
+    } else 
+    {
+      temp.snp <- snp
+      if (nv) temp.V <- matrixMultVec(X.int, temp.snp)
+    }
+    ret <- as.matrix(cbind(X.main, temp.snp, temp.V))
+    ret 
+  }
+
+  # Function to compute Z matrix for imputed snp #TODO : Bypassed so far
+  getZ.imp <- function(genovec) 
+  {
+    temp.V <- NULL
+    if (nv) temp.V <- matrixMultVec(X.int, genovec)
+    ret <- as.matrix(cbind(X.main, genovec, temp.V))
+
+    ret
+  }
+  
+  # Function to compute W(Y - mu)
+  getWtYmu.UML <- function(eta) 
+  {
+    # eta     Vector of parms
+    #         Only needed for which = 1
+    temp <- colSums(getUMLScores(eta))
+    temp
+  } # END: getWtYmu
+
+  getWtYmu.CML <- function(eta) 
+  {
+    # eta     Vector of parms
+    #         Only needed for which = 1
+    temp<-colSums(getCMLScores(eta))
+    temp
+  } # END: getWtYmu
+
+  # Function to call the optimizer
+  callOptimIndep <- function() 
+  {
+    # Set the control list
+    control <- list(fnscale=-1, maxit=op$maxiter, reltol=op$reltol)
+
+    # Call the optimizer
+    if (op$num.deriv)
+    {
+      ret <- optim(eta0, loc.getLoglike.indep, method=op$optimizer,
+                   control=control, hessian=TRUE)
+    } else 
+    {
+      stop("WtYmu not implemented yet for the independence case ")
+      ret <- optim(eta0, loc.getLoglike.indep, gr=getWtYmu.CML, method=op$optimizer,
+                   control=control, hessian=TRUE)
+    }
+
+    # Determine if it converged
+    conv <- (ret$convergence == 0)
+
+    # Get the covariance matrix and score
+    if (conv) 
+    {
+      conv   <- 1
+      cov    <- chol(-ret$hessian)
+      cov    <- chol2inv(cov)
+      cnames <- names(eta0)
+      colnames(cov) <- cnames
+      rownames(cov) <- cnames
+    } else 
+    {
+      cov  <- NA
+      conv <- 0
+    }
+
+    # Return list
+    list(parms=ret$par, cov=cov, converged=conv, loglike=ret$value)
+
+  } # END: callOptim
+
+  callOptim <- function() 
+  {
+    # Set the control list
+    control <- list(fnscale=-1, maxit=op$maxiter, reltol=op$reltol)
+
+    # Call the optimizer
+    if (op$num.deriv) 
+    {
+      ret <- optim(eta0, loc.getLoglike, method=op$optimizer,
+                   control=control, hessian=TRUE)
+    } else 
+    {
+      ret <- optim(eta0, loc.getLoglike, gr=getWtYmu.UML, method=op$optimizer,
+                   control=control, hessian=TRUE)
+    }
+
+    # Determine if it converged
+    conv <- (ret$convergence == 0)
+
+    # Get the covariance matrix and score
+    if (conv) 
+    {
+      conv   <- 1
+      cov    <- chol(-ret$hessian)
+      cov    <- chol2inv(cov)
+      cnames <- names(eta0)
+      colnames(cov) <- cnames
+      rownames(cov) <- cnames
+    } else 
+    {
+      cov  <- NA
+      conv <- 0
+    }
+
+    # Return list
+    list(parms=ret$par, cov=cov, converged=conv, loglike=ret$value)
+
+  } # END: callOptim
+
+  # Function to call before returning the return list
+  # TODO: fix this . Why do we remove the strata info?
+  setReturn <- function(ret) 
+  {
+    class(ret) <- "snp.logistic"
+    if (!is.null(ret$UML)) 
+    {
+      class(ret$UML) <- "UML"
+    } else 
+    {
+      return(ret)
+    }
+    if (is.null(ret$CML)) return(ret)
+
+    if (fixFlag) 
+    {
+      xi.row <- fix_xi.row
+      if (!xi.row[1]) 
+      {
+        class(ret$CML) <- "CML"
+        return(ret)
+      }
+    }
+
+    # Transfrom the strata parms ???
+    xi  <- ret$CML$parms[xi.row]
+    #exi <- exp(xi)
+    #ret$CML$strata.parms <- exi/(1 + exi)
+    ret$CML$strata.parms <- xi
+
+    # Remove the strata parms from parms
+    ret$CML$parms <- ret$CML$parms[-xi.row]
+
+    # Get the cov matrix for the strata
+    xi <- ret$CML$cov[xi.row, xi.row]
+    dim(xi) <- c(nStrata, nStrata)
+
+    # Use the delta method. The derivative is a diagonal matrix
+    #dexi  <- ret$CML$strata.parms/(1 + exi)
+    #ndexi <- length(dexi)
+    #if (ndexi > 1) dexi <- diag(dexi)
+
+    # Get the covariance matrix
+    #temp <- dexi %*% xi %*% dexi
+    #dim(temp) <- c(ndexi, ndexi)
+    #ret$CML$strata.cov <- temp
+    ret$CML$strata.cov <- xi
+
+    # Set the names
+    temp <- names(ret$CML$strata.parms)
+    colnames(ret$CML$strata.cov) <- temp
+    rownames(ret$CML$strata.cov) <- temp
+
+    # Save full cov
+    ret$CML$cov.full <- ret$CML$cov
+
+    # Remove strata parms from cov
+    temp <- ret$CML$cov[-xi.row, -xi.row]
+    if (length(temp) == 1) 
+    {
+      dim(temp) <- c(1, 1)
+      rownames(temp) <- colnames(temp) <- "Intercept"
+    }
+    ret$CML$cov <- temp
+
+    class(ret$CML) <- "CML"
+    if (!is.null(ret$EB)) class(ret$EB) <- "EB"
+
+    ret
+
+  } # END: setReturn
+
+  # Function to prepare the output
+  expandModel <- function(fit.object = ret$UML, suffix = ".UML")
+  {
+    coefnames <- names(fit.object$parms)
+    coeffvals <- fit.object$parms
+    namescov <- paste(coefnames,suffix,sep="")
+    localVar <- varCovMat[namescov,namescov]
+    colnames(localVar) <- coefnames
+    rownames(localVar) <- coefnames
+    #print("DEBUG: retrieving indices")
+    i.x11 <- which(names(coeffvals)=="x11")
+    i.x20 <- which(names(coeffvals)=="x2_1")
+    i.xinter <- which(names(coeffvals)=="x11:x2_1")
+    beta.x12 <- log( 2.0 * exp(coeffvals[i.x11]) - 1 )
+    beta.x2inter <- log( ( 2 * exp(coeffvals[i.x11] + coeffvals[i.x20] + coeffvals[i.xinter]) - exp(coeffvals[i.x20]) ) / ( exp(beta.x12) * exp(coeffvals[i.x20]) ) )
+    coeffsfull <- c(coeffvals, beta.x12, beta.x2inter)
+    names(coeffsfull) <- c(coefnames, "x12", "x12:x2_1")
+    #print("DEBUG: Preparing gradients matrix")
+    gradients <- diag(1.0,ncol = length(coeffvals),nrow = length(coeffsfull))
+    colnames(gradients) <- coefnames
+    rownames(gradients) <- names(coeffsfull)
+    gradients["x12","x11"] <- as.numeric(2 * exp( coeffsfull["x11"] - coeffsfull["x12"] ))
+    gradients["x12:x2_1","x11"] <- as.numeric(1 / (2 * exp(coeffsfull["x11"] + coeffsfull["x11:x2_1"]) - 1) - 1)
+    gradients["x12:x2_1","x11:x2_1"] <- as.numeric(1 + 1 / (2 * exp(coeffsfull["x11"] + coeffsfull["x11:x2_1"]) - 1))
+    fCvMat <- gradients %*% localVar %*% t(gradients)
+    #print("DEBUG: Preparing final DF")
+    model.df <- data.frame( cbind(coeffsfull,sqrt(diag(fCvMat))) )
+    colnames(model.df) <- c("Estimate","Std. Error")
+    #print(names(coeffsfull))
+    rownames(model.df) <- names(coeffsfull)
+    model.df[,"z value"] <- model.df[,"Estimate"]/model.df[,"Std. Error"]
+    model.df[,"Pr(>|z|)"] <- 2 * pnorm(abs(model.df[,"z value"]),lower.tail = FALSE)
+    model.df
+  }
+
+  # Function to call glm for a factor snp (for now)
+  fitGLM <- function() 
+  {
+    snp  <- factor(snp)
+    temp <- callGLM(D, X.main=X.main, X.int=X.int, int.vec=snp,
+                    family=op$family, prefix=op$snpName)
+
+    if (temp$converged) 
+    {
+      uml         <- list(parms=temp$coefficients)
+      uml$cov     <- summary(temp)$cov.scaled
+      uml$loglike <- getLoglike.glm(temp)
+    }
+
+    list(UML=uml)
+  } # END: fitGLM
+
+  # Function to get a new eta from fixEta0
+  fixGetEta <- function(eta) 
+  {
+    ret <- fixEta0
+    ret[fixMap] <- eta
+    ret
+  } # END: fixGetEta
+
+  # Wrapper for the C function  #TODO: Bypassed so far
+  CML_EB.R <- function(indep = FALSE) 
+  {
+    #TODO: call the right C code
+    if (op$use.C.code == 0) return(NULL)
+    if (!is.loaded("additive1_trend")) 
+    {
+      warning("CML_EB function is not loaded")
+      return(NULL)
+    }
+
+    # If initial estimates were passed in, then use them
+    op_eta0 <- op[["init.parms", exact=TRUE]]
+    if (!is.null(op_eta0)) 
+    {
+      if (length(op_eta0) != nparms) stop("ERROR: init.parms has the wrong length")
+      eta0[] <- op_eta0
+    }
+
+    error <- 1
+
+    # Make the matrices vectors by row
+    if (!nx) X.main <- 0
+    if (!nv) X.int  <- 0
+    X.main        <- t(X.main)
+    dim(X.main)   <- NULL
+    X.int         <- t(X.int)
+    dim(X.int)    <- NULL
+    X.strata      <- t(X.strata)
+    dim(X.strata) <- NULL
+
+    # Define the return vector
+    cml.parms <- double(nparms)
+    cml.cov   <- double(nparms*nparms)
+    cml.ll    <- double(1)
+    error     <- as.integer(1)
+    nbp1      <- nbeta + 1
+    eb.parms  <- double(nbp1)
+    eb.cov    <- double(nbp1*nbp1)
+    uml.cov   <- ret$UML$cov
+    uml.parms <- ret$UML$parms
+
+    if (zeroSNP) 
+    {
+      # Remove snp and update other variables
+      temp <- match(op$snpName, names(eta0))
+      if (!is.na(temp)) 
+      {
+        eta0   <- eta0[-temp]
+        nparms <- length(eta0)
+        nbeta  <- nbeta - 1
+      }
+    }
+
+    # Vector for UML-CML cov
+    uml.cml.cov <- double((nbeta+1)*nparms)
+
+    ##########################################################################
+    ############## Include PACKAGE="CGEN" when building a package ############
+    ##########################################################################
+    # Call the C function
+    temp <- .C("CML_EB", as.double(eta0), as.integer(nparms), as.integer(nbeta),
+               as.integer(D), as.double(snp), as.integer(n), as.double(X.main), as.integer(nx),
+               as.double(X.int), as.integer(nv), as.double(X.strata), as.integer(nStrata),
+               as.integer(genetic.model), as.integer(geno.binary),
+               as.integer(op$maxiter), as.double(op$reltol), as.integer(op$debug),
+               as.double(uml.cov), as.double(fitted.values),
+               as.integer(zeroSNP), as.integer(op$num.deriv), as.integer(imputed), as.double(ProbG1),
+               as.double(uml.parms), error=error, cml.parms=cml.parms, cml.cov=cml.cov, cml.ll=cml.ll,
+               eb.parms=eb.parms, eb.cov=eb.cov, uml.cml.cov=uml.cml.cov, PACKAGE="CGEN")
+    error <- temp$error
+    if (error) return(list())
+
+    # Get the covariance matrix
+    cml.cov <- matrix(temp$cml.cov, nrow=nparms, byrow=TRUE)
+    if (any(!is.finite(diag(cml.cov)))) return(list())
+    cml.parms <- temp$cml.parms
+    cnames <- names(eta0)
+    names(cml.parms) <- cnames
+    colnames(cml.cov) <- cnames
+    rownames(cml.cov) <- cnames
+
+    cnames <- cnames[1:(1+nbeta)]
+    eb.parms <- temp$eb.parms
+    names(eb.parms) <- cnames
+    eb.cov <- matrix(temp$eb.cov, nrow=1+nbeta, byrow=TRUE)
+    colnames(eb.cov) <- cnames
+    rownames(eb.cov) <- cnames
+
+    # UML-CML matrix
+    uml.cml.cov <- matrix(temp$uml.cml.cov, byrow=TRUE, ncol=nparms)
+    rownames(uml.cml.cov) <- paste("UML.", cnames, sep="")
+    colnames(uml.cml.cov) <- paste("CML.", names(eta0), sep="")
+
+    # Return list
+    list(CML=list(parms=cml.parms, cov=cml.cov, loglike=temp$cml.ll),
+         EB=list(parms=eb.parms, cov=eb.cov, UML.CML.cov=uml.cml.cov))
+
+  } # END: CML_EB.R
+
+  # Function to check the initial estimates of CML
+  check_init <- function(indep = FALSE) 
+  {
+    ##Check that the init value is compatible with constraints
+
+    new <- eta0
+
+    # If initial estimates were passed in, then use them
+    op_eta0 <- op[["init.parms", exact=TRUE]]
+    if (!is.null(op_eta0)) 
+    {
+      if (length(op_eta0) != nparms) stop("ERROR: init.parms has the wrong length")
+      new[] <- op_eta0
+    }
+
+    #print("DEBUG: Computing the init likelihood for indep = ")
+    #print(indep)
+    if(indep)
+    {
+      maxll <- loc.getLoglike.indep(eta0)
+    } else
+    {
+      maxll <- loc.getLoglike(eta0)
+    }
+    #print(maxll)
+    #print(eta0)
+
+    maxit <- 100
+    h     <- 0.1
+    steps <- h*abs(new)
+    temp  <- steps <= 1e-8
+    steps[temp] <- 0.01
+
+    for (i in 1:nparms) 
+    {
+      test  <- new
+      point <- new[i]
+      step  <- steps[i]
+      flag  <- 0
+
+      # For 2 directions
+      for (k in 1:2) 
+      {
+        for (j in 1:maxit) 
+        {
+
+          point0  <- point + step
+          test[i] <- point0
+          if(indep)
+          {
+            ll<-loc.getLoglike.indep(test)
+          } else
+          {
+            ll <- loc.getLoglike(test)
+          }
+          if ( (!is.null(ll)) & (is.finite(ll)) & (ll > maxll) ) 
+          {
+            maxll <- ll
+            point <- point0
+            flag  <- 1
+          } else 
+          {
+            break
+          }
+        }
+        if (flag) 
+        {
+          new[i] <- point
+          break
+        } else 
+        {
+          # Try other direction
+          point <- new[i]
+          step  <- -step
+        }
+      }
+
+    }
+
+    new
+
+  } # END: check_init
+
+  # Function to compute score function of UML
+  getUMLScores <- function(fitted.eta)
+  {
+    alpha <- fitted.eta[alpha.row]
+    beta  <- fitted.eta[beta.row]
+    xi    <- fitted.eta[xi.row]
+    extended.beta <- getExtendedBeta(beta)
+
+    logits <- alpha + Zdesign %*% extended.beta
+    probs <- 1.0/(1.0+exp(-logits))
+
+    resids <- D - probs
+
+    extension.gradient <- getExtendedBetaGradient(extended.beta)
+    gradient.CML.reduced <- cbind( rep(1.0,times = nrow(Zdesign)), Zdesign %*% t(extension.gradient) ) * as.numeric(resids)
+    colnames(gradient.CML.reduced) <- c(names(alpha),names(beta))
+    gradient.CML.reduced
+  }
+
+  # Function to compute score function of CML
+  getCMLScores <- function(fitted.eta)
+  {
+    alpha <- fitted.eta[alpha.row]
+    beta  <- fitted.eta[beta.row]
+    xi    <- fitted.eta[xi.row]
+    extended.beta <- getExtendedBeta(beta)
+
+    Pdg <- Pdg.xs(Pdg, alpha, beta, xi)
+
+
+    if(!any(is.infinite(Pdg$Pdg.matrix)))
+    {
+      Pdg <- Pdg$Pdg.matrix
+      ret <- log(Pdg[loglike.mat])
+    } else
+    {
+      ret<--Inf
+    }
+    #TODO: Do imputed
+
+    d1g0.grad.beta <- Z0
+    d1g1.grad.beta <- Z1
+    d1g2.grad.beta <- Z2
+
+    grad.beta.norm <- d1g0.grad.beta*Pdg[,d1g0.col] +
+                  d1g1.grad.beta*Pdg[,d1g1.col] +
+                  d1g2.grad.beta*Pdg[,d1g2.col]
+
+
+    grad.beta<- D*((snp==0) * Z0 + (snp==1) * Z1 + (snp==2) * Z2) - grad.beta.norm
+
+    extension.gradient <- getExtendedBetaGradient(extended.beta)
+    grad.beta.reduced <- grad.beta %*% t(extension.gradient)
+
+    grad.alpha <- D - (Pdg[,d1g0.col] + Pdg[,d1g1.col] + Pdg[,d1g2.col])
+    #TODO:check this
+    grad.xi <- X.strata * (snp - 1 * (Pdg[,d1g1.col]+Pdg[,d0g1.col]) - 2 * ( Pdg[,d1g2.col] + Pdg[,d0g2.col]) )
+
+    CML.scores <- matrix(data = NA, nrow = nrow(Z0), ncol = length(fitted.eta))
+
+    CML.scores[,alpha.row] <- grad.alpha
+    CML.scores[,beta.row] <- grad.beta.reduced
+    CML.scores[,xi.row] <- grad.xi
+
+    namesCML <- rep( "",times = length(c(alpha,beta,xi)) )
+
+    namesCML[alpha.row] <- names(alpha)
+    namesCML[beta.row] <- names(beta)
+    namesCML[xi.row] <- names(xi)
+    colnames(CML.scores) <- namesCML
+    CML.scores
+  }
+
+  # Function to compute covariance of beta_UML and beta_CML
+  getVarCov <- function()
+  {
+    cases.indic <- (D==1)
+    controls.indic <- (D==0)
+    UML.VAR <- sum(cases.indic) * cov(UML.scores.matrix[cases.indic,]) + sum(controls.indic) * cov(UML.scores.matrix[controls.indic,])
+    CML.VAR <- sum(cases.indic) * cov(CML.scores.matrix[cases.indic,]) + sum(controls.indic) * cov(CML.scores.matrix[controls.indic,])
+    UML.CML.VAR <- sum(cases.indic) * cov(UML.scores.matrix[cases.indic,], CML.scores.matrix[cases.indic,]) + sum(controls.indic) * cov(UML.scores.matrix[controls.indic,],CML.scores.matrix[controls.indic,])
+
+    UML.VAR.SC <- ret$UML$cov %*% UML.VAR %*% ret$UML$cov
+    CML.VAR.SC <- ret$CML$cov %*% CML.VAR %*% ret$CML$cov
+    UML.CML.VAR.SC <- ret$UML$cov %*% UML.CML.VAR %*% ret$CML$cov
+
+
+    full.covar.matrix.sc <- rbind( cbind(UML.VAR.SC, UML.CML.VAR.SC), cbind( t(UML.CML.VAR.SC), CML.VAR.SC) )
+    names.covar.matrix <- c( paste0(colnames(UML.VAR), ".UML"), paste0(colnames(UML.CML.VAR), ".CML") )
+
+    colnames(full.covar.matrix.sc) <- names.covar.matrix
+    rownames(full.covar.matrix.sc) <- names.covar.matrix
+
+    full.covar.matrix.sc
+  }
+
+  getVarCovUMLOnly <- function()
+  {
+    cases.indic <- (D==1)
+    controls.indic <- (D==0)
+    UML.VAR <- sum(cases.indic) * cov(UML.scores.matrix[cases.indic,]) + sum(controls.indic) * cov(UML.scores.matrix[controls.indic,])
+
+    UML.VAR.SC <- ret$UML$cov %*% UML.VAR %*% ret$UML$cov
+
+    full.covar.matrix.sc <- UML.VAR.SC
+    names.covar.matrix <- paste(colnames(UML.VAR), ".UML", sep = "")
+
+    colnames(full.covar.matrix.sc) <- names.covar.matrix
+    rownames(full.covar.matrix.sc) <- names.covar.matrix
+
+    full.covar.matrix.sc
+  }
+
+  # Function to compute RERI for UML or CML
+  getRERI <- function(eta,varsnames = c("x11","x2_1"),suffix = "",covar = NULL)
+  {
+    namesfull <- c(varsnames, paste(varsnames[1],varsnames[2],sep = ":"))
+    RERI <- exp(eta[namesfull[1]] + eta[namesfull[2]] + eta[namesfull[3]]) - exp(eta[namesfull[1]])- exp(eta[namesfull[2]]) + 1
+    if(!is.null(covar))
+    {
+      namesfullcov <- paste(namesfull,suffix,sep = "")
+      selected.cov <- covar[namesfullcov,namesfullcov]
+      gradient.vector <- c(exp(eta[namesfull[1]] + eta[namesfull[2]] + eta[namesfull[3]]) - exp(eta[namesfull[1]]),
+                           exp(eta[namesfull[1]] + eta[namesfull[2]] + eta[namesfull[3]]) - exp(eta[namesfull[2]]),
+                           exp(eta[namesfull[1]] + eta[namesfull[2]] + eta[namesfull[3]]))
+      names(gradient.vector) <- namesfullcov
+      delta.var <- sum( t(gradient.vector) %*% selected.cov %*% gradient.vector )
+      return(list(value = as.numeric(RERI), variance = as.numeric(delta.var), gradient = gradient.vector))
+    } else
+    {
+      return(list(value = as.numeric(RERI)))
+    }
+  }
+
+  # Function to compute RERI EB-estimate
+  getEB <- function()
+  {
+    R0 <- RERI.UML$value
+    R1 <- RERI.CML$value
+    sig2 <- RERI.UML$variance
+    sigdev <- (R1-R0)^2
+    RERI.EB <- list()
+    RERI.EB$value <- (sigdev * R0 + sig2 * R1)/(sigdev + sig2)
+
+    dRdR0 <- (sigdev^2 + 3 * sig2 * sigdev)/( (sigdev+sig2)^2 )
+    dRdR1 <- (sig2^2 - sig2*sigdev)/( (sigdev+sig2)^2 )
+    fullEBgradient <- c( dRdR0 * RERI.UML$gradient, dRdR1 * RERI.CML$gradient )
+    EBVar <- as.numeric( sum( t(fullEBgradient) %*% varCovMat[names(fullEBgradient),names(fullEBgradient)] %*% fullEBgradient ) )
+    RERI.EB$gradient <- fullEBgradient
+    RERI.EB$variance <- EBVar
+    RERI.EB
+  }
+
+  # Check the options list
+  op <- default.list(op, c("reltol", "maxiter", "optimizer",
+                           "snpName", "debug", "genetic.model", "errorCheck", "geno.binary",
+                           "use.C.code", "only.UML", "fit.null", "num.deriv", "imputed",
+                           "s.1catVar","reparam"),
+                     list(1e-8, 100, "BFGS", "SNP_", 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0))
+
+  snp.nc   <- ncol(snp)
+  if (is.null(snp.nc)) snp.nc <- 0
+  if (snp.nc == 3) op$imputed <- 1
+  op$imputed <- 0 # Changed Mar 11, 2015
+  reparam <- op$reparam
+
+  fixFlag  <- 0
+  fit.null <- op$fit.null
+  imputed  <- op$imputed
+  if (imputed) 
+  {
+    if (snp.nc == 3) 
+    {
+      ProbG1 <- snp[, 2]
+
+      # Create snp vector
+      gmodel <- op$genetic.model
+      if (gmodel == 0) 
+      {
+        snp <- snp[, 2] + 2*snp[, 3]
+      } else if (gmodel == 1) 
+      {
+        snp <- snp[, 2] + snp[, 3]
+      } else if (gmodel == 2) 
+      {
+        snp <- snp[, 3]
+      } else 
+      {
+        stop("Incorrect genetic.model with imputed data")
+      }
+    }
+
+    op$genetic.model <- 0
+    if (is.null(ProbG1)) stop("ERROR: ProbG1 is NULL")
+  } else 
+  {
+    ProbG1 <- 0
+  }
+  zeroSNP <- FALSE
+  if (fit.null) 
+  {
+    X.int <- NULL
+    op$fixParms <- list(parms = op$snpName, values=0)
+    zeroSNP <- TRUE
+    fixFlag <- 1
+  } else 
+  {
+    fixFlag <- !is.null(op[["fixParms", exact=TRUE]])
+    if (fixFlag) 
+    {
+      if (op$snpName %in% op$fixParms$parms) zeroSNP <- TRUE
+    }
+  }
+  if (zeroSNP) op$genetic.model <- 0
+  genetic.model <- op$genetic.model
+  geno.binary   <- 0
+
+  if (!(genetic.model %in% c(0, 1, 2, 3))) stop("genetic.model must be 0-3")
+
+  # Get the number of genotypes
+  snp  <- unfactor(snp, fun=as.numeric)
+  usnp <- sort(unique(snp))
+  n    <- length(usnp)
+
+  # If the input SNP is binary 0-1, set genetic.model to 0
+  #
+  # #TODO: Handle the case of the trend model, currently assume that the data is
+  # preprocessed in a "general" fashion
+  if (!imputed) 
+  {
+    if (!all(usnp %in% c(0, 1, 2))) stop("snp is not coded correctly")
+  }
+  if (n == 1) 
+  {
+    stop("snp only has 1 value")
+  } else if (n == 2) 
+  {
+    if (genetic.model) warning("genetic.model is set to 0")
+    genetic.model <- 0
+
+    if (all(usnp %in% 0:1)) geno.binary <- 1
+  }
+  if (genetic.model %in% 1:2) geno.binary <- 1
+
+  # Check D
+  if (!all(unique(D) %in% c(0, 1))) stop("D is not coded correctly")
+
+  if (!is.null(X.strata)) 
+  {
+    if (!is.matrix(X.strata)) stop("X.strata is not a matrix")
+  }
+
+  gmodel3 <- (genetic.model %in% c(0,3))
+  n       <- length(D)
+  if (op$optimizer != "BFGS") op$use.C.code <- 0
+  #if (imputed) dim(ProbG1) <- c(n, 1)
+
+  # See if X and V were given
+  if (is.null(X.main)) 
+  {
+    nx <- 0
+  } else 
+  {
+    nx <- ncol(X.main)
+  }
+  if (is.null(X.int)) 
+  {
+    nv <- 0
+  } else 
+  {
+    nv <- ncol(X.int)
+  }
+
+  # Get the SNP vector for the specific genetic model
+  fsnp <- snp
+  if (genetic.model == 1) 
+  {
+    # Dominant
+    temp <- snp == 2
+    fsnp[temp] <- 1
+  } else if (genetic.model == 2) 
+  {
+    temp <- snp == 1
+    fsnp[temp] <- 0
+    temp <- snp == 2
+    fsnp[temp] <- 1
+  } else if (genetic.model %in% c(0,3)) 
+  {
+    fsnp <- cbind(as.integer(snp == 1), as.integer(snp == 2))
+  }
+
+  # Check the strata
+  if (is.null(X.strata)) X.strata <- matrix(data=1, nrow=n, ncol=1)
+  nStrata <- ncol(X.strata)
+  #print("DEBUG: STRATA COLNAMES ARE: ")
+  #print(head(X.strata))
+
+  # Get the initial estimates
+  temp <- getInit(indep = FALSE)
+  #print("Got init")
+  if (is.null(temp)) return(NULL)
+
+  # Save the initial estimates and initialize the return list
+  ret       <- list()
+  ret$UML   <- list(parms = temp$UML.parms, cov = temp$cov, loglike = temp$loglike)
+  if (op$only.UML) setReturn(ret)#TODO: move this somewhere else
+
+  #TODO: Set this to be a constrained parameter and get the right scope for beta
+  nbeta     <- length(temp$beta)
+  eta0      <- temp$eta
+  alpha.row <- 1
+  beta.row  <- 2:(nbeta+1)
+  xi.row<-NULL
+  if(max(beta.row) < length(eta0))
+  {
+    xi.row    <- (max(beta.row)+1):length(eta0)
+  }
+  #print("DEBUG: Checking XI ROW")
+  #print(xi.row)
+
+
+  cov       <- NULL
+  nparms    <- length(eta0)
+
+  # Save the fitted values for empirical bayes
+  fitted.values <- temp$fitted.values
+
+  # If there were NAs in UML, modify the design matrices
+  if (temp$naFlag) 
+  {
+    if (nx) 
+    {
+      pos <- temp$naXPos
+      len <- length(pos)
+      if (len) {
+        if (len == nx) 
+        {
+          nx     <- 0
+          X.main <- NULL
+        } else 
+        {
+          X.main <- removeOrKeepCols( X.main, pos, which=-1)
+          nx     <- ncol(X.main)
+        }
+      }
+    }
+    if (nv) 
+    {
+      pos <- temp$naVPos
+      len <- length(pos)
+      if (len) 
+      {
+        if (len == nv) 
+        {
+          nv    <- 0
+          X.int <- NULL
+        } else 
+        {
+          X.int <- removeOrKeepCols( X.int, pos, which=-1)
+          nv    <- ncol(X.int)
+        }
+      }
+    }
+  }
+
+  # Determine if parameters are to be fixed
+  if (fixFlag) 
+  {
+    #op$use.C.code <- 0
+    temp <- op$fixParms
+
+    # Define the map for fixed parms
+    temp2 <- match( temp$parms, names(eta0) )
+    temp2 <- temp2[!is.na(temp2)]
+    if (!length(temp2)) stop("ERROR with fixParms$parms")
+    fixEta0   <- eta0
+    fixEta0[temp2] <- temp$values
+    fixMap <- (1:nparms)[-temp2]
+
+    # Change eta0
+    eta0 <- eta0[fixMap]
+
+    # Get the updated xi.row
+    temp <- sum(xi.row %in% temp2)
+    nxi  <- length(xi.row) - temp
+    if (nxi) 
+    {
+      temp <- length(eta0)
+      fix_xi.row <- (temp-nxi+1):temp
+    } else 
+    {
+      fix_xi.row <- 0
+    }
+  }
+  if (genetic.model) op$num.deriv <- 1
+
+  # Call the C code TODO: Adapt the c code
+  #clist <- try(CML_EB.R(), silent=TRUE)
+  clist<-NULL
+  if (checkTryError(clist, conv=0)) return(setReturn(ret))
+  if (!is.null(clist)) 
+  {
+    if (!length(clist)) return(setReturn(ret))
+    ret$CML <- clist$CML
+    ret$EB  <- clist$EB
+    return(setReturn(ret))
+  }
+  #print("DEBUG: Starting fit")
+  # Initialize
+  nlevels  <- 6
+  d0g0.col <- 1
+  d0g1.col <- 2
+  d0g2.col <- 3
+  d1g0.col <- 4
+  d1g1.col <- 5
+  d1g2.col <- 6
+  d0.col   <- c(d0g0.col, d0g1.col, d0g2.col)
+  d1.col   <- c(d1g0.col, d1g1.col, d1g2.col)
+  g0.col   <- c(d0g0.col, d1g0.col)
+  g1.col   <- c(d0g1.col, d1g1.col)
+  g2.col   <- c(d0g2.col, d1g2.col)
+  log2     <- log(2)
+
+  # Define the Z matrices for efficiency
+
+  Z0 <- getZ(0)
+  Z1 <- getZ(1)
+  Z2 <- getZ(2)
+  if (imputed) Z.imp <- getZ.imp(fsnp)
+  Pdg <- matrix(data=0, nrow=n, ncol=nlevels)
+
+  Zdesign<-getDMatrix()
+
+
+  # Initialize the matrix to hold all probabilities P(D=d, G=g| X, S)
+
+
+  # Compute D*snp
+  if (gmodel3) 
+  {
+    Dsnp <- matrixMultVec(fsnp, D)
+  } else 
+  {
+    Dsnp <- D*fsnp
+  }
+  # Add intercept columns to X and V
+  X.main <- addIntercept(X.main, nrow=n)
+  X.int  <- addIntercept(X.int, nrow=n)
+
+
+  # Define a logical matrix for the calculation of the log-likelihood
+  loglike.mat <- getLoglike.mat()
+
+  #print("DEBUG: strata")
+  #print(xi.row)
+  # Update initial estimates if needed
+  eta0 <- check_init(indep = FALSE)
+  if( !is.null(op$initPars) )
+  {
+    if( all( names(eta0) %in% names(op$initPars) ) )
+    {
+      eta0 <- op$initPars[names(eta0)]
+      print("DEBUG: Using init params bypass: ")
+      print(eta0)
+    }
+  }
+  #print("checked init")
+
+  temp <- try(callOptim(), silent=TRUE)
+  #print("ran optim")
+  #print(temp)
+
+  if (checkTryError(temp, conv=0)) return(setReturn(ret))
+  if (!temp$converged) return(setReturn(ret))
+  temp <- list(parms = temp$parms, cov = temp$cov, loglike = temp$loglike)
+  ret$UML <- temp
+
+  #print("DEBUG: Done UML opti")
+
+  #Get the scores matrix
+  #print("getting scores for UML")
+  #Update the fitted values
+  fitted.values <- getFittedValuesUML(temp$parms)
+
+  UML.scores.matrix <- getUMLScores(temp$parms)
+
+
+  # Now fit the CML
+  #print("start init")
+  temp <- getInit(indep = TRUE)
+  #print("computed init")
+  if (is.null(temp)) return(NULL)
+
+  # Save the initial estimates and initialize the return list
+  ret$CML   <- list(parms = temp$CML.parms, cov = temp$cov, loglike = temp$loglike)
+
+  #TODO: Set this to be a constrained parameter and get the right scope for beta
+  nbeta     <- length(temp$beta)
+  eta0      <- temp$eta
+  alpha.row <- 1
+  beta.row  <- 2:(nbeta+1)
+  xi.row<-NULL
+  if(max(beta.row) < length(eta0))
+  {
+    xi.row    <- (max(beta.row) + 1):length(eta0)
+  }
+  #print("DEBUG: xi rows are ")
+  #print(xi.row)
+
+
+
+  cov       <- NULL
+  nparms    <- length(eta0)
+
+  # Save the fitted values for empirical bayes
+  fitted.values.CMLInit <- temp$fitted.values
+  X.main.old <- X.main[,]
+  # If there were NAs in CML, modify the design matrices
+
+  if (temp$naFlag) 
+  {
+    if (nx) 
+    {
+      pos <- temp$naXPos
+      len <- length(pos)
+      if (len) 
+      {
+        if (len == nx) 
+        {
+          nx     <- 0
+          X.main <- NULL
+        } else 
+        {
+          X.main <- removeOrKeepCols( X.main, pos, which=-1 )
+          nx     <- ncol(X.main)
+        }
+      }
+    }
+
+    if (nv) 
+    {
+      pos <- temp$naVPos
+      len <- length(pos)
+      if (len) 
+      {
+        if (len == nv) 
+        {
+          nv    <- 0
+          X.int <- NULL
+        } else 
+        {
+          X.int <- removeOrKeepCols( X.int, pos, which = -1 )
+          nv    <- ncol(X.int)
+        }
+      }
+    }
+  }
+
+  # Determine if parameters are to be fixed
+  if (fixFlag) 
+  {
+    #op$use.C.code <- 0
+    temp <- op$fixParms
+
+    # Define the map for fixed parms
+    temp2 <- match(temp$parms, names(eta0))
+    temp2 <- temp2[!is.na(temp2)]
+    if (!length(temp2)) stop("ERROR with fixParms$parms")
+    fixEta0   <- eta0
+    fixEta0[temp2] <- temp$values
+    fixMap <- (1:nparms)[-temp2]
+
+    # Change eta0
+    eta0 <- eta0[fixMap]
+
+    # Get the updated xi.row
+    temp <- sum(xi.row %in% temp2)
+    nxi  <- length(xi.row) - temp
+    if (nxi) 
+    {
+      temp <- length(eta0)
+      fix_xi.row <- (temp - nxi + 1):temp
+    } else 
+    {
+      fix_xi.row <- 0
+    }
+  }
+  if (genetic.model) op$num.deriv <- 1
+  if(op$indep)
+  {
+    eta0 <- check_init(indep = TRUE)
+    #print("checked init")
+    #print("DEBUG: Starting CML opti")
+    temp <- try(callOptimIndep(), silent=TRUE)
+    #print(temp)
+    #print("ran optim")
+    if (checkTryError(temp, conv=0)) return(setReturn(ret))
+    if (!temp$converged) return(setReturn(ret))
+    temp <- list(parms = temp$parms, cov = temp$cov, loglike = temp$loglike)
+    ret$CML <- temp
+    #Get the CML scores matrix
+    #print("Compute scores (CML)")
+    CML.scores.matrix<-getCMLScores(temp$parms)
+
+
+    #print("DEBUG: Done CML opti")
+    varCovMat <- getVarCov()
+    #print("DEBUG: computed vcov matrix")
+  } else
+  {
+    varCovMat <- getVarCovUMLOnly()
+  }
+
+  if(!reparam)
+  {
+    RERI.UML <- getRERI( ret$UML$parms, suffix = ".UML", covar = varCovMat)
+    ret$RERI.UML <- RERI.UML
+    ret$vCovMat <- varCovMat
+    ret$lm.UML <- expandModel( fit.object = ret$UML, suffix = ".UML")
+    #print("DEBUG: Expanded the model")
+
+    if(op$indep)
+    {
+      RERI.CML <- getRERI( ret$CML$parms, suffix = ".CML", covar = varCovMat)
+      ret$RERI.CML <- RERI.CML
+      RERI.EB <- getEB()
+      #print("DEBUG: Computed EB estimator")
+      ret$RERI.EB <- RERI.EB
+        ret$lm.CML <- expandModel(fit.object = ret$CML,suffix = ".CML")
+    }
+  } else 
+  {
+    ret$lik.UML.NULL <- ret$UML$loglike
+    ret$lik.CML.NULL <- ret$CML$loglike
+  }
+  ret
+
+} # END: snp.main.additiveTrend
+
 # Function to return a vector of variable names
-logistic.vnames <- function(X, V, nStrata, snpName="SNP_", 
-                    out.est=NULL, genetic.model=0, 
-                    fit.null=0, zeroSNP=0) {
+logistic.vnames <- function(X, V, nStrata, snpName="SNP_",
+                            out.est=NULL, genetic.model=0,
+                            fit.null=0, zeroSNP=0) 
+{
 
-    # Initialize the return list
-    ret <- list()
+  # Initialize the return list
+  ret <- list()
 
-    # Check out.est
-    if (!is.null(out.est)) {
-      temp <- out.est$parms
-      if (is.character(temp)) {
-        ret$est.p <- temp
-        out.est   <- 0
-      } else {
-        # Numeric value
-        out.est <- temp
-      } 
-    } else { 
-      out.est <- 0
-    }
-    
-    save1 <- out.est
-
-    ret$int <- "Intercept"
-    if (!is.null(X)) ret$X <- getVarNames(X, prefix="X")
-    ret$snp <- getVarNames.snp(prefix=snpName, genetic.model=genetic.model) 
-    if (!is.null(V)) {
-      temp <- getVarNames.int(V, prefix=snpName, genetic.model=genetic.model, sep=":")
+  # Check out.est
+  if (!is.null(out.est)) {
+    temp <- out.est$parms
+    if (is.character(temp)) {
+      ret$est.p <- temp
+      out.est   <- 0
     } else {
-      temp <- NULL
-      if (out.est == 2) out.est <- 1
+      # Numeric value
+      out.est <- temp
+    }
+  } else {
+    out.est <- 0
+  }
+
+  save1 <- out.est
+
+  ret$int <- "Intercept"
+  if (!is.null(X)) ret$X <- getVarNames(X, prefix="X")
+  ret$snp <- getVarNames.snp(prefix=snpName, genetic.model=genetic.model)
+  if (!is.null(V)) {
+    temp <- getVarNames.int(V, prefix=snpName, genetic.model=genetic.model, sep=":")
+  } else {
+    temp <- NULL
+    if (out.est == 2) out.est <- 1
+  }
+
+  ret$V <- temp
+  ret$strata <- paste("Allele_freq.", 1:nStrata, sep="")
+  ret$all <- c(ret$int, ret$X, ret$snp, ret$V, ret$strata)
+
+  if (out.est) {
+    if (out.est == 3) {
+      ret$est.p <- c(ret$int, ret$X, ret$snp, ret$V)
+    } else {
+      ret$est.p <- ret$snp
+      if (out.est == 2) {
+        ret$est.p <- c(ret$est.p, ret$V)
+      }
     }
 
-    ret$V <- temp
-    ret$strata <- paste("Allele_freq.", 1:nStrata, sep="")
-    ret$all <- c(ret$int, ret$X, ret$snp, ret$V, ret$strata)
 
-    if (out.est) {
-      if (out.est == 3) {
-        ret$est.p <- c(ret$int, ret$X, ret$snp, ret$V)
+    if (genetic.model == 3) {
+      # Create another vector of parm names for the case when there is
+      #  less than 3 genotypes
+      snp1 <- paste(snpName, 1, sep="")
+      if (!is.null(V)) {
+        tempv  <- getVarNames.int(V, prefix=snpName, genetic.model=0, sep=":")
+        tempv1 <- getVarNames.int(V, prefix=snp1, genetic.model=0, sep=":")
       } else {
-        ret$est.p <- ret$snp
-        if (out.est == 2) {
-          ret$est.p <- c(ret$est.p, ret$V)
-        } 
+        tempv  <- NULL
+        tempv1 <- NULL
       }
 
-      if (genetic.model == 3) {
-        # Create another vector of parm names for the case when there is
-        #  less than 3 genotypes
-        snp1 <- paste(snpName, 1, sep="")
-        if (!is.null(V)) {
-          tempv  <- getVarNames.int(V, prefix=snpName, genetic.model=0, sep=":")
-          tempv1 <- getVarNames.int(V, prefix=snp1, genetic.model=0, sep=":")
-        } else {
-          tempv  <- NULL
-          tempv1 <- NULL
-        }
-        
-        if (save1 == 3) {
-          temp  <- c(ret$int, ret$X, snpName, tempv)
-          temp1 <- c(ret$int, ret$X, snp1, tempv1)
-        } else if (save1 == 2) {
-          temp  <- c(snpName, tempv)
-          temp1 <- c(snp1, tempv1)
-        } else if (save1 == 1) {
-          temp  <- snpName
-          temp1 <- snp1
-        }
-        ret$est.p  <- list(ret$est.p, temp)
-        ret$est.parms <- list(ret$est.p[[1]], temp1)
-      } else {
-        ret$est.parms <- ret$est.p
+      if (save1 == 3) {
+        temp  <- c(ret$int, ret$X, snpName, tempv)
+        temp1 <- c(ret$int, ret$X, snp1, tempv1)
+      } else if (save1 == 2) {
+        temp  <- c(snpName, tempv)
+        temp1 <- c(snp1, tempv1)
+      } else if (save1 == 1) {
+        temp  <- snpName
+        temp1 <- snp1
       }
+      ret$est.p  <- list(ret$est.p, temp)
+      ret$est.parms <- list(ret$est.p[[1]], temp1)
     } else {
       ret$est.parms <- ret$est.p
     }
+  } else {
+    ret$est.parms <- ret$est.p
+  }
 
-    if (fit.null) {
-      ret$UML.names <- c(ret$int, ret$X)
-      ret$all.names <- c(ret$int, ret$X, ret$snp, ret$strata)
-    } else {
-      UML.names <- c(ret$int, ret$X)
-      if (!zeroSNP) UML.names <- c(UML.names, ret$snp)
-      UML.names <- c(UML.names, ret$V)
-      ret$UML.names <- UML.names
-      ret$all.names <- ret$all
-    }
-    
-    ret
+  if (fit.null) {
+    ret$UML.names <- c(ret$int, ret$X)
+    ret$UML.names.full <- c(ret$int, ret$X)
+    ret$all.names <- c(ret$int, ret$X, ret$snp, ret$strata)
+  } else {
+    UML.names <- c(ret$int, ret$X)
+    UML.names.full <- c(ret$int, ret$X)
+    if (!zeroSNP) UML.names <- c(UML.names, ret$snp[1])
+    if (!zeroSNP) UML.names.full <- c(UML.names.full, ret$snp)
+    UML.names <- c(UML.names, ret$V[1])
+    UML.names.full <- c(UML.names.full, ret$V)
+    ret$UML.names <- UML.names
+    ret$UML.names.full <- UML.names.full
+    ret$all.names <- ret$all
+  }
+
+  ret
 
 } # END: logistic.vnames
 
 # Function to create a design matrix
-logistic.dsgnMat <- function(data, vars, facVars, removeInt=1, 
-                      norm.names=1, remove.vars=NULL) {
+logistic.dsgnMat <- function(data, vars, facVars, removeInt=1,
+                             norm.names=1, remove.vars=NULL) 
+{
 
   # data        Data frame
   # vars        Character vector of variable names or a formula
@@ -2938,12 +4615,12 @@ logistic.dsgnMat <- function(data, vars, facVars, removeInt=1,
       mat <- NULL
     } else {
       mat <- removeOrKeepCols(mat, mnames, which=1)
-    } 
+    }
     mat
 
   } # END: rm.vars
 
-  if (is.null(vars)) return(list(designMatrix=NULL, newVars=NULL)) 
+  if (is.null(vars)) return(list(designMatrix=NULL, newVars=NULL))
 
   # Determine if vars is a formula
   if ("formula" %in% class(vars)) {
@@ -2960,7 +4637,7 @@ logistic.dsgnMat <- function(data, vars, facVars, removeInt=1,
     }
     if (norm.names) colnames(design) <- normVarNames(colnames(design))
     if (!is.null(remove.vars)) design <- rm.vars(design, remove.vars)
-    return(list(designMatrix=design, newVars=newVars))    
+    return(list(designMatrix=design, newVars=newVars))
   }
 
   design  <- removeOrKeepCols(data, vars, which=1)
@@ -2973,7 +4650,7 @@ logistic.dsgnMat <- function(data, vars, facVars, removeInt=1,
       design  <- temp$data
       newVars <- temp$newVars
     }
-  } 
+  }
   design <- as.matrix(design)
   if (norm.names) colnames(design) <- normVarNames(colnames(design))
 
@@ -3001,7 +4678,8 @@ logistic.dsgnMat <- function(data, vars, facVars, removeInt=1,
 } # END: logistic.dsgnMat
 
 # Function to apply the zero.vars option to the design matrices
-apply_zero.vars <- function(zero.vars, mat.list, snp.var, facVars, data) {
+apply_zero.vars <- function(zero.vars, mat.list, snp.var, facVars, data) 
+{
 
   mat.names <- names(mat.list)
   fixParms  <- NULL
@@ -3018,8 +4696,8 @@ apply_zero.vars <- function(zero.vars, mat.list, snp.var, facVars, data) {
         } else {
           mat <- removeOrKeepCols(mat, cnames, which=1)
         }
-        mat.list[[mat.names[i]]] <- mat 
-      } 
+        mat.list[[mat.names[i]]] <- mat
+      }
     }
     if (snp.var %in% zero.vars) {
       fixParms <- list(parms=snp.var, values=0)
@@ -3048,8 +4726,8 @@ apply_zero.vars <- function(zero.vars, mat.list, snp.var, facVars, data) {
         } else {
           mat <- removeOrKeepCols(mat, cnames, which=1)
         }
-        mat.list[[z]] <- mat 
-      } 
+        mat.list[[z]] <- mat
+      }
     }
   }
 
@@ -3058,14 +4736,15 @@ apply_zero.vars <- function(zero.vars, mat.list, snp.var, facVars, data) {
 } # END: apply_zero.vars
 
 # Function to output the needed UML and CML estimates
-UML_CML_GxE_parms <- function(main.variables, interaction.variables, out.file, snps, data, response.var, 
-        main.vars=NULL, int.vars=NULL, strata.var=NULL, ProbG1.var=NULL, op=NULL) {
+UML_CML_GxE_parms <- function(main.variables, interaction.variables, out.file, snps, data, response.var,
+                              main.vars=NULL, int.vars=NULL, strata.var=NULL, ProbG1.var=NULL, op=NULL) 
+{
 
   # Input arguments:
   # out.file      Output file to save the necessary UML and CML estimates, or NULL
   # snps          Character vector of snps to be analyzed
   # data          Data frame containing the snps to be analyzed, outcome,
-  #                covariates and other variables 
+  #                covariates and other variables
   # response.var  Same definition as is snp.logistic
   # main.vars     Same definition as is snp.logistic
   # int.var       Character vector of interaction variable
@@ -3073,8 +4752,8 @@ UML_CML_GxE_parms <- function(main.variables, interaction.variables, out.file, s
   # op            Same definition as is snp.logistic
 
   # Output variable names for the UML main effects:
-  # UML.G.BETA UML.E.BETA UML.GE.BETA 
-  
+  # UML.G.BETA UML.E.BETA UML.GE.BETA
+
   # Output variable names for the upper triangle of the UML covariance matrix:
   # UML.G.G.COV, UML.G.E.COV UML.G.GE.COV
   #              UML.E.E.COV UML.E.GE.COV
@@ -3082,8 +4761,8 @@ UML_CML_GxE_parms <- function(main.variables, interaction.variables, out.file, s
 
   # Output variable names for the UML-CML covariance matrix:
   # UML.G.CML.G.COV, UML.G.CML.E.COV UML.G.CML.GE.COV
-  # UML.E.CML.G.COV, UML.E.CML.E.COV UML.E.CML.GE.COV         
-  # UML.GE.CML.G.COV, UML.GE.CML.E.COV UML.GE.CML.GE.COV                   
+  # UML.E.CML.G.COV, UML.E.CML.E.COV UML.E.CML.GE.COV
+  # UML.GE.CML.G.COV, UML.GE.CML.E.COV UML.GE.CML.GE.COV
 
   n.main.vars     <- length(main.variables)
   n.int.vars      <- length(interaction.variables)
@@ -3092,16 +4771,16 @@ UML_CML_GxE_parms <- function(main.variables, interaction.variables, out.file, s
   UML.COV.out     <- outNames.cov("UML", n.main.vars, n.int.vars)
   CML.COV.out     <- outNames.cov("CML", n.main.vars, n.int.vars)
   UML.CML.COV.out <- outNames.cov2(n.main.vars, n.int.vars)
-  
+
   fileFlag <- !is.null(out.file)
   print    <- op$print
 
-  # Open the output file 
+  # Open the output file
   if (fileFlag) fid <- file(out.file, "w")
-   
+
   # Write out the column names
   outvars <- c("SNP", UML.ME.out, UML.COV.out, CML.ME.out, CML.COV.out, UML.CML.COV.out)
-  if (fileFlag) writeOut(fid, outvars) 
+  if (fileFlag) writeOut(fid, outvars)
 
   # Vector to store output values
   outvec <- character(length(outvars))
@@ -3110,31 +4789,31 @@ UML_CML_GxE_parms <- function(main.variables, interaction.variables, out.file, s
 
   # Loop over each snp
   for (snp in snps) {
-    outvec0[]     <- "" 
+    outvec0[]     <- ""
     outvec        <- outvec0
     outvec["SNP"] <- snp
 
-    fit <- try(snp.logistic(data, response.var, snp, main.vars=main.vars, 
-                 int.vars=int.vars, strata.var=strata.var, op=op), silent=TRUE)
+    fit <- try(snp.logistic(data, response.var, snp, main.vars=main.vars,
+                            int.vars=int.vars, strata.var=strata.var, op=op), silent=TRUE)
     if ("try-error" %in% class(fit)) {
       if (print) print(fit)
-      if (fileFlag) writeOut(fid, outvec) 
-      next 
-    } 
+      if (fileFlag) writeOut(fid, outvec)
+      next
+    }
     if (print) print(summary(fit))
 
     # Extract UML and CML estimates
-    temp <- try(extractEst(fit, "UML", outvec, snp, main.variables, interaction.variables, 
+    temp <- try(extractEst(fit, "UML", outvec, snp, main.variables, interaction.variables,
                            UML.ME.out, UML.COV.out), silent=TRUE)
     if (!("try-error" %in% class(temp))) outvec <- temp
-    temp <- try(extractEst(fit, "CML", outvec, snp, main.variables, interaction.variables, 
+    temp <- try(extractEst(fit, "CML", outvec, snp, main.variables, interaction.variables,
                            CML.ME.out, CML.COV.out), silent=TRUE)
     if (!("try-error" %in% class(temp))) outvec <- temp
-    temp <- try(extract_UML.CML(fit, outvec, snp, main.variables, interaction.variables, 
+    temp <- try(extract_UML.CML(fit, outvec, snp, main.variables, interaction.variables,
                                 UML.CML.COV.out), silent=TRUE)
     if (!("try-error" %in% class(temp))) outvec <- temp
 
-    if (fileFlag) writeOut(fid, outvec)     
+    if (fileFlag) writeOut(fid, outvec)
   }
 
   if (fileFlag) close(fid)
@@ -3144,7 +4823,8 @@ UML_CML_GxE_parms <- function(main.variables, interaction.variables, out.file, s
 } # END: UML_CML_GxE_parms
 
 # Function to write output to an open (tab-delimited) file
-writeOut <- function(FID, vec) {
+writeOut <- function(FID, vec) 
+{
 
   # FID    File id
   # vec    Vector to output
@@ -3156,7 +4836,8 @@ writeOut <- function(FID, vec) {
 } # END: writeOut
 
 # Function to get the parameter names
-outNames.me <- function(which, n.main.vars, n.int.vars) {
+outNames.me <- function(which, n.main.vars, n.int.vars) 
+{
 
   ret <- "G"
   if (n.main.vars < 2) {
@@ -3165,7 +4846,7 @@ outNames.me <- function(which, n.main.vars, n.int.vars) {
     jj  <- 1:n.main.vars
     ret <- c(ret, paste("E", jj, sep=""))
   }
- 
+
   if (n.int.vars < 2) {
     ret <- c(ret, "GE")
   } else {
@@ -3179,7 +4860,8 @@ outNames.me <- function(which, n.main.vars, n.int.vars) {
 } # END: outNames.me
 
 # Function to get output names
-outNames.cov <- function(which, n.main.vars, n.int.vars) {
+outNames.cov <- function(which, n.main.vars, n.int.vars) 
+{
 
   # G row
   ret <- "G.G"
@@ -3193,7 +4875,7 @@ outNames.cov <- function(which, n.main.vars, n.int.vars) {
     ret <- c(ret, "G.GE")
   } else {
     jj  <- 1:n.int.vars
-    ret <- c(ret, paste("G.GE", jj, sep="")) 
+    ret <- c(ret, paste("G.GE", jj, sep=""))
   }
 
   # E rows
@@ -3202,14 +4884,14 @@ outNames.cov <- function(which, n.main.vars, n.int.vars) {
     if (n.int.vars < 2) {
       ret <- c(ret, "E.GE")
     } else {
-      jj  <- 1:n.int.vars 
+      jj  <- 1:n.int.vars
       ret <- c(ret, paste("E.GE", jj, sep=""))
     }
   } else {
     jj0 <- 1:n.main.vars
     jj2 <- 1:n.int.vars
     for (i in 1:n.main.vars) {
-      jj  <- i:n.main.vars 
+      jj  <- i:n.main.vars
       ret <- c(ret, paste("E", i, ".E", jj, sep=""))
       if (n.int.vars < 2) {
         ret <- c(ret, paste("E", i, ".GE", sep=""))
@@ -3225,7 +4907,7 @@ outNames.cov <- function(which, n.main.vars, n.int.vars) {
   } else {
     jj0 <- 1:n.int.vars
     for (i in 1:n.int.vars) {
-      jj  <- i:n.int.vars 
+      jj  <- i:n.int.vars
       ret <- c(ret, paste("GE", i, ".GE", jj, sep=""))
     }
   }
@@ -3236,10 +4918,11 @@ outNames.cov <- function(which, n.main.vars, n.int.vars) {
 
 } # END: outNames.cov
 
-outNames.cov2 <- function(n.main.vars, n.int.vars) {
+outNames.cov2 <- function(n.main.vars, n.int.vars) 
+{
 
   if ((n.main.vars < 2) && (n.int.vars < 2)) {
-    ret <- c("UML.G.CML.G.COV", "UML.G.CML.E.COV", "UML.G.CML.GE.COV", 
+    ret <- c("UML.G.CML.G.COV", "UML.G.CML.E.COV", "UML.G.CML.GE.COV",
              "UML.E.CML.G.COV", "UML.E.CML.E.COV", "UML.E.CML.GE.COV",
              "UML.GE.CML.G.COV", "UML.GE.CML.E.COV", "UML.GE.CML.GE.COV")
     return(ret)
@@ -3273,8 +4956,8 @@ outNames.cov2 <- function(n.main.vars, n.int.vars) {
     jj  <- 1:n.main.vars
     jj2 <- 1:n.int.vars
     for (i in 1:n.main.vars) {
-      ret <- c(ret, paste("UML.E", i, ".CML.G", sep="")) 
-      ret <- c(ret, paste("UML.E", i, ".CML.E", jj, sep=""))     
+      ret <- c(ret, paste("UML.E", i, ".CML.G", sep=""))
+      ret <- c(ret, paste("UML.E", i, ".CML.E", jj, sep=""))
       if (n.int.vars < 2) {
         ret <- c(ret, paste("UML.E", i, ".CML.GE", sep=""))
       } else {
@@ -3296,24 +4979,25 @@ outNames.cov2 <- function(n.main.vars, n.int.vars) {
     jj0 <- 1:n.main.vars
     jj2 <- 1:n.int.vars
     for (i in 1:n.int.vars) {
-      ret <- c(ret, paste("UML.GE", i, ".CML.G", sep="")) 
+      ret <- c(ret, paste("UML.GE", i, ".CML.G", sep=""))
       if (n.main.vars < 2) {
         ret <- c(ret, paste("UML.GE", i, ".CML.E", sep=""))
       } else {
         ret <- c(ret, paste("UML.GE", i, ".CML.E", jj0, sep=""))
-      }     
+      }
       ret <- c(ret, paste("UML.GE", i, ".CML.GE", jj2, sep=""))
     }
   }
 
   ret <- paste(ret, ".COV", sep="")
 
-  ret 
-  
+  ret
+
 } # END: outNames.cov2
 
 # Function to get the UML-CML cov estimates
-extract_UML.CML <- function(fit, outvec, G.name, E.name, GE.name, ids) {
+extract_UML.CML <- function(fit, outvec, G.name, E.name, GE.name, ids) 
+{
 
   x <- fit[["EB", exact=TRUE]]
   if (is.null(x)) return(outvec)
@@ -3348,23 +5032,23 @@ extract_UML.CML <- function(fit, outvec, G.name, E.name, GE.name, ids) {
     cov2[row2.names, col2.names] <- cov[row2.names, col2.names]
   } else {
     cov2 <- cov
-  } 
+  }
 
   if (n.int.vars < 2) {
     outvec[ids] <- c(cov2[G.row, G.col], cov2[G.row, E.col], cov2[G.row, GE.col],
                      cov2[E.row, G.col], cov2[E.row, E.col], cov2[E.row, GE.col],
-                     cov2[GE.row, G.col], cov2[GE.row, E.col], cov2[GE.row, GE.col]) 
+                     cov2[GE.row, G.col], cov2[GE.row, E.col], cov2[GE.row, GE.col])
   } else {
     vec <- cov2[G.row, G.col]
     for (i in 1:n.int.vars) vec <- c(vec, cov2[G.row, E.col[i]])
     for (i in 1:n.int.vars) vec <- c(vec, cov2[G.row, GE.col[i]])
-    for (i in 1:n.int.vars) {    
+    for (i in 1:n.int.vars) {
       row <- E.row[i]
       vec <- c(vec, cov2[row, G.col])
       for (j in 1:n.int.vars) vec <- c(vec, cov2[row, E.col[j]])
       for (j in 1:n.int.vars) vec <- c(vec, cov2[row, GE.col[j]])
     }
-    for (i in 1:n.int.vars) {    
+    for (i in 1:n.int.vars) {
       row <- GE.row[i]
       vec <- c(vec, cov2[row, G.col])
       for (j in 1:n.int.vars) vec <- c(vec, cov2[row, E.col[j]])
@@ -3379,7 +5063,8 @@ extract_UML.CML <- function(fit, outvec, G.name, E.name, GE.name, ids) {
 } # END: extract_UML.CML
 
 # Function to extract estimates. The updated output vector will be returned
-extractEst <- function(fit, which, outvec, G.name, E.name, GE.name, ids.main, ids.cov) {
+extractEst <- function(fit, which, outvec, G.name, E.name, GE.name, ids.main, ids.cov) 
+{
 
   # fit     Return object from snp.logistic
   # which   "UML" or "CML"
@@ -3396,7 +5081,7 @@ extractEst <- function(fit, which, outvec, G.name, E.name, GE.name, ids.main, id
 
   # Get the names of the interaction parms
   GE.name  <- paste(G.name, ":", GE.name, sep="")
-  
+
   # Vector of expected parameter names
   vec.names   <- c(G.name, E.name, GE.name)
   n.vec.names <- length(vec.names)
@@ -3413,8 +5098,8 @@ extractEst <- function(fit, which, outvec, G.name, E.name, GE.name, ids.main, id
     } else {
       parms2     <- parms
       vec2.names <- vec.names
-    } 
-    outvec[ids.main] <- c(parms[vec2.names]) 
+    }
+    outvec[ids.main] <- c(parms[vec2.names])
   }
 
   cov <- x[["cov", exact=TRUE]]
@@ -3429,21 +5114,21 @@ extractEst <- function(fit, which, outvec, G.name, E.name, GE.name, ids.main, id
       cov2[vec2.names, vec2.names] <- cov[vec2.names, vec2.names]
     } else {
       cov2 <- cov
-    } 
+    }
     if (n.int.vars < 2) {
       outvec[ids.cov] <- c(cov2[G.name, G.name], cov2[G.name, E.name], cov2[G.name, GE.name],
-                         cov2[E.name, E.name], cov2[E.name, GE.name], cov2[GE.name, GE.name]) 
+                           cov2[E.name, E.name], cov2[E.name, GE.name], cov2[GE.name, GE.name])
     } else {
       vec <- cov2[G.name, G.name]
       for (i in 1:n.int.vars) vec <- c(vec, cov2[G.name, E.name[i]])
       for (i in 1:n.int.vars) vec <- c(vec, cov2[G.name, GE.name[i]])
-      for (i in 1:n.int.vars) {   
-        row <- E.name[i] 
+      for (i in 1:n.int.vars) {
+        row <- E.name[i]
         for (j in i:n.int.vars) vec <- c(vec, cov2[row, E.name[j]])
         for (j in 1:n.int.vars) vec <- c(vec, cov2[row, GE.name[j]])
       }
-      for (i in 1:n.int.vars) { 
-        row <- GE.name[i]   
+      for (i in 1:n.int.vars) {
+        row <- GE.name[i]
         for (j in i:n.int.vars) vec <- c(vec, cov2[row, GE.name[j]])
       }
       outvec[ids.cov] <- vec
@@ -3454,13 +5139,14 @@ extractEst <- function(fit, which, outvec, G.name, E.name, GE.name, ids.main, id
 
 } # END: extractEst
 
-# Function for running a scan 
-scan.UML_CML <- function(snp.list, pheno.list, op=NULL) {
+# Function for running a scan
+scan.UML_CML <- function(snp.list, pheno.list, op=NULL) 
+{
 
   # Check the input lists
   snp.list   <- check.snp.list(snp.list)
-  pheno.list <- default.list(pheno.list, 
-                c("response.var"), list("ERROR"), error=c(1)) 
+  pheno.list <- default.list(pheno.list,
+                             c("response.var"), list("ERROR"), error=c(1))
 
   response.var <- pheno.list$response.var
   main.vars    <- pheno.list[["main.vars", exact=TRUE]]
@@ -3494,15 +5180,15 @@ scan.UML_CML <- function(snp.list, pheno.list, op=NULL) {
   temp.list <- check.temp.list(temp.list)
   temp <- c("BFGS", "Nelder-Mead", "BFGS", "CG", "L-BFGS-B", "SANN", "IRLS")
 
-  op <- default.list(op, 
-        c("id", "print", "optimizer", "snpName","genetic.model", 
-          "allele.cc", "out.file", "save.varnames"), 
-        list(1, 0, "BFGS", "SNP_", 0, 1, "scan.UML_CML.txt", 1),
-        error=c(0, 0, 0, 0, 0, 0, 0, 0),
-       checkList=list(NA, 0:1, temp, NA, 0:2, 1:2, NA, 0:1))
+  op <- default.list(op,
+                     c("id", "print", "optimizer", "snpName","genetic.model",
+                       "allele.cc", "out.file", "save.varnames"),
+                     list(1, 0, "BFGS", "SNP_", 0, 1, "scan.UML_CML.txt", 1),
+                     error=c(0, 0, 0, 0, 0, 0, 0, 0),
+                     checkList=list(NA, 0:1, temp, NA, 0:2, 1:2, NA, 0:1))
   print <- op$print
   SNP   <- op$snpName
-  
+
   # Check cc.var
   if (is.null(cc.var)) {
     if (op$allele.cc == 2) pheno.list$cc.var <- pheno.list$response.var
@@ -3512,20 +5198,20 @@ scan.UML_CML <- function(snp.list, pheno.list, op=NULL) {
   snp.list$genetic.model <- NULL
 
   # All the variables must be given by variable name (not column number)
-  if ((is.numeric(pheno.list$response.var)) || 
+  if ((is.numeric(pheno.list$response.var)) ||
       (is.numeric(pheno.list$strata.var)) ||
       (is.numeric(pheno.list$factor.vars)) ||
       (is.numeric(pheno.list$id.var)) ) {
     stop("ERROR: variables must be specified by name, not column number")
   }
-  if ((!main.form) && (is.numeric(pheno.list$X.vars))) 
+  if ((!main.form) && (is.numeric(pheno.list$X.vars)))
     stop("ERROR: variables must be specified by name, not column number")
-  if ((!int.form) && (is.numeric(pheno.list$V.vars))) 
+  if ((!int.form) && (is.numeric(pheno.list$V.vars)))
     stop("ERROR: variables must be specified by name, not column number")
 
   # Keep only the variables we need
   if (!formFlag) {
-    temp <- c(response.var, strata.var, main.vars, int.vars, 
+    temp <- c(response.var, strata.var, main.vars, int.vars,
               pheno.list$id.var, cc.var)
     pheno.list$keep.vars   <- unique(temp)
     pheno.list$remove.vars <- NULL
@@ -3542,7 +5228,7 @@ scan.UML_CML <- function(snp.list, pheno.list, op=NULL) {
 
   temp  <- try(getData.1(snp.list, pheno.list, temp.list, op=tlist),
                silent=TRUE)
-  if (class(temp) == "try-error") {
+  if (inherits(temp,"try-error")) {
     print(temp)
     stop("ERROR loading data")
   }
@@ -3568,11 +5254,11 @@ scan.UML_CML <- function(snp.list, pheno.list, op=NULL) {
     ProbG1.var <- paste(SNP, "ProbG1", sep="")
     phenoData0[, ProbG1.var] <- NA
   }
-  
+
   rm(temp, tlist, snp.list, phenoData.list)
   temp <- gc(verbose=FALSE)
 
-  # Get the response variable 
+  # Get the response variable
   response0 <- as.numeric(phenoData0[, response.var])
   if (!any(response0 %in% 0:1)) stop("ERROR: response must be 0-1")
 
@@ -3593,13 +5279,13 @@ scan.UML_CML <- function(snp.list, pheno.list, op=NULL) {
   phenoData0[, SNP] <- rbinom(nobs, 1, 0.5)
   out.file    <- op$out.file
   out.base    <- paste(out.file, "_info", sep="")
-  temp <- try(snp.logistic(phenoData0, response.var, SNP, main.vars=main.vars, 
-                 int.vars=int.vars, strata.var=NULL, op=op), silent=TRUE)
+  temp <- try(snp.logistic(phenoData0, response.var, SNP, main.vars=main.vars,
+                           int.vars=int.vars, strata.var=NULL, op=op), silent=TRUE)
   if ("try-error" %in% class(temp)) {
     print(temp)
     stop()
   }
- 
+
   interaction.variables <- temp$model.info$int.vars
   main.variables <- op[["E.parm.names", exact=TRUE]]
   if (is.null(main.variables)) main.variables <- interaction.variables
@@ -3643,7 +5329,7 @@ scan.UML_CML <- function(snp.list, pheno.list, op=NULL) {
 
   # Open the output file
   fid <- file(op$out.file, "w")
-  
+
   # Loop over each SNP
   i <- 0
   while (1) {
@@ -3659,7 +5345,7 @@ scan.UML_CML <- function(snp.list, pheno.list, op=NULL) {
     } else {
       majMin <- "  "
     }
-     
+
     # Get the MAF
     if (maf.flag) {
       maf <- maf.vec[i]
@@ -3675,8 +5361,8 @@ scan.UML_CML <- function(snp.list, pheno.list, op=NULL) {
 
     # Fit the model
     temp <- try(UML_CML_GxE_parms(main.variables, interaction.variables, NULL, SNP, phenoData0, response.var,
-            main.vars=main.vars, int.vars=int.vars, strata.var=strata.var, ProbG1.var=ProbG1.var, 
-            op=op), silent=TRUE)
+                                  main.vars=main.vars, int.vars=int.vars, strata.var=strata.var, ProbG1.var=ProbG1.var,
+                                  op=op), silent=TRUE)
     errorFlag <- ("try-error" %in% class(temp))
     if (!errorFlag) {
       if (firstFlag) {
@@ -3690,8 +5376,8 @@ scan.UML_CML <- function(snp.list, pheno.list, op=NULL) {
       }
     } else {
       if (firstFlag) writeOut(fid, c(snp.name, majMin, maf, errorVec))
-    } 
-   
+    }
+
   } # END: while(1)
 
   close(fid)
@@ -3701,23 +5387,24 @@ scan.UML_CML <- function(snp.list, pheno.list, op=NULL) {
 } # END: scan.UML_CML
 
 # Function for meta-anlaysis
-meta.fixed <- function(study.list) {
- 
+meta.fixed <- function(study.list) 
+{
+
   # study.list    List of named lists with names beta and cov
   nstudy <- length(study.list)
-  
+
   sigma.inv.list     <- list()
   sum.sigma.inv      <- 0
   sum.sigma.inv.beta <- 0
- 
+
   # Compute sigma inverse for each study
   for (i in 1:nstudy) {
     temp          <- study.list[[i]]
     beta          <- temp$beta
-    sigma         <- temp$cov    
+    sigma         <- temp$cov
     sigma.inv     <- solve(sigma)
     sum.sigma.inv <- sum.sigma.inv + sigma.inv
- 
+
     dim(beta)           <- c(length(beta), 1)
     sum.sigma.inv.beta  <- sum.sigma.inv.beta + sum.sigma.inv %*% beta
     sigma.inv.list[[i]] <- sigma.inv
@@ -3726,13 +5413,14 @@ meta.fixed <- function(study.list) {
   meta.cov  <- solve(sum.sigma.inv)
   meta.beta <- meta.cov %*% sum.sigma.inv.beta
 
-  list(meta.beta=meta.beta, meta.cov=meta.cov, meta.cov.inv=sum.sigma.inv, 
-       inv.list=sigma.inv.list) 
+  list(meta.beta=meta.beta, meta.cov=meta.cov, meta.cov.inv=sum.sigma.inv,
+       inv.list=sigma.inv.list)
 
 } # END: meta.fixed
 
 # Function to compute A matrix for EB meta
-get.EB.A_matrix <- function(parm1, cov1, parm2) {
+get.EB.A_matrix <- function(parm1, cov1, parm2) 
+{
 
   psi      <- parm1 - parm2
   dim(psi) <- NULL
@@ -3746,7 +5434,8 @@ get.EB.A_matrix <- function(parm1, cov1, parm2) {
 } # END: get.EB.A_matrix
 
 meta.EB <- function(beta1, beta2, sumInv1.inv, sumInv2.inv, inv1.list, inv2.list,
-                    cov12.list) {
+                    cov12.list) 
+{
 
   # Covariance matrix for beta1 is sumInv1.inv
 
@@ -3761,20 +5450,21 @@ meta.EB <- function(beta1, beta2, sumInv1.inv, sumInv2.inv, inv1.list, inv2.list
   sum     <- 0
   n.study <- length(inv1.list)
   for (i in 1:n.study) {
-    sum <- sum + inv1.list[[i]] %*% cov12.list[[i]] %*% inv2.list[[i]] 
+    sum <- sum + inv1.list[[i]] %*% cov12.list[[i]] %*% inv2.list[[i]]
   }
   cov.EB <- sumInv1.inv %*% sum %*% sumInv2.inv
 
-  list(beta=beta.EB, cov=cov.EB)  
+  list(beta=beta.EB, cov=cov.EB)
 
 
 } # END: meta.EB
 
 # Function to get the parms/cov for a study given a named vec
-getBetaObject <- function(vec, vars) {
-   
+getBetaObject <- function(vec, vars) 
+{
+
   # vec   Named vector
-  # vars  Names to extract (must be ordered G, E, GE) 
+  # vars  Names to extract (must be ordered G, E, GE)
 
   ret <- vec[vars]
 
@@ -3783,17 +5473,18 @@ getBetaObject <- function(vec, vars) {
 } # END: getBetaObject
 
 # Function to get the cov for a study given a named vec
-getCovObject <- function(vec, vars) {
-   
+getCovObject <- function(vec, vars) 
+{
+
   # vec   Named vector
-  # vars  Names to extract (must be ordered, upper triangle of matrix) 
+  # vars  Names to extract (must be ordered, upper triangle of matrix)
 
   len <- length(vars)
   n   <- (-1 + sqrt(8*len + 1))/2
   ret <- matrix(data=NA, nrow=n, ncol=n)
   a   <- 1
   for (i in 1:n) {
-    b           <- a + n - i 
+    b           <- a + n - i
     ret[i, i:n] <- vec[vars[a:b]]
     ret[i:n, i] <- ret[i, i:n]
     a           <- b + 1
@@ -3804,10 +5495,11 @@ getCovObject <- function(vec, vars) {
 } # END: getCovObject
 
 # Function to get the UML-CML cov for a study given a named vec
-getCov12Object <- function(vec, vars) {
-   
+getCov12Object <- function(vec, vars) 
+{
+
   # vec   Named vector
-  # vars  Names to extract (must be ordered, rows of matrix) 
+  # vars  Names to extract (must be ordered, rows of matrix)
 
   n   <- sqrt(length(vars))
   ret <- matrix(data=vec[vars], byrow=TRUE, nrow=n, ncol=n)
@@ -3819,7 +5511,8 @@ getCov12Object <- function(vec, vars) {
 
 
 # Function to perfrm meta-analysis for each study
-meta.GxE <- function(study.list, op=NULL) {
+meta.GxE <- function(study.list, op=NULL) 
+{
 
   # study.list    List of sublists containing name of file, study name, etc
   # op            List with names:
@@ -3844,10 +5537,10 @@ meta.GxE <- function(study.list, op=NULL) {
     vec  <- gsub("CML.", "", vec, fixed=TRUE)
     vec  <- gsub(".BETA", "", vec, fixed=TRUE)
     temp <- substr(vec, 1, 1) == which
-    vec  <- vec[temp] 
-    vec  <- unique(vec) 
+    vec  <- vec[temp]
+    vec  <- unique(vec)
     n    <- length(vec)
-    
+
     n
 
   } # END: get.n.parms
@@ -3872,8 +5565,8 @@ meta.GxE <- function(study.list, op=NULL) {
 
   } # END: get.flip.E
   ###############################################################
-  # Function to determine which column names would be flipped from 
-  #  a different risk allele  
+  # Function to determine which column names would be flipped from
+  #  a different risk allele
   get.flip.cnames <- function(vec) {
 
     ids  <- grep("BETA", vec, fixed=TRUE)
@@ -3900,19 +5593,19 @@ meta.GxE <- function(study.list, op=NULL) {
     } else if (a == "G") {
       return("C")
     } else {
-      return(NULL) 
+      return(NULL)
     }
 
-  } # END: flip.allele 
+  } # END: flip.allele
   #################################################################
   # Function to determine if G parms need to be flipped
-  get.flip.status <- function(risk.base, other.base, MAF.base, 
+  get.flip.status <- function(risk.base, other.base, MAF.base,
                               risk, other, MAF) {
 
     message     <- ""
     messageFlag <- 0
     flip        <- 0
-    error       <- 0 
+    error       <- 0
 
     # See if the set of alleles match
     set.base <- c(risk.base, other.base)
@@ -3941,7 +5634,7 @@ meta.GxE <- function(study.list, op=NULL) {
   ###################################################################
 
   op       <- default.list(op, c("out.file", "print"), list("ERROR", 0),
-              error=c(1, 0))
+                           error=c(1, 0))
 
   nstudy   <- length(study.list)
   snps     <- op[["snps", exact=TRUE]]
@@ -3967,7 +5660,7 @@ meta.GxE <- function(study.list, op=NULL) {
     x[, "SNP"] <- removeWhiteSpace(x[, "SNP"])
     if (snpFlag) {
       temp <- x[, "SNP"] %in% snps
-      x    <- removeOrKeepRows(x, temp) 
+      x    <- removeOrKeepRows(x, temp)
     }
     nx  <- nrow(x)
     str <- paste("For study ", i, ", ", nx, " SNPs will be included.", sep="")
@@ -3996,7 +5689,7 @@ meta.GxE <- function(study.list, op=NULL) {
   }
 
   # Get the number of main effect parms and interaction parms
-  N.E.parms  <- get.n.parms(cnames, "E") 
+  N.E.parms  <- get.n.parms(cnames, "E")
   N.GE.parms <- get.n.parms(cnames, "G")
 
   # Get the column names for the vector of main effect estimates
@@ -4004,10 +5697,10 @@ meta.GxE <- function(study.list, op=NULL) {
   CML.beta.cnames    <- outNames.me("CML", N.E.parms, N.GE.parms)
   UML.cov.cnames     <- outNames.cov("UML", N.E.parms, N.GE.parms)
   CML.cov.cnames     <- outNames.cov("CML", N.E.parms, N.GE.parms)
-  UML.CML.cov.cnames <- outNames.cov2(N.E.parms, N.GE.parms) 
+  UML.CML.cov.cnames <- outNames.cov2(N.E.parms, N.GE.parms)
 
   # Get the betas to flip from different reference cat
-  cat.flip.cnames <- get.flip.E(cnames) 
+  cat.flip.cnames <- get.flip.E(cnames)
 
   # Get the beta column names to flip for different risk allele
   allele.flip.cnames <- get.flip.cnames(cnames)
@@ -4033,7 +5726,7 @@ meta.GxE <- function(study.list, op=NULL) {
     snp         <- snps.all[i]
     message     <- ""
     outvec[1:3] <- c(snp, ".", ".")
-    
+
 
     # For UML-CML cov matrix
     UML.CML.list <- list()
@@ -4065,7 +5758,7 @@ meta.GxE <- function(study.list, op=NULL) {
 
       # Get the UML and CML estimates
       CML.beta <- getBetaObject(vec, CML.beta.cnames)
-      CML.cov  <- getCovObject(vec, CML.cov.cnames) 
+      CML.cov  <- getCovObject(vec, CML.cov.cnames)
       UML.beta <- getBetaObject(vec, UML.beta.cnames)
       UML.cov  <- getCovObject(vec, UML.cov.cnames)
 
@@ -4081,7 +5774,7 @@ meta.GxE <- function(study.list, op=NULL) {
         MAF.base    <- MAF
       } else {
         # Compare to base values
-        ret <- get.flip.status(risk.base, other.base, MAF.base, risk, other, MAF) 
+        ret <- get.flip.status(risk.base, other.base, MAF.base, risk, other, MAF)
         if (ret$error) next
         if (ret$flip) {
           # Flip betas
@@ -4111,11 +5804,11 @@ meta.GxE <- function(study.list, op=NULL) {
       if (outFlag) writeOut(fid, outvec)
       next
     }
-    outvec["Studies"] <- paste(study.vec, collapse=",", sep="") 
+    outvec["Studies"] <- paste(study.vec, collapse=",", sep="")
 
     # Perform the fixed effects meta-anlaysis for UML and CML estimates
     # Return list: list(meta.beta=meta.beta, meta.cov=meta.cov, meta.cov.inv=sum.sigma.inv,
-    #                   inv.list=sigma.inv) 
+    #                   inv.list=sigma.inv)
     UML.meta <- try(meta.fixed(UML.list), silent=TRUE)
     if (checkTryError(UML.meta, conv=0)) {
       outvec["Message"] <- "Error in UML meta-analysis"
@@ -4131,11 +5824,11 @@ meta.GxE <- function(study.list, op=NULL) {
 
     # Now perform EB
     # meta.EB <- function(beta1, beta2, sumInv1.inv, sumInv2.inv, inv1.list, inv2.list,
-    #                     cov12.list) 
-    # Return list: list(beta=beta.EB, cov=cov.EB)  
-    ret <- meta.EB(UML.meta$meta.beta, CML.meta$meta.beta, UML.meta$meta.cov, 
+    #                     cov12.list)
+    # Return list: list(beta=beta.EB, cov=cov.EB)
+    ret <- meta.EB(UML.meta$meta.beta, CML.meta$meta.beta, UML.meta$meta.cov,
                    CML.meta$meta.cov, UML.meta$inv.list,
-                   CML.meta$inv.list, UML.CML.list) 
+                   CML.meta$inv.list, UML.CML.list)
 
     temp <- waldTest.main(ret$beta, ret$cov, 1:length(UML.beta))
     outvec["P.omnibus"] <- temp$pvalue
@@ -4144,7 +5837,7 @@ meta.GxE <- function(study.list, op=NULL) {
 
     # Write output
     if (outFlag) writeOut(fid, outvec)
-     
+
   }
   if (outFlag) close(fid)
 

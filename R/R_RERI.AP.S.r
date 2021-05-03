@@ -7,8 +7,8 @@ RERI.AP.S=function(Y,X1,X2,COVS){
             ans=NULL
 
             
-            if(is.null(COVS)==F) myDAT=data.frame(Y=Y,COVS)
-            if(is.null(COVS)==T) myDAT=data.frame(Y=Y)
+            if(is.null(COVS)==FALSE) myDAT=data.frame(Y=Y,COVS)
+            if(is.null(COVS)==TRUE) myDAT=data.frame(Y=Y)
             
             X1[X1==2]=1  # dominant
             
@@ -24,21 +24,21 @@ RERI.AP.S=function(Y,X1,X2,COVS){
             myDAT$Z=as.factor(Z)
             
             GLM0 <- glm(Y~ Z+., family = binomial, data = myDAT)
-            summary(GLM0)
+            # summary(GLM0)
             model=GLM0
             
             fit=GLM0
             coeff=c(2,3,4)
 
             tt1=RERI.AP.S.small(fit, coeff = c(2, 3, 4))
-            tt1
+            # tt1
 
             #tt=epi.interaction(model = GLM0 , coeff = c(2,3,4), conf.level = 0.95)
             #tt
 
 
-            doThis=F
-            if(doThis==T){
+            doThis=FALSE
+            if(doThis==TRUE){
 
                   GLM2 <- glm(Y~ X1+X2+X1:X2+., family = binomial, data = COVS)
                   summary(GLM2)

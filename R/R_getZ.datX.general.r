@@ -11,7 +11,7 @@
                 ############### [1] Make a design matrix using dummy variables for two loci (later to be used for likelihood calculations for each individuals ####
       
                 datX=datX.inter=datX.all=NULL         
-                datX=myDummyVar3(mat=cbind(x1,x2),refer=F,SORT=F)
+                datX=myDummyVar3(mat=cbind(x1,x2),refer=FALSE,SORT=FALSE)
                 #> datX[1:5,]
                 #     x1.1 x2.1 x2.2
                 #[1,]    1    0    1

@@ -64,7 +64,7 @@ getMatchedSets(x, CC, NN, ccs.var=NULL, dist.vars=NULL, strata.var=NULL,
   data(Xdata, package="CGEN")
 
  # Add fake principal component columns.
-  set.seed(123)
+  # set.seed(123)
   Xdata <- cbind(Xdata, PC1 = rnorm(nrow(Xdata)), PC2 = rnorm(nrow(Xdata)))
 
  # Assign matched set size and case/control ratio stratifying by ethnic group

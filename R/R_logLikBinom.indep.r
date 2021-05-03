@@ -4,7 +4,7 @@
    #### this is likelhood when there are covariates ####################
    
    logLikBinom.indep=function(BETAS, nStrata, strDat, y, Z0,Z1,Z2,n,x1.num,  g.model,loglike.mat){    # tb.ML.p is for calculating # free params
-                                   #(b, b.cov, y, Z0,Z1,Z2, n, x1.num, xi, tb.ML.p, simple=F)
+                                   #(b, b.cov, y, Z0,Z1,Z2, n, x1.num, xi, tb.ML.p, simple=FALSE)
             # D=0,1 is diease status, G=0,1,2  genotype , p is MAF of given strata (one strata)
             # Z is design matrix including intercept, main effects (X2, Covariate), X1 (SNP), and interactions between X1 and X2
             # L=P(D,G|Z,S) = exp(th(d,g)))/sum over possible d,g (th(d,g))  : all six possible... d=0,1  and g=0,1,2               

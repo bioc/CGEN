@@ -1,16 +1,12 @@
-CHANGES IN VERSION 3.5
-----------------------
 
-USER VISIBLE CHANGES
+MAJOR CHANGES IN VERSION 3.28.0
+-------------------------------
 
-    o The function snp.score has been added. The functions snp.scan.logistic, recode.geno, score.test have been removed.
-    o The function chromosome.plot has been renamed to Manhattan.plot
+o For additive.test(), trend model (genetic.model=0) based analyses were incorporated.
 
-BUG FIXES
+o The output of additive.test() is formatted for better organization and easier understanding.
 
-    o The function snp.logistic checks that the snp variable is used in main.vars or int.vars.
 
-PLANS
 
-    o Efficiency improvements.
+
 

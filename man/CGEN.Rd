@@ -6,8 +6,7 @@
  An R package for analysis of case-control studies in genetic epidemiology
 }
 \description{
-\bold{The new version includes snp.score function that implements a variety of score-tests for genetic association incorporating gene-environment interactions. 
-The function, with certain options, also allows analysis of imputed SNPs.}
+\bold{The new version extends the additive.test() function by implementing additive gene-gene or gene-environment tests under the trend effect of genotypes (i.e. additive genetic model), extending the previous approaches that were only available for the dominant or recessive genetic models (Han et al. 2012 AJE). Several types of interaction tests under the trend effect of genotype are available -- methods with and without the gene-environment independence assumption (de Rochemonteix et al. 2020 AJE) and robust methods based on an empirical Bayes type shrinkage estimator (Sanyal et al. 2021 AJE).}
 
 This package is for logistic regression analyses of SNP data in case-control studies. It is 
 designed to give the users flexibility of using a number of different methods for analysis of 
@@ -22,12 +21,16 @@ estimation  and conditional-likelihoods, that can automatically adjust for possi
 that could arise due to direct causal relationship (e.g. between a gene and a behavior exposure) or  
 indirect correlation (e.g due to population stratification). A number of convenient summary and printing functions 
 are included. 
-In its latest version, the package has been updated with the new function \code{\link{snp.score}} that allow
+In its previous version, the package has been updated with the new function \code{\link{snp.score}} that allow
 testing for disease-SNP association accounting for gene-environment interaction using an array of different
 types of score-tests. The function can handle both genotyped and imputed SNPs. 
+The latest version of the package has extended the additive.test() function by implementing additive gene by environment tests 
+under the trend effect of genotypes (additive model). Two types of trend tests are available - likelihood ratio tests and Wald tests 
+based on an empirical Bayes type shrinkage estimator.
 The package will continue to be updated with new methods as they are developed. The methods are currently
 not suitable for analysis of SNPs on sex chromosomes.
 }
+
 \details{
 The main functions for unmatched data are \code{\link{additive.test}}, \code{\link{snp.logistic}} 
 and \code{\link{snp.score}}.
@@ -80,6 +83,7 @@ Miscellaneous: \cr
 \code{\link{snp.effects}} (For computing joint and stratified effects) \cr
 
 }
+
 \references{ 
 \bold{Maximum-likelihood estimation under independence}
 
@@ -118,10 +122,14 @@ Song M., Wheeler B., Chatterjee, N. Using imputed genotype data in joint score t
 
 \bold{Tests for additive interaction}
 
-Han, S. S, Rosenberg P. S, Garcia-Closas M, Figueroa J. D, Silverman D, Chanock S. J, Rothman N, and Chatterjee N.   Likelihood ratio test for detecting gene (G) environment (E) interactions under the additive risk model exploiting G-E independence for case-control data. 
- Am J of Epidemiol, 2012; 176:1060-7.  
+Sanyal, N., Napolioni, V., de Rochemonteix, M., Belloy, M. E., Caporaso, N. E., Landi, M. T., Greicius, M. D., Chatterjee, N., Han, S. S. A robust test for additive gene-environment interaction under the trend effect of genotype using an empirical Bayes-type shrinkage estimator. American Journal of Epidemiology 2021 (in press).
 
+de Rochemonteix M, Napolioni V, Sanyal N, et al. A likelihood ratio test for gene-environment interaction based on the trend effect of genotype under an additive risk model using the gene-environment independence assumption. American Journal of Epidemiology 2021;190(1):129-41.
+
+Han, S. S, Rosenberg P. S, Garcia-Closas M, Figueroa J. D, Silverman D, Chanock S. J, Rothman N, and Chatterjee N.   Likelihood ratio test for detecting gene (G) environment (E) interactions under the additive risk model exploiting G-E independence for case-control data. 
+ Am J of Epidemiol, 2012; 176:1060-7. 
 
 }
-\author{Samsiddhi Bhattacharjee, Summer Han, Minsun Song, Nilanjan Chatterjee and William Wheeler <wheelerb@imsweb.com>}
+
+\author{Samsiddhi Bhattacharjee, Summer Han, Minsun Song, Nilanjan Chatterjee, William Wheeler and Nilotpal Sanyal <nsanyal@stanford.edu>}
 \keyword{package}

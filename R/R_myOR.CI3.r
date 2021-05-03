@@ -4,7 +4,7 @@
   #sdName="Std. Error"
   #pName="Pr(>|z|)"
   
-  myOR.CI3=function(xx,bName="Estimate",sName="Std. Error",pName="Pr(>|z|)",pval=F){
+  myOR.CI3=function(xx,bName="Estimate",sName="Std. Error",pName="Pr(>|z|)",pval=FALSE){
 
         #> xx=full$coef
         #> xx
@@ -64,7 +64,7 @@
         ans=cbind(OR=OR,CI1=CI[,1],CI2=CI[,2],beta=tm1,sd=tm2)
         
         
-        if(pval==T){
+        if(pval==TRUE){
         ans=cbind(OR=OR,CI1=CI[,1],CI2=CI[,2],beta=tm1,sd=tm2,pval2=tm3)
         
         }

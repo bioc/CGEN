@@ -129,6 +129,7 @@ static const R_CMethodDef callMethods[] = {
   {NULL, NULL, 0}
 };
 
+/*
 static void print_dVec(vec, n, name)
 double *vec;
 int n;
@@ -140,6 +141,7 @@ char *name;
   Rprintf("\n");
 
 }
+*/
 
 /* Function to initialize a vector to a constant */
 static void vecinit(vec, n, c)

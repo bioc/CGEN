@@ -2245,7 +2245,7 @@ snp.effects.plot <- function(obj.list, op=NULL) {
     if (length(type) > 1) stop("ERROR: op$type must have length 1")
   }
   
-  if (class(obj.list) == "snp.effects") obj.list <- list(obj.list)
+  if (inherits(obj.list,"snp.effects")) obj.list <- list(obj.list)
   n <- length(obj.list)
   temp <- op[[1]]
   svec <- temp[["split.screen", exact=TRUE]]

@@ -19,25 +19,25 @@
 
 #LT.test=T
 
-scoreTest.general9=function(Y,X1,X2,COVS=NULL,thetas,df2=T,indep=F,X.st=NULL,doGLM=F,p.mvn=T,do.joint=T){
+scoreTest.general9=function(Y,X1,X2,COVS=NULL,thetas,df2=TRUE,indep=FALSE,X.st=NULL,doGLM=FALSE,p.mvn=TRUE,do.joint=TRUE){
 
   # Remove WARNING
   link <- "logit"
 
           ########################################################################
           #  Z is matrix!
-          #  if additive=F, then it's going to do standard score test without additive model restriction
+          #  if additive=FALSE, then it's going to do standard score test without additive model restriction
           #  H0: b1=0  (regression coefficient for X1)
           ########################################################################
           #indep=F;X.st=NULL;doGLM=F;p.mvn=T
           
           ########################### [0] Preliminary work #######################################
-          if(is.null(COVS)==F) COVS<-as.matrix(COVS)
+          if(is.null(COVS)==FALSE) COVS<-as.matrix(COVS)
           ###### Deal with missing values #####
           
           
           #### change X.st as numeric if not ######
-		  if(is.null(X.st)==F){
+		  if(is.null(X.st)==FALSE){
 		  
 			  tt1=as.factor(X.st)
 			  levels(tt1)=1:length(levels(tt1))
@@ -45,10 +45,10 @@ scoreTest.general9=function(Y,X1,X2,COVS=NULL,thetas,df2=T,indep=F,X.st=NULL,doG
 		  
 		  }#3nd of 
 		  
-		  if(is.null(X.st)==T) { X.st=rep(1,length(X1)) ; nStrata=1}
+		  if(is.null(X.st)==TRUE) { X.st=rep(1,length(X1)) ; nStrata=1}
 
 
-          indic.st = is.null(X.st)==F # stratified for indep?
+          indic.st = is.null(X.st)==FALSE # stratified for indep?
           ttt=variablePrep3(Y,X1,X2,COVS,X.st,indep)
           
           ##### redefine variables (reduced after deleting missing values ######
@@ -58,30 +58,30 @@ scoreTest.general9=function(Y,X1,X2,COVS=NULL,thetas,df2=T,indep=F,X.st=NULL,doG
           x2=ttt$x2   
           ncolx2 = ncol(x2)    
           covs=ttt$covs
-          indic.covs=(is.null(covs)==F)  # T if there are covs
+          indic.covs=(is.null(covs)==FALSE)  # T if there are covs
           
           x.st=NULL;nStrata=1;strDat=NULL
-          if(indep==T & is.null(X.st)==F){
+          if(indep==TRUE & is.null(X.st)==FALSE){
              
              x.st=ttt$x.st
              nStrata = length(levels(x.st))
              
 			 mat=x.st; dim(x.st)=c(length(x.st),1)
-			 datS=myDummyVar3(mat,refer=T,SORT=F)
+			 datS=myDummyVar3(mat,refer=TRUE,SORT=FALSE)
 
           }#end of 
           
-          indic.collapse =  (length(unique(x1)) < 2) | (is.null(x2)==T ) ;indic.collapse   #at least two different genotype observed
+          indic.collapse =  (length(unique(x1)) < 2) | (is.null(x2)==TRUE ) ;indic.collapse   #at least two different genotype observed
           
          
-         if(indic.collapse==T)  ans=NULL 
-         if(indic.collapse==F){   ####if not collapse
+         if(indic.collapse==TRUE)  ans=NULL 
+         if(indic.collapse==FALSE){   ####if not collapse
 
 
                   ###design matrix ###
                   
-                  #if(indic.covs==T) Z=cbind(x1=x1,x2=x2,int=rep(1,length(x1)),covs=covs)
-                  #if(indic.covs==F) Z=cbind(x1=x1,x2=x2,int=rep(1,length(x1)))
+                  #if(indic.covs==TRUE) Z=cbind(x1=x1,x2=x2,int=rep(1,length(x1)),covs=covs)
+                  #if(indic.covs==FALSE) Z=cbind(x1=x1,x2=x2,int=rep(1,length(x1)))
                   
                  ######################## [2]  logit or probit regression: logit link can have additive score test ##################################################################                 
                  
@@ -92,8 +92,8 @@ scoreTest.general9=function(Y,X1,X2,COVS=NULL,thetas,df2=T,indep=F,X.st=NULL,doG
                  lm1=lm1sum= NA
                  
                  
-                 if(indic.covs==T) lm1=glm(y~x2+.,family=binomial(link='logit'),data=data.frame(covs))
-                 if(indic.covs==F) lm1=glm(y~x2,family=binomial(link='logit'))
+                 if(indic.covs==TRUE) lm1=glm(y~x2+.,family=binomial(link='logit'),data=data.frame(covs))
+                 if(indic.covs==FALSE) lm1=glm(y~x2,family=binomial(link='logit'))
         
                  lm1sum=summary(lm1)
                  
@@ -119,7 +119,7 @@ scoreTest.general9=function(Y,X1,X2,COVS=NULL,thetas,df2=T,indep=F,X.st=NULL,doG
                 covs2=NULL
                 
                 bCovs = coeff[-b2col]
-                if(indic.covs==F) bCovs=NULL
+                if(indic.covs==FALSE) bCovs=NULL
                 
                 
                 ### this will be used for LT model information  :order same as Z matrix
@@ -160,10 +160,10 @@ scoreTest.general9=function(Y,X1,X2,COVS=NULL,thetas,df2=T,indep=F,X.st=NULL,doG
                 
                 ########### 2-df method ########################################
                 
-                if(df2==T){   p.max = 1-pchisq(maxSc,df=2)  }   #;p.max
+                if(df2==TRUE){   p.max = 1-pchisq(maxSc,df=2)  }   #;p.max
                   
               
-                if(p.mvn==T & all(is.na(sc$COR))==F){
+                if(p.mvn==TRUE & all(is.na(sc$COR))==FALSE){
                 
                      ############ multivariate integral method ########################
                       
@@ -194,9 +194,9 @@ scoreTest.general9=function(Y,X1,X2,COVS=NULL,thetas,df2=T,indep=F,X.st=NULL,doG
                
                 ##################### pval using davies method ##########################################
                 pval=ros=NA
-                if(indep==F ){   ### indep=T cannot be done yet since output is not comformative
+                if(indep==FALSE ){   ### indep=T cannot be done yet since output is not comformative
                 
-                    if(is.na(sc$info_rest.rest[1])==F & all(is.na(sc$COR))==F){
+                    if(is.na(sc$info_rest.rest[1])==FALSE & all(is.na(sc$COR))==FALSE){
                        
 						  # Pr { Z > c} = 1-pnorm(c) + (1/(2*pi))*exp(-0.5*c^2)*integ(L ~ U)sqrt(-ro(theta)) d(theta) 
 						  # ---> Pr {|Z| > c} = 2* {1-pnorm(c) + (1/(2*pi))*exp(-0.5*c^2)*integ(L ~ U)sqrt(-ro(theta)) d(theta)}
@@ -281,12 +281,12 @@ scoreTest.general9=function(Y,X1,X2,COVS=NULL,thetas,df2=T,indep=F,X.st=NULL,doG
 
 						  # 4.025491e-05
                       
-                     }#end of  if(is.na(sc$info_rest.rest[1])==F & all(is.na(sc$COR))==F){
+                     }#end of  if(is.na(sc$info_rest.rest[1])==FALSE & all(is.na(sc$COR))==FALSE){
  
                 }#end of indep=F
                 
                 
-                if(indep==T &  all(is.na(sc$COR))==F){   ### indep=T cannot be done yet since output is not comformative
+                if(indep==TRUE &  all(is.na(sc$COR))==FALSE){   ### indep=T cannot be done yet since output is not comformative
                       
                       # Pr { Z > c} = 1-pnorm(c) + (1/(2*pi))*exp(-0.5*c^2)*integ(L ~ U)sqrt(-ro(theta)) d(theta) 
                       # ---> Pr {|Z| > c} = 2* {1-pnorm(c) + (1/(2*pi))*exp(-0.5*c^2)*integ(L ~ U)sqrt(-ro(theta)) d(theta)}
@@ -395,10 +395,10 @@ scoreTest.general9=function(Y,X1,X2,COVS=NULL,thetas,df2=T,indep=F,X.st=NULL,doG
                  pval.glm=stat.glm=lm2sum=NA
                  pval.joint=stat.joint=df.joint=NA
                  
-                 if(do.joint==T){
+                 if(do.joint==TRUE){
              
-                         if(indic.covs==T) lm2=glm(y~x1+x2+x1*x2+.,family=binomial(link='logit'),data=data.frame(covs))
-                         if(indic.covs==F) lm2=glm(y~x1+x2+x1*x2,family=binomial(link='logit'))
+                         if(indic.covs==TRUE) lm2=glm(y~x1+x2+x1*x2+.,family=binomial(link='logit'),data=data.frame(covs))
+                         if(indic.covs==FALSE) lm2=glm(y~x1+x2+x1*x2,family=binomial(link='logit'))
                          
                          wd= wald.test(b=coef(lm2),Sigma=vcov(lm2),Terms=grep("x1",row.names(summary(lm2)$coef)))
                           #$chi2
@@ -412,19 +412,19 @@ scoreTest.general9=function(Y,X1,X2,COVS=NULL,thetas,df2=T,indep=F,X.st=NULL,doG
                          
                  }#end of GLM
                  
-                 if(doGLM==T){
+                 if(doGLM==TRUE){
                  
                          if(link=="logit"){
                          
-                             if(indic.covs==T) lm2=glm(y~x1+x2+.,family=binomial(link='logit'),data=data.frame(covs))
-                             if(indic.covs==F) lm2=glm(y~x1+x2,family=binomial(link='logit'))
+                             if(indic.covs==TRUE) lm2=glm(y~x1+x2+.,family=binomial(link='logit'),data=data.frame(covs))
+                             if(indic.covs==FALSE) lm2=glm(y~x1+x2,family=binomial(link='logit'))
                          
                          }#end of logit
                          
                          if(link=="probit"){
                          
-                             if(indic.covs==T) lm2=glm(y~x1+x2+.,family=binomial(link='probit'),data=data.frame(covs))
-                             if(indic.covs==F) lm2=glm(y~x1+x2,family=binomial(link='probit'))
+                             if(indic.covs==TRUE) lm2=glm(y~x1+x2+.,family=binomial(link='probit'),data=data.frame(covs))
+                             if(indic.covs==FALSE) lm2=glm(y~x1+x2,family=binomial(link='probit'))
                          
                          }#end of proit
                          

@@ -985,7 +985,7 @@ check.temp.list <- function(temp.list) {
     # Change the warn option so a warning turns to an error
     options(warn=2)
     temp <- try(dir(temp.list$dir), silent=TRUE)
-    if (class(temp) == "try-error") {
+    if (inherits(temp,"try-error")) {
       temp <- paste("ERROR: the directory ", temp.list$dir, " does not exist", sep="")
       options(warn=warn)
       stop(temp)
@@ -1307,7 +1307,7 @@ matrix2rda <- function(infile, outfile, delimiter="\t", stopOnError=1) {
   options(warn=2)
   dat <- try(scanFile(infile, tlist), silent=TRUE)
   options(warn=1)
-  if (class(dat) == "try-error") {
+  if (inherits(dat,"try-error")) {
     temp <- paste("ERROR with file ", infile, sep="")
     if (stopOnError) stop(temp)
     return(0)
@@ -2908,7 +2908,7 @@ crossTab <- function(snp.list, pheno.list, varlist, op=NULL) {
 
     temp  <- try(getData.1(snp.list, pheno.list, temp.list, op=tlist),
                silent=TRUE)
-    if (class(temp) == "try-error") {
+    if (inherits(temp,"try-error")) {
       print(temp)
       stop("ERROR loading data")
     }
@@ -3006,7 +3006,7 @@ mergePhenoGeno <- function(snp.list, pheno.list, temp.list=NULL, op=NULL) {
 
   temp  <- try(getData.1(snp.list, pheno.list, temp.list, op=tlist),
                silent=TRUE)
-  if (class(temp) == "try-error") {
+  if (inherits(temp,"try-error")) {
     print(temp)
     stop("ERROR loading data")
   }

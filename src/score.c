@@ -15,7 +15,7 @@ void infoSmallStandard(xmat, pnr, pnc, pphat, infoSum)
 double *xmat, *pphat, *infoSum; /* xmat is by row, infoSum has length nc*nc */
 int *pnr, *pnc;
 {
-  int  nr, nc, i, j, row, ii, nc2;
+  int  nr, nc, i, j, row, nc2; /* ii */
   double temp, *p, *vec, *pi, *pj, vali, *p2, phat, *pret;
 
   nr  = *pnr;
@@ -180,7 +180,7 @@ double *score1, *score2, *avgscore1_0, *avgscore1_1, *avgscore2_0, *avgscore2_1,
 
   int i, j, k, *py, nr, nc1, nc2;
   double *subtract1, *subtract2, *p1, *p2, *p3, *vec1, *vec2, *tv1, *tv2, *pret, val;
-  double *p4, *p5, *p6;
+  /* double *p4, *p5, *p6; */
 
   nr  = *pnr;
   nc1 = *pnc1;

@@ -2,14 +2,14 @@
 ##### 4/26/2010: this deals with no level (it autoatically deals with it #######
 
 
-myDummyVar3=function(mat,refer=F,SORT=T){  ### this will create dummy variables with given level
+myDummyVar3=function(mat,refer=FALSE,SORT=TRUE){  ### this will create dummy variables with given level
                        ######## the most common one is reference and will be omitted
 
         ans2=NULL
         
         ####### in case it's not matrix make it ######
         
-        if(is.null(dim(mat))==T) {
+        if(is.null(dim(mat))==TRUE) {
         
            dim(mat)=c(length(mat),1)
            colnames(mat)="x"
@@ -25,10 +25,10 @@ myDummyVar3=function(mat,refer=F,SORT=T){  ### this will create dummy variables 
               cname
               
               
-              #if(is.null(level)==T) {   # if no level is specified do it
-                if(SORT==T){
+              #if(is.null(level)==TRUE) {   # if no level is specified do it
+                if(SORT==TRUE){
                 
-                    tb=sort(table(x),decreasing=T)
+                    tb=sort(table(x),decreasing=TRUE)
                     tb
                     # 61 62 31 11 64 41 63 
                     #80 77 51 49 48 46 13
@@ -36,7 +36,7 @@ myDummyVar3=function(mat,refer=F,SORT=T){  ### this will create dummy variables 
                 }# sort
                 
                 
-                if(SORT==F){
+                if(SORT==FALSE){
                 
                     tb=table(x)
                     tb
@@ -67,7 +67,7 @@ myDummyVar3=function(mat,refer=F,SORT=T){  ### this will create dummy variables 
               # [8,]    2    1
               # [9,]    2    2
               level2=level[-1] #[1] 1 2  --> skip dummy variable for first level
-              if(refer==T) level2=level
+              if(refer==TRUE) level2=level
               
               ans=matrix(NA,nrow=nrow(mat),ncol=(length(level2)))
               colnames(ans)=paste(cname,level2,sep=".")
@@ -146,7 +146,7 @@ myDummyVar3=function(mat,refer=F,SORT=T){  ### this will create dummy variables 
 #[21,] 31    0    1    0    0    0    0
 
 
-#> ttt=myDummyVar3(mat,refer=T,SORT=F)
+#> ttt=myDummyVar3(mat,refer=TRUE,SORT=FALSE)
 #> ttt[1:5,]
 #     x.1 x.2 x.3 x.4
 #[1,]   0   0   0   1
@@ -154,7 +154,7 @@ myDummyVar3=function(mat,refer=F,SORT=T){  ### this will create dummy variables 
 #[3,]   0   0   0   1
 #[4,]   0   0   0   1
 #[5,]   0   0   0   1
-#> ttt=myDummyVar3(mat,refer=T,SORT=T)
+#> ttt=myDummyVar3(mat,refer=TRUE,SORT=TRUE)
 #> ttt[1:5,]
 #     x.3 x.4 x.1 x.2
 #[1,]   0   1   0   0

@@ -235,7 +235,7 @@ waldTest.main <- function(parms, cov, parmNames) {
 
   # See if matrix is invertible
   temp <- try(solve(cov), silent=TRUE)
-  if (class(temp) == "try-error") {
+  if ("try-error" %in% class(temp)) {
     return(list(test=NA, df=np, pvalue=NA))
   } 
 
@@ -353,7 +353,7 @@ score.logReg <- function(fit, mat) {
 
   # Invert the hessian
   hess <- try(solve(hess), silent=TRUE)
-  if (class(hess) == "try-error") {
+  if (inherits(hess,"try-error")) {
     warning("Singular hessian matrix")
     return(list(test=NA, df=df, pvalue=NA))
   } 
@@ -468,7 +468,7 @@ getSummary <- function(fit, sided=2, method=NULL) {
 
   # GLM
   if ("glm" %in% clss) fit <- summary(fit)
-  if (class(fit) == "summary.glm") {
+  if (inherits(fit,"summary.glm")) {
     cols <- c("Estimate", "Std.Error", "Z.value", "Pvalue")
     if (sided != 1) sided <- 2
 
@@ -1306,7 +1306,7 @@ unadjustedGLM.counts <- function(file.list, op=NULL) {
       mat[, 2] <- as.numeric(getVecFromStr(x[i, v0], delimiter=sep0))
     }
     temp <- try(glm(mat~covar, family=binomial), silent=TRUE)
-    if (class(temp)[1] != "try-error") {
+    if (!inherits(temp,"try-error")) {
       temp <- summary(temp)$coefficients
       if (nrow(temp) == 2) x[i, newVars] <- temp[2,]
     } 

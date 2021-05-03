@@ -83,7 +83,7 @@ Bhattacharjee S., Wang Z., Ciampa J., Kraft P., Chanock S, Yu K., Chatterjee N.
  data(Xdata, package="CGEN")
  
  # Fake principal component columns
- set.seed(123)
+ # set.seed(123)
  Ydata <- cbind(Xdata, PC1=rnorm(nrow(Xdata)), PC2=rnorm(nrow(Xdata)))
  
  # Match using PC1 and PC2

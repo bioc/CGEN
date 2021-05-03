@@ -557,7 +557,7 @@ glu.getCounts <- function(snp.list, pheno.list, temp.list=NULL, op=NULL) {
                 missing=1, snpNames=1, orderByPheno=1, return.pheno=1)
   temp  <- try(getData.1(snp.list, pheno.list, temp.list, op=tlist),
                silent=TRUE)
-  if (class(temp) == "try-error") {
+  if (inherits(temp,"try-error")) {
     print(temp)
     stop("ERROR loading data")
   }

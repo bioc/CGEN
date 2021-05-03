@@ -500,7 +500,7 @@ table2Format <- function(infile, p) {
       infile <- scanFile(fid, tlist)
     
       # Check for error
-      if (class(infile) == "try-error") {
+      if (inherits(infile,"try-error")) {
         if (readFlag) {
           break
         } else {
@@ -604,7 +604,7 @@ table2Format <- function(infile, p) {
     temp <- try(apply(infile, 2, f2), silent=TRUE)
 
     # Check for error
-    if (class(temp) == "try-error") {
+    if (inherits(temp,"try-error")) {
       # It failed, so loop over each column
       temp <- character(nc)
 
@@ -761,7 +761,7 @@ exportSAS <- function(sas.data, p) {
 
   # Open a connection to the temporary file
   fid <- try(file(p$temp.file, "w"), silent=TRUE)
-  if (class(fid)[1] == "try-error") stop("ERROR: temp.file is invalid")
+  if (inherits(fid,"try-error")) stop("ERROR: temp.file is invalid")
   
   temp <- paste('libname _tmp4125 "', libname, '"; \n', sep="")
   cat(temp, file=fid)
@@ -874,7 +874,7 @@ SAS2Format <- function(sas.data, p) {
 
   # Open a connection to the temporary file
   fid <- try(file(s$temp.file, "w"), silent=TRUE)
-  if (class(fid)[1] == "try-error") stop("ERROR: temp.file is invalid")
+  if (inherits(fid,"try-error")) stop("ERROR: temp.file is invalid")
   
   temp <- paste('libname _tmp4125 "', libname, '"; \n', sep="")
   cat(temp, file=fid)
@@ -945,7 +945,7 @@ createScript <- function(script.file, exe, run.file, shell="bash",
 
   # Open the script file
   fid <- try(file(script.file, "w"), silent=TRUE)
-  if (class(fid)[1] == "try-error") stop("ERROR: script file is invalid")
+  if (inherits(fid,"try-error")) stop("ERROR: script file is invalid")
 
   # Get the path seperator
   sep <- .Platform$file.sep

@@ -1,5 +1,5 @@
             #x=letters[1:10]
-            #set.seed(123);y=sample(x,10,replace=F)
+            #set.seed(123);y=sample(x,10,replace=FALSE)
             
             #x=c("a","b","c")
             #y=c("d","a","e","b") ### "c" doesn't exist in y

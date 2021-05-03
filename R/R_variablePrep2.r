@@ -5,7 +5,7 @@
         ######### this delete missing valued subjects
 
         x1=x2=y=covs=x.st=strDat=NULL
-        indic.st = is.null(X.st)==F
+        indic.st = is.null(X.st)==FALSE
         
          
         ### remove a record if any of X1, X2 or COVS are missing :to do "overall" fit test --> otherwise it's not fair comparison between full and null model ########
@@ -14,12 +14,12 @@
 
         covs=NULL
 
-        if (is.null(COVS)==F){ # if covariate exists
+        if (is.null(COVS)==FALSE){ # if covariate exists
 
                 keep.indic=(rowSums(is.na(cbind(X1,X2,COVS)))==0)
 
                 ### if indep=T and stratified=T
-                if (indic.st==T & indep==T) keep.indic=(rowSums(is.na(cbind(X1,X2,COVS,X.st)))==0)  ## why COVS also? don't know but i remember i screwed up by not doing it..
+                if (indic.st==TRUE & indep==TRUE) keep.indic=(rowSums(is.na(cbind(X1,X2,COVS,X.st)))==0)  ## why COVS also? don't know but i remember i screwed up by not doing it..
 
                 sum(!keep.indic)
                 #[1] 71
@@ -43,12 +43,12 @@
 
         }# end of
 
-        if (is.null(COVS)==T){ # if NO covariate
+        if (is.null(COVS)==TRUE){ # if NO covariate
 
                 keep.indic=(rowSums(is.na(cbind(X1,X2)))==0)
 
                 ### if indep=T and stratified=T
-                if (indic.st==T & indep==T) keep.indic=(rowSums(is.na(cbind(X1,X2,X.st)))==0)  ## why COVS also? don't know but i remember i screwed up by not doing it..
+                if (indic.st==TRUE & indep==TRUE) keep.indic=(rowSums(is.na(cbind(X1,X2,X.st)))==0)  ## why COVS also? don't know but i remember i screwed up by not doing it..
 
                 sum(!keep.indic)
                 #[1] 71
@@ -70,8 +70,8 @@
         x.st=strDat=NULL
         nStrata=1
 
-        if(is.null(X.st)==F){
-        #if(indic.st==T & indep==T){
+        if(is.null(X.st)==FALSE){
+        #if(indic.st==TRUE & indep==TRUE){
 
               x.st = as.factor(X.st[keep.indic])
               x.st = factor(as.character(x.st))   ## this is to remove some empty level!
@@ -79,7 +79,7 @@
               nStrata=length(unique(x.st))
               nStrata
 
-              strDat0= myDummyVar3(x.st,refer=T,SORT=F)
+              strDat0= myDummyVar3(x.st,refer=TRUE,SORT=FALSE)
               #> strDat[1:5,]
               #     x.1 x.2 x.3 x.4
               #[1,]   0   0   0   1

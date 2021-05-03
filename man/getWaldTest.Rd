@@ -24,7 +24,7 @@
 %\references{ }
 %\author{ }
 \examples{
-  set.seed(123)
+  # set.seed(123)
   n <- 100
   y <- rbinom(n, 1, 0.5)
   x <- runif(n*5)

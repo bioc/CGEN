@@ -1,7 +1,7 @@
 #xx=c("a","b","c")
 #yy=c("a","dd","b","x","xc")
 
-multiGrep=function(xx,yy,SORT=F){
+multiGrep=function(xx,yy,SORT=FALSE){
 
        out=NULL
        for(u in 1:length(xx)){
@@ -14,7 +14,7 @@ multiGrep=function(xx,yy,SORT=F){
        }# end of u loop
 
        out2=unique(out)
-       if(SORT==T) out2=sort(out2)
+       if(SORT==TRUE) out2=sort(out2)
        
        out2
        

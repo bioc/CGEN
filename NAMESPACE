@@ -1,5 +1,5 @@
 useDynLib(CGEN)
-import(survival, mvtnorm)
+import(stats, graphics, utils, grDevices, survival, mvtnorm)
 export(snp.logistic, getSummary, getWaldTest, 
        QQ.plot, Manhattan.plot, snp.effects, getMatchedSets, snp.matched, printEffects,
        additive.test, snp.effects.plot, GxE.scan, GxE.scan.combine, GxE.scan.partition,

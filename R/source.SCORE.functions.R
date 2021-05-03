@@ -96,7 +96,7 @@
 
               ############# [1] Create reference dummy variable first in case it doesn't have one #######
 
-              if(sum(rowSums(xx)==0,na.rm=T) >0)  { # # then referenece variable is not included in this matrix --> make it then
+              if(sum(rowSums(xx)==0,na.rm=TRUE) >0)  { # # then referenece variable is not included in this matrix --> make it then
 
                     yy = rep(0,nrow(xx))
                     yy[rowSums(xx)==0] = 1
@@ -177,7 +177,7 @@ myPercent=function(xx,yy){  ## base is xx and compare it to yy
 
 
             #x=letters[1:10]
-            #set.seed(123);y=sample(x,10,replace=F)
+            #set.seed(123);y=sample(x,10,replace=FALSE)
             
             #x=c("a","b","c")
             #y=c("d","a","e","b") ### "c" doesn't exist in y
@@ -279,7 +279,7 @@ myPercent=function(xx,yy){  ## base is xx and compare it to yy
 #xx=c("a","b","c")
 #yy=c("a","dd","b","x","xc")
 
-multiGrep=function(xx,yy,SORT=F){
+multiGrep=function(xx,yy,SORT=FALSE){
 
        out=NULL
        for(u in 1:length(xx)){
@@ -292,7 +292,7 @@ multiGrep=function(xx,yy,SORT=F){
        }# end of u loop
 
        out2=unique(out)
-       if(SORT==T) out2=sort(out2)
+       if(SORT==TRUE) out2=sort(out2)
        
        out2
        
@@ -306,14 +306,14 @@ multiGrep=function(xx,yy,SORT=F){
 #[1] "a" "b" "c"
 #> yy
 #[1] "a"  "dd" "b"  "x"  "xc"
-    snpPlot3=function(colName,snpSum,Col,Pch,New=F,Main="",YLIM=-log10(c(1,(0.1)^3)),horizLine=T,value=-log10(0.05),Lines=T,CEX=1.5,vertical=T,CEX.AXIS=1,CEX.MAIN=1,CEX.LAB=1){
+    snpPlot3=function(colName,snpSum,Col,Pch,New=FALSE,Main="",YLIM=-log10(c(1,(0.1)^3)),horizLine=TRUE,value=-log10(0.05),Lines=TRUE,CEX=1.5,vertical=TRUE,CEX.AXIS=1,CEX.MAIN=1,CEX.LAB=1){
 
-          if (New==T) {
+          if (New==TRUE) {
               
               
                                                   # pch=16                                                         #main=paste(colName)
               par(mar=c(9.5, 7, 7, 5) + 0.1)
-              plot(1:nrow(snpSum),-log10(as.numeric(as.character(snpSum[,colName]))),pch=Pch,xlab="",ylab="-log10(P-value)",axes=F,main=Main,col=Col,ylim=YLIM,cex=CEX,cex.main=CEX.MAIN,cex.lab=CEX.LAB)
+              plot(1:nrow(snpSum),-log10(as.numeric(as.character(snpSum[,colName]))),pch=Pch,xlab="",ylab="-log10(P-value)",axes=FALSE,main=Main,col=Col,ylim=YLIM,cex=CEX,cex.main=CEX.MAIN,cex.lab=CEX.LAB)
               #lines(1:nrow(snpSum),-log10(snpSum[,colName]),col=Col)
               
                ### to connect lines when there are a lot of NAs
@@ -321,29 +321,29 @@ multiGrep=function(xx,yy,SORT=F){
                indic=!is.na(xx)
                
                
-              if(Lines==T) lines((1:length(xx))[indic],-log10(xx)[indic],col=Col[indic])
+              if(Lines==TRUE) lines((1:length(xx))[indic],-log10(xx)[indic],col=Col[indic])
             
               axis(2,cex.axis=CEX.AXIS)
               axis(1,at=1:nrow(snpSum),labels=rownames(snpSum),col.axis="black",las=3,font.lab=3,cex.lab=0.8)
               #axis(1,at=1:nrow(snpSum),labels=rep("",nrow(snpSum)),col.axis="black",las=3,font.lab=3,cex.lab=0.8)
               #axis(1,at=1:nrow(snpSum),labels=rep("",nrow(snpSum)),col.axis="black",las=3,font.lab=3,cex.lab=0.5)
 
-              #axis(3,at=1:1000,labels=1:1000,cex.axis=0.6,line=NA,tick=F)
+              #axis(3,at=1:1000,labels=1:1000,cex.axis=0.6,line=NA,tick=FALSE)
               
-              if(vertical==T) abline(v=c(1:nrow(snpSum)),lty="dotted")
+              if(vertical==TRUE) abline(v=c(1:nrow(snpSum)),lty="dotted")
 
-              if (horizLine==T) {
+              if (horizLine==TRUE) {
                 abline(h=value,lty="dotted",col="red")
-                #axis(4,at=value,sprintf("%.4f",10^(-value)),col.axis="red",tick=F,line=NA)
+                #axis(4,at=value,sprintf("%.4f",10^(-value)),col.axis="red",tick=FALSE,line=NA)
               }# end of if
 
           } # end of new==T
 
 
-         if (New==F){
+         if (New==FALSE){
 
             points(1:nrow(snpSum),-log10(as.numeric(as.character(snpSum[,colName]))),col=Col,pch=Pch,cex=1.5)
-            if (Lines==T) lines(1:nrow(snpSum),-log10(snpSum[,colName]),col=Col)
+            if (Lines==TRUE) lines(1:nrow(snpSum),-log10(snpSum[,colName]),col=Col)
 
          }# end of new==F
 
@@ -354,182 +354,182 @@ myPlot_genScoreCompare =function(OUTPUT,YLIM){
   # Remove WARNINGS
   OUT2 <- NULL 
 
-		
-		######## [2] QQ plots: compare logit vs general score (F) and general score (T) #########
-		
-		qqplot(-log10(OUT2[,"pval.logit"]), -log10(OUT2[,"pval"]),pch=16,col="blue",xlab="-log10(logit.pval)",ylab="-log10(general.score.pval)")
-		abline(0,1)
-		
-		rmv = which(OUT2[,"pval.logit"] < 0.00000001)
-		rmv
-		
-		qqplot(-log10(OUT2[-rmv,"pval.logit"]), -log10(OUT2[-rmv,"pval"]),pch=16,col="blue",xlab="-log10(logit.pval)",ylab="-log10(general.score.pval)")
-		abline(0,1)
+    
+    ######## [2] QQ plots: compare logit vs general score (F) and general score (T) #########
+    
+    qqplot(-log10(OUT2[,"pval.logit"]), -log10(OUT2[,"pval"]),pch=16,col="blue",xlab="-log10(logit.pval)",ylab="-log10(general.score.pval)")
+    abline(0,1)
+    
+    rmv = which(OUT2[,"pval.logit"] < 0.00000001)
+    rmv
+    
+    qqplot(-log10(OUT2[-rmv,"pval.logit"]), -log10(OUT2[-rmv,"pval"]),pch=16,col="blue",xlab="-log10(logit.pval)",ylab="-log10(general.score.pval)")
+    abline(0,1)
 
 
-		##### logit vs. general score T
-		
-		qqplot(-log10(OUT2[,"pval.logit"]), -log10(OUT2[,"pval.T"]),pch=16,col="blue",xlab="-log10(logit.pval)",ylab="-log10(general.score.pval.T)")
-		abline(0,1)
-		
+    ##### logit vs. general score T
+    
+    qqplot(-log10(OUT2[,"pval.logit"]), -log10(OUT2[,"pval.T"]),pch=16,col="blue",xlab="-log10(logit.pval)",ylab="-log10(general.score.pval.T)")
+    abline(0,1)
+    
 #rmv = which(OUT2[,"pval.logit"] < 0.00000001)
 #rmv
-		
-		qqplot(-log10(OUT2[-rmv,"pval.logit"]), -log10(OUT2[-rmv,"pval.T"]),pch=16,col="blue",xlab="-log10(logit.pval)",ylab="-log10(general.score.pval.T)")
-		abline(0,1)
-		
-		
-		####################### joint test vs. general score test
-		
+    
+    qqplot(-log10(OUT2[-rmv,"pval.logit"]), -log10(OUT2[-rmv,"pval.T"]),pch=16,col="blue",xlab="-log10(logit.pval)",ylab="-log10(general.score.pval.T)")
+    abline(0,1)
+    
+    
+    ####################### joint test vs. general score test
+    
 
-		qqplot(-log10(OUT2[,"pval.joint.P"]), -log10(OUT2[,"pval"]),pch=16,col="blue",xlab="-log10(joint.pval)",ylab="-log10(general.score.pval)")
-		abline(0,1)
-		
+    qqplot(-log10(OUT2[,"pval.joint.P"]), -log10(OUT2[,"pval"]),pch=16,col="blue",xlab="-log10(joint.pval)",ylab="-log10(general.score.pval)")
+    abline(0,1)
+    
 #rmv = which(OUT2[,"pval.logit"] < 0.00000001)
 #rmv
-		
-		qqplot(-log10(OUT2[-rmv,"pval.joint.P"]), -log10(OUT2[-rmv,"pval"]),pch=16,col="blue",xlab="-log10(joint.pval)",ylab="-log10(general.score.pval)")
-		abline(0,1)
+    
+    qqplot(-log10(OUT2[-rmv,"pval.joint.P"]), -log10(OUT2[-rmv,"pval"]),pch=16,col="blue",xlab="-log10(joint.pval)",ylab="-log10(general.score.pval)")
+    abline(0,1)
 
 
-		qqplot(-log10(OUT2[,"pval.joint.P"]), -log10(OUT2[,"pval.T"]),pch=16,col="blue",xlab="-log10(joint.pval)",ylab="-log10(general.score.pval.T)")
-		abline(0,1)
-		
+    qqplot(-log10(OUT2[,"pval.joint.P"]), -log10(OUT2[,"pval.T"]),pch=16,col="blue",xlab="-log10(joint.pval)",ylab="-log10(general.score.pval.T)")
+    abline(0,1)
+    
 #rmv = which(OUT2[,"pval.logit"] < 0.00000001)
 #rmv
-		
-		qqplot(-log10(OUT2[-rmv,"pval.joint.P"]), -log10(OUT2[-rmv,"pval.T"]),pch=16,col="blue",xlab="-log10(joint.pval)",ylab="-log10(general.score.pval.T)")
-		abline(0,1)
-		
-		
+    
+    qqplot(-log10(OUT2[-rmv,"pval.joint.P"]), -log10(OUT2[-rmv,"pval.T"]),pch=16,col="blue",xlab="-log10(joint.pval)",ylab="-log10(general.score.pval.T)")
+    abline(0,1)
+    
+    
 
-		##### score.F vs. general score T
-		
-		qqplot(-log10(OUT2[,"pval"]), -log10(OUT2[,"pval.T"]),pch=16,col="blue",xlab="-log10(general.score.pval.F)",ylab="-log10(general.score.pval.T)")
-		abline(0,1)
-		
+    ##### score.F vs. general score T
+    
+    qqplot(-log10(OUT2[,"pval"]), -log10(OUT2[,"pval.T"]),pch=16,col="blue",xlab="-log10(general.score.pval.F)",ylab="-log10(general.score.pval.T)")
+    abline(0,1)
+    
 #rmv = which(OUT2[,"pval.logit"] < 0.00000001)
 #rmv
-		
-		qqplot(-log10(OUT2[-rmv,"pval"]), -log10(OUT2[-rmv,"pval.T"]),pch=16,col="blue",xlab="-log10(general.score.pval.F)",ylab="-log10(general.score.pval.T)")
-		abline(0,1)
-			
-			
-		
-		######## [3] Manhattan plots ############################################################
-		
-		snpSum=OUT2
-		row.names(snpSum) = OUT2[,"SNP"]
-		Col="blue";Pch=16 ;New=T
-		#YLIM=c(0,5);
-		horizLine=T ;value=1:10;Lines=F ;CEX=1.5 ;vertical=F ;CEX=1.5; CEX.AXIS=1.5 ;CEX.MAIN=1.5 ;CEX.LAB=1.5
+    
+    qqplot(-log10(OUT2[-rmv,"pval"]), -log10(OUT2[-rmv,"pval.T"]),pch=16,col="blue",xlab="-log10(general.score.pval.F)",ylab="-log10(general.score.pval.T)")
+    abline(0,1)
+      
+      
+    
+    ######## [3] Manhattan plots ############################################################
+    
+    snpSum=OUT2
+    row.names(snpSum) = OUT2[,"SNP"]
+    Col="blue";Pch=16 ;New=TRUE
+    #YLIM=c(0,5);
+    horizLine=TRUE ;value=1:10;Lines=FALSE ;CEX=1.5 ;vertical=FALSE ;CEX=1.5; CEX.AXIS=1.5 ;CEX.MAIN=1.5 ;CEX.LAB=1.5
 
 
 
-		#YLIM=c(0,13)
-		
-		colName="pval"   # score test
-		Main="General Score Test"
-		Col="blue"
-		snpPlot3(colName,snpSum,Col,Pch,New,Main,YLIM,horizLine,value,Lines,CEX,vertical,CEX.AXIS,CEX.MAIN,CEX.LAB)
+    #YLIM=c(0,13)
+    
+    colName="pval"   # score test
+    Main="General Score Test"
+    Col="blue"
+    snpPlot3(colName,snpSum,Col,Pch,New,Main,YLIM,horizLine,value,Lines,CEX,vertical,CEX.AXIS,CEX.MAIN,CEX.LAB)
 
 
-	  #YLIM=c(0,13)
-		
-		colName="pval.T"   # score test
-		Main="General Score Test (T)"
-		Col="purple"
-		snpPlot3(colName,snpSum,Col,Pch,New,Main,YLIM,horizLine,value,Lines,CEX,vertical,CEX.AXIS,CEX.MAIN,CEX.LAB)
-		
+    #YLIM=c(0,13)
+    
+    colName="pval.T"   # score test
+    Main="General Score Test (T)"
+    Col="purple"
+    snpPlot3(colName,snpSum,Col,Pch,New,Main,YLIM,horizLine,value,Lines,CEX,vertical,CEX.AXIS,CEX.MAIN,CEX.LAB)
+    
 
-					
-					colName="pval.logit"
-					Main="Multiplicative Risk Model"
-					Col="red"
-					snpPlot3(colName,snpSum,Col,Pch,New,Main,YLIM,horizLine,value,Lines,CEX,vertical,CEX.AXIS,CEX.MAIN,CEX.LAB)
+          
+          colName="pval.logit"
+          Main="Multiplicative Risk Model"
+          Col="red"
+          snpPlot3(colName,snpSum,Col,Pch,New,Main,YLIM,horizLine,value,Lines,CEX,vertical,CEX.AXIS,CEX.MAIN,CEX.LAB)
 
 
-					colNames=c("pval.logit","pval")
-					cols=c("red","blue")
-					Main=""
-					#YLIM=c(0,12)
-					#colNames=c("pval.add","pval","pval.joint.P","pval.logit")
-					#cols=c("red","blue","dark green","black")
-					#Main=""
-					
-					for(j in 1:length(colNames)){
-					
-						colName=colNames[j]
-						if(j==1) New=T
-						if(j>1) New=F
-						CEX=1
-						Lines=T
-						Col=cols[j]
-						
-						snpPlot3(colName,snpSum,Col,Pch,New,Main,YLIM,horizLine,value,Lines=T,CEX,vertical,CEX.AXIS,CEX.MAIN,CEX.LAB)
-						legend(x="topleft",legend=colNames,col=cols,bg="white",cex=1,pch=Pch,lty="solid")
-					
-					}#3nd of j
-					
-					
-					#plot(1:nrow(snpSum),snpSum[,"maxTheta"],ylim=c(-2,2),pch=15,col="black",ylab="Theta",xlab="Location",cex=1)
+          colNames=c("pval.logit","pval")
+          cols=c("red","blue")
+          Main=""
+          #YLIM=c(0,12)
+          #colNames=c("pval.add","pval","pval.joint.P","pval.logit")
+          #cols=c("red","blue","dark green","black")
+          #Main=""
+          
+          for(j in 1:length(colNames)){
+          
+            colName=colNames[j]
+            if(j==1) New=TRUE
+            if(j>1) New=FALSE
+            CEX=1
+            Lines=TRUE
+            Col=cols[j]
+            
+            snpPlot3(colName,snpSum,Col,Pch,New,Main,YLIM,horizLine,value,Lines=TRUE,CEX,vertical,CEX.AXIS,CEX.MAIN,CEX.LAB)
+            legend(x="topleft",legend=colNames,col=cols,bg="white",cex=1,pch=Pch,lty="solid")
+          
+          }#3nd of j
+          
+          
+          #plot(1:nrow(snpSum),snpSum[,"maxTheta"],ylim=c(-2,2),pch=15,col="black",ylab="Theta",xlab="Location",cex=1)
 
-		
-					New=T
-					colName="pval.joint.P"
-					Main="3df Joint Test"
-					Col="dark green"
-					snpPlot3(colName,snpSum,Col,Pch,New,Main,YLIM,horizLine,value,Lines,CEX,vertical,CEX.AXIS,CEX.MAIN,CEX.LAB)
-					
-					#colName="pval"
-					#Main="Never Smokers"
-					#snpPlot3(colName,snpSum,Col,Pch,New,Main,YLIM,horizLine,value,Lines,CEX,vertical,CEX.AXIS,CEX.MAIN,CEX.LAB)
-					#New=T
-					#colName="pval.add"
-					#Main="Additive Risk Model"
-					#Col="red"
-					#snpPlot3(colName,snpSum,Col,Pch,New,Main,YLIM,horizLine,value,Lines,CEX,vertical,CEX.AXIS,CEX.MAIN,CEX.LAB)
-					
-		
-		
-					
-					colNames=c("pval","pval.joint.P","pval.logit")
-					cols=c("blue","dark green","black")
-					Main=""
-					YLIM=c(0,12)
-					#colNames=c("pval.add","pval","pval.joint.P","pval.logit")
-					#cols=c("red","blue","dark green","black")
-					#Main=""
-					
-					for(j in 1:length(colNames)){
-					
-						colName=colNames[j]
-						if(j==1) New=T
-						if(j>1) New=F
-						CEX=1
-						Lines=T
-						Col=cols[j]
-						
-						snpPlot3(colName,snpSum,Col,Pch,New,Main,YLIM,horizLine,value,Lines,CEX,vertical,CEX.AXIS,CEX.MAIN,CEX.LAB)
-						legend(x="topleft",legend=colNames,col=cols,bg="white",cex=1,pch=Pch,lty="solid")
-					
-					}#3nd of j
-					
-					
-					plot(1:nrow(snpSum),snpSum[,"maxTheta"],ylim=c(-2,2),pch=15,col="black",ylab="Theta",xlab="Location",cex=2)
-					 
-		#> OUT2[as.numeric(OUT2[,"pval"]) < 0.0001,c(3:11)]
-		#          SNP maxScore maxTheta stat.logit stat.add   pval.logit     pval.add pval.joint.P         pval
-		#18  rs2121267 20.50703     -1.0   20.25929 20.50703 6.762419e-06 5.941250e-06 1.036997e-04 2.423447e-05
-		#24 rs10208823 17.88001      0.8   17.82423 17.61783 2.422786e-05 2.700443e-05 1.275158e-04 9.175605e-05
-		#26  rs9679290 27.22223     -0.2   27.20603 26.97767 1.828875e-07 2.058191e-07 1.127837e-06 8.219513e-07
-		#27  rs4953346 23.26892     -0.4   23.25648 23.22538 1.417716e-06 1.440828e-06 1.348831e-05 6.097641e-06
-		#29  rs4953348 20.00907     -1.0   19.78910 20.00907 8.647450e-06 7.707555e-06 8.222423e-05 3.136839e-05
-		#31 rs12617313 28.13827     -1.0   27.93122 28.13827 1.257051e-07 1.129500e-07 9.207711e-07 5.202902e-07
-		#38  rs2346175 17.95380     -0.2   17.94847 16.79062 2.269664e-05 4.173922e-05 4.728338e-04 7.023804e-05
-		
-		
-			
+    
+          New=TRUE
+          colName="pval.joint.P"
+          Main="3df Joint Test"
+          Col="dark green"
+          snpPlot3(colName,snpSum,Col,Pch,New,Main,YLIM,horizLine,value,Lines,CEX,vertical,CEX.AXIS,CEX.MAIN,CEX.LAB)
+          
+          #colName="pval"
+          #Main="Never Smokers"
+          #snpPlot3(colName,snpSum,Col,Pch,New,Main,YLIM,horizLine,value,Lines,CEX,vertical,CEX.AXIS,CEX.MAIN,CEX.LAB)
+          #New=T
+          #colName="pval.add"
+          #Main="Additive Risk Model"
+          #Col="red"
+          #snpPlot3(colName,snpSum,Col,Pch,New,Main,YLIM,horizLine,value,Lines,CEX,vertical,CEX.AXIS,CEX.MAIN,CEX.LAB)
+          
+    
+    
+          
+          colNames=c("pval","pval.joint.P","pval.logit")
+          cols=c("blue","dark green","black")
+          Main=""
+          YLIM=c(0,12)
+          #colNames=c("pval.add","pval","pval.joint.P","pval.logit")
+          #cols=c("red","blue","dark green","black")
+          #Main=""
+          
+          for(j in 1:length(colNames)){
+          
+            colName=colNames[j]
+            if(j==1) New=TRUE
+            if(j>1) New=FALSE
+            CEX=1
+            Lines=TRUE
+            Col=cols[j]
+            
+            snpPlot3(colName,snpSum,Col,Pch,New,Main,YLIM,horizLine,value,Lines,CEX,vertical,CEX.AXIS,CEX.MAIN,CEX.LAB)
+            legend(x="topleft",legend=colNames,col=cols,bg="white",cex=1,pch=Pch,lty="solid")
+          
+          }#3nd of j
+          
+          
+          plot(1:nrow(snpSum),snpSum[,"maxTheta"],ylim=c(-2,2),pch=15,col="black",ylab="Theta",xlab="Location",cex=2)
+           
+    #> OUT2[as.numeric(OUT2[,"pval"]) < 0.0001,c(3:11)]
+    #          SNP maxScore maxTheta stat.logit stat.add   pval.logit     pval.add pval.joint.P         pval
+    #18  rs2121267 20.50703     -1.0   20.25929 20.50703 6.762419e-06 5.941250e-06 1.036997e-04 2.423447e-05
+    #24 rs10208823 17.88001      0.8   17.82423 17.61783 2.422786e-05 2.700443e-05 1.275158e-04 9.175605e-05
+    #26  rs9679290 27.22223     -0.2   27.20603 26.97767 1.828875e-07 2.058191e-07 1.127837e-06 8.219513e-07
+    #27  rs4953346 23.26892     -0.4   23.25648 23.22538 1.417716e-06 1.440828e-06 1.348831e-05 6.097641e-06
+    #29  rs4953348 20.00907     -1.0   19.78910 20.00907 8.647450e-06 7.707555e-06 8.222423e-05 3.136839e-05
+    #31 rs12617313 28.13827     -1.0   27.93122 28.13827 1.257051e-07 1.129500e-07 9.207711e-07 5.202902e-07
+    #38  rs2346175 17.95380     -0.2   17.94847 16.79062 2.269664e-05 4.173922e-05 4.728338e-04 7.023804e-05
+    
+    
+      
 
 }#end of end of function
 
@@ -591,7 +591,7 @@ possibleComb=function(x,sep=" ") {
 
             }#End of
 
-            if(is.null(dim(ans))==T) dim(ans)=c(length(ans),1)
+            if(is.null(dim(ans))==TRUE) dim(ans)=c(length(ans),1)
             #>             ans
             #     ans             tm3
             #[1,] "(0.710,1.047)" "(0.710,1.048)"
@@ -635,7 +635,7 @@ myInterval=function(xx,int){
       #8  rs9642880 0.46798086   8 128787250
       #9  rs1495741 0.21809903   8  18317161                           NAT2
 
-      if(is.null(dim(xx))==T) dim(xx) = c(length(xx),1)
+      if(is.null(dim(xx))==TRUE) dim(xx) = c(length(xx),1)
 
       int
       #3
@@ -692,8 +692,8 @@ myCbind=function(x1,x2){
   #3 "X2=2"   "0.87" "(0.74,1.03)"
   #4 "X2=3"   "0.85" "(0.73,0.98)"
 
-    if(is.null(dim(x1))==T)  dim(x1)=c(length(x1),1)
-    if(is.null(dim(x2))==T)  dim(x2)=c(length(x2),1)
+    if(is.null(dim(x1))==TRUE)  dim(x1)=c(length(x1),1)
+    if(is.null(dim(x2))==TRUE)  dim(x2)=c(length(x2),1)
     
     mxRow=max(nrow(x1),nrow(x2))
     mxCol=max(ncol(x1),ncol(x2))
@@ -708,7 +708,7 @@ myCbind=function(x1,x2){
 }#end of
 
             #x=letters[1:10]
-            #set.seed(123);y=sample(x,10,replace=F)
+            #set.seed(123);y=sample(x,10,replace=FALSE)
             
             #x=c("a","b","c")
             #y=c("d","a","e","b") ### "c" doesn't exist in y
@@ -858,7 +858,7 @@ myCbind=function(x1,x2){
 
 	myProcess.myStrat.inter.OR.CI4 = function(x){
 		
-			# x is output from x=myStrat.inter.OR.CI4(X1,X2,COVS,doSubset=T)
+			# x is output from x=myStrat.inter.OR.CI4(X1,X2,COVS,doSubset=TRUE)
 			# > x
 			# $jointModel
 			#            OR       CI1      CL2
@@ -978,7 +978,7 @@ myStratOR.big = function(X1,X2,COVS,GENOS,VARS, x2names,varnames,levs){
 					
 					### make a single column variable ###
 					
-					if(is.matrix(xx2)==F)  { xx2=as.matrix(xx2); colnames(xx2)=VARS1 }
+					if(is.matrix(xx2)==FALSE)  { xx2=as.matrix(xx2); colnames(xx2)=VARS1 }
 					X2=myStrataVar(xx2)[[1]]
 					# > table(X2)
 					# X2
@@ -995,7 +995,7 @@ myStratOR.big = function(X1,X2,COVS,GENOS,VARS, x2names,varnames,levs){
 					
 					## get # of categories ####
 					
-					nX2=length(unique(X2[is.na(X2)==F]))
+					nX2=length(unique(X2[is.na(X2)==FALSE]))
 					nX2
 						
 					### get number of categories for each variable ##
@@ -1020,17 +1020,17 @@ myStratOR.big = function(X1,X2,COVS,GENOS,VARS, x2names,varnames,levs){
 					
 					##################### (2) Run the joint model ################################
 					tt=NULL
-					#tt<-myStrat.inter.OR.CI2(X1,X2,COVS,call.names,doSubset=T)
+					#tt<-myStrat.inter.OR.CI2(X1,X2,COVS,call.names,doSubset=TRUE)
 					
-					try(tt<-myStrat.inter.OR.CI4(X1,X2,COVS,doSubset=T))
+					try(tt<-myStrat.inter.OR.CI4(X1,X2,COVS,doSubset=TRUE))
 					
 					
 					##################### (3) Reorganize for adding confidence interval ################################
 					
 					
-					if(is.null(tt)==T){   ans[,]=""         } # previous one and plug ""
+					if(is.null(tt)==TRUE){   ans[,]=""         } # previous one and plug ""
 
-					if(is.null(tt)!=T){
+					if(is.null(tt)!=TRUE){
 					
 						  tt
 						  #> names(tt)
@@ -1081,13 +1081,13 @@ myStratOR.big = function(X1,X2,COVS,GENOS,VARS, x2names,varnames,levs){
 					  #[4,] ""       ""     ""            "X2=3"   "0.85" "(0.73,0.98)"
 	  
 					   
-			   }#if(is.null(tt)!=T){
+			   }#if(is.null(tt)!=TRUE){
 			
 			}# end of j loop
 		   
 			print(i)
 			
-			#if(is.null(ans)==F){  # if it's not null, accumulate
+			#if(is.null(ans)==FALSE){  # if it's not null, accumulate
   
 				if(i==1) { ANS=ans  ; snps=snp}
 				if(i>1) { ANS=rbind(ANS,ans)  ; snps=c(snps,snp) }
@@ -1360,7 +1360,7 @@ myAR.G2=function(prev,eLevs,Pes,pars,model,nE=1,eLevs2,Pes2){
           # [1] 0.0003444942 0.0002966219 0.0002583082 0
     
           ans2
-         (length(ans2)==(length(gLevs)*length(eLevs)))==T  # TRUE
+         (length(ans2)==(length(gLevs)*length(eLevs)))==TRUE  # TRUE
     
          sum(ans2)
          
@@ -1540,7 +1540,7 @@ myAR.G=function(prev,eLevs,Pes,pars,model){
       # [1] 0.0003444942 0.0002966219 0.0002583082 0
 
       ans2
-     (length(ans2)==(length(gLevs)*length(eLevs)))==T  # TRUE
+     (length(ans2)==(length(gLevs)*length(eLevs)))==TRUE  # TRUE
 
      sum(ans2)
 
@@ -1846,7 +1846,7 @@ myPercent=function(xx,yy){  ## base is xx and compare it to yy
 
           bz=NULL
           if(length(pars) > 3){  bz=pars[-c(1:3)] }
-          if(is.null(dim(z))==T) { dim(z)=c(length(z),1) }
+          if(is.null(dim(z))==TRUE) { dim(z)=c(length(z),1) }
           
           if (model=="add") risk = logistic( pars[1] +log( exp(pars[2]*g) + exp(pars[3]*e) -1)+ z%*%bz )   # logistic=function(x) exp(x)/(1+exp(x)
           if (model=="LT")  risk = pnorm(pars[1]+ pars[2]*g + pars[3]*e + z%*%bz )
@@ -1899,13 +1899,13 @@ logistic = function(x) {  exp(x)/(1+exp(x))         }
 ##### 4/26/2010: this deals with no level (it autoatically deals with it #######
 
 
-myDummyVar3=function(mat,refer=F,SORT=T){  ### this will create dummy variables with given level
+myDummyVar3=function(mat,refer=FALSE,SORT=TRUE){  ### this will create dummy variables with given level
                        ######## the most common one is reference and will be omitted
         ans2=NULL
         
         ####### in case it's not matrix make it ######
         
-        if(is.null(dim(mat))==T) {
+        if(is.null(dim(mat))==TRUE) {
         
            dim(mat)=c(length(mat),1)
            colnames(mat)="x"
@@ -1921,10 +1921,10 @@ myDummyVar3=function(mat,refer=F,SORT=T){  ### this will create dummy variables 
               #cname
               
               
-              #if(is.null(level)==T) {   # if no level is specified do it
-                if(SORT==T){
+              #if(is.null(level)==TRUE) {   # if no level is specified do it
+                if(SORT==TRUE){
                 
-                    tb=sort(table(x),decreasing=T)
+                    tb=sort(table(x),decreasing=TRUE)
                     #tb
                     # 61 62 31 11 64 41 63 
                     #80 77 51 49 48 46 13
@@ -1932,7 +1932,7 @@ myDummyVar3=function(mat,refer=F,SORT=T){  ### this will create dummy variables 
                 }# sort
                 
                 
-                if(SORT==F){
+                if(SORT==FALSE){
                 
                     tb=table(x)
                     #tb
@@ -1963,7 +1963,7 @@ myDummyVar3=function(mat,refer=F,SORT=T){  ### this will create dummy variables 
               # [8,]    2    1
               # [9,]    2    2
               level2=level[-1] #[1] 1 2  --> skip dummy variable for first level
-              if(refer==T) level2=level
+              if(refer==TRUE) level2=level
               
               ans=matrix(NA,nrow=nrow(mat),ncol=(length(level2)))
               colnames(ans)=paste(cname,level2,sep=".")
@@ -2042,7 +2042,7 @@ myDummyVar3=function(mat,refer=F,SORT=T){  ### this will create dummy variables 
 #[21,] 31    0    1    0    0    0    0
 
 
-#> ttt=myDummyVar3(mat,refer=T,SORT=F)
+#> ttt=myDummyVar3(mat,refer=TRUE,SORT=FALSE)
 #> ttt[1:5,]
 #     x.1 x.2 x.3 x.4
 #[1,]   0   0   0   1
@@ -2050,7 +2050,7 @@ myDummyVar3=function(mat,refer=F,SORT=T){  ### this will create dummy variables 
 #[3,]   0   0   0   1
 #[4,]   0   0   0   1
 #[5,]   0   0   0   1
-#> ttt=myDummyVar3(mat,refer=T,SORT=T)
+#> ttt=myDummyVar3(mat,refer=TRUE,SORT=TRUE)
 #> ttt[1:5,]
 #     x.3 x.4 x.1 x.2
 #[1,]   0   1   0   0
@@ -2068,11 +2068,11 @@ myDummyVar3=function(mat,refer=F,SORT=T){  ### this will create dummy variables 
         ######### this delete missing valued subjects
 
         x1=x2=y=covs=x.st=strDat=NULL
-        indic.st = is.null(X.st)==F
+        indic.st = is.null(X.st)==FALSE
         
        
-        if(is.null(ncol(X2))==T)  ncolx2=1
-        if(is.null(ncol(X2))==F) ncolx2=ncol(X2)
+        if(is.null(ncol(X2))==TRUE)  ncolx2=1
+        if(is.null(ncol(X2))==FALSE) ncolx2=ncol(X2)
         ncolx2
         
         
@@ -2082,12 +2082,12 @@ myDummyVar3=function(mat,refer=F,SORT=T){  ### this will create dummy variables 
 
         covs=NULL
 
-        if (is.null(COVS)==F){ # if covariate exists
+        if (is.null(COVS)==FALSE){ # if covariate exists
 
                 keep.indic=(rowSums(is.na(cbind(X1,X2,COVS)))==0)
 
                 ### if indep=T and stratified=T
-                if (indic.st==T & indep==T) keep.indic=(rowSums(is.na(cbind(X1,X2,COVS,X.st)))==0)  ## why COVS also? don't know but i remember i screwed up by not doing it..
+                if (indic.st==TRUE & indep==TRUE) keep.indic=(rowSums(is.na(cbind(X1,X2,COVS,X.st)))==0)  ## why COVS also? don't know but i remember i screwed up by not doing it..
 
                 #sum(!keep.indic)
                 #[1] 71
@@ -2111,12 +2111,12 @@ myDummyVar3=function(mat,refer=F,SORT=T){  ### this will create dummy variables 
 
         }# end of
 
-        if (is.null(COVS)==T){ # if NO covariate
+        if (is.null(COVS)==TRUE){ # if NO covariate
 
                 keep.indic=(rowSums(is.na(cbind(X1,X2)))==0)
 
                 ### if indep=T and stratified=T
-                if (indic.st==T & indep==T) keep.indic=(rowSums(is.na(cbind(X1,X2,X.st)))==0)  ## why COVS also? don't know but i remember i screwed up by not doing it..
+                if (indic.st==TRUE & indep==TRUE) keep.indic=(rowSums(is.na(cbind(X1,X2,X.st)))==0)  ## why COVS also? don't know but i remember i screwed up by not doing it..
 
                 sum(!keep.indic)
                 #[1] 71
@@ -2141,7 +2141,7 @@ myDummyVar3=function(mat,refer=F,SORT=T){  ### this will create dummy variables 
             #       1        6        1 
 
             x2 = x2.0[,nUni > 1]
-            if(is.null(dim(x2))==T) { dim(x2)=c(length(x2),1)  ; colnames(x2) = names(nUni)[nUni > 1]     }
+            if(is.null(dim(x2))==TRUE) { dim(x2)=c(length(x2),1)  ; colnames(x2) = names(nUni)[nUni > 1]     }
           
             if(all(nUni==1))   x2=NULL
 
@@ -2162,8 +2162,8 @@ myDummyVar3=function(mat,refer=F,SORT=T){  ### this will create dummy variables 
         x.st=strDat=NULL
         nStrata=1
 
-        if(is.null(X.st)==F){
-        #if(indic.st==T & indep==T){
+        if(is.null(X.st)==FALSE){
+        #if(indic.st==T & indep==TRUE){
 
               x.st = as.factor(X.st[keep.indic])
               x.st = factor(as.character(x.st))   ## this is to remove some empty level!
@@ -2171,7 +2171,7 @@ myDummyVar3=function(mat,refer=F,SORT=T){  ### this will create dummy variables 
               nStrata=length(unique(x.st))
               nStrata
 
-              strDat0= myDummyVar3(x.st,refer=T,SORT=F)
+              strDat0= myDummyVar3(x.st,refer=TRUE,SORT=FALSE)
               #> strDat[1:5,]
               #     x.1 x.2 x.3 x.4
               #[1,]   0   0   0   1
@@ -2308,10 +2308,10 @@ info.small.add2=function(x,additive,ncolx2,theta=-1){
         #[4,] 0.024441285 0.23189543 0.23189543 0.23189543
         
         
-        if(additive==F)  ans= outprod
+        if(additive==FALSE)  ans= outprod
           
         
-        if(additive==T)  {# if additive, there is additional terms for [1,1] element with x1star*xstar and [2:3,2:3] regarding X2 terms
+        if(additive==TRUE)  {# if additive, there is additional terms for [1,1] element with x1star*xstar and [2:3,2:3] regarding X2 terms
                 
                 outprod2=outprod
                 ######### additional terms #################
@@ -2357,7 +2357,7 @@ info.small.add2=function(x,additive,ncolx2,theta=-1){
             
                 ans=outprod2
        
-        } #end if(additive==T)  {# if additive, there is additional terms for [1,1] element with x1star*xstar and [2:3,2:3] regarding X2 terms
+        } #end if(additive==TRUE)  {# if additive, there is additional terms for [1,1] element with x1star*xstar and [2:3,2:3] regarding X2 terms
        
         
         
@@ -2753,7 +2753,7 @@ postEps.small=function(x,m,c) {   ### posterial mean of eplison given E (environ
 
 ######### 7/18/2011: add LT.price test ####################
 
-convertParams3=function(b0,b2,trueModel,outputModel,cohort=F,prev){
+convertParams3=function(b0,b2,trueModel,outputModel,cohort=FALSE,prev){
 
   # Remove WARNING
   gLevs <- Pgs <- eLevs <- Pes <- root <- beta0 <- betas <- outModel <- NULL
@@ -2764,9 +2764,9 @@ convertParams3=function(b0,b2,trueModel,outputModel,cohort=F,prev){
       logit = function(x) { log(x/(1-x)) }  # this is inverse function of logistic (cdf of logistic)
       
       
-      ################ (0) if this is for case-control study (i.e. cohort==F) then intercept should be re-assigned for case-control scale and use it for the rest of calculation
+      ################ (0) if this is for case-control study (i.e. cohort==FALSE) then intercept should be re-assigned for case-control scale and use it for the rest of calculation
       
-      if(cohort==F){  ## if it's case-control design, need to original intercept b0 (this is from true cohort model) to case-control based intercetp
+      if(cohort==FALSE){  ## if it's case-control design, need to original intercept b0 (this is from true cohort model) to case-control based intercetp
       
                if(trueModel=="additive" | trueModel=="add")  b0 = b0 + log( (1-prev)/prev )
                           # Farewell_1979_Biometrika_caseControl.intercept.pdf  summary mynote 3 at  2/13/2011
@@ -2775,13 +2775,13 @@ convertParams3=function(b0,b2,trueModel,outputModel,cohort=F,prev){
                }# need to work on this  later
       
       
-      }# end of if(cohort==F)
+      }# end of if(cohort==FALSE)
 
       
       
       ################ (1) Conversion from probit<-> logistic: This can be used for cohort study, or possibly case-control when the retro=prospective equivalence hold (e.g. true model is logistic)
       
-      if(cohort==T | (cohort==F & ((trueModel=="additive" | trueModel=="add")==T)))  {
+      if(cohort==TRUE | (cohort==FALSE & ((trueModel=="additive" | trueModel=="add")==TRUE)))  {
       
             #################### (1) Under the truth of additive model based on logistic regression ########################
             
@@ -2810,8 +2810,8 @@ convertParams3=function(b0,b2,trueModel,outputModel,cohort=F,prev){
                        #[1] -1.763718
                        #[1] 0.6882359
       
-                           doThis=F
-                           if(doThis==T){   ##### check ###########
+                           doThis=FALSE
+                           if(doThis==TRUE){   ##### check ###########
       
                                     pars=c(BETA0, 0,  BETA2)
                                         #pars=c(beta0,0,betas[2])
@@ -2896,14 +2896,14 @@ convertParams3=function(b0,b2,trueModel,outputModel,cohort=F,prev){
             }#end of  if(inputModel=="probit"){
       
       
-      }#end of  if(cohort==T | (cohort==F & ((trueModel=="additive" | trueModel=="add")==T))  {
+      }#end of  if(cohort==T | (cohort==F & ((trueModel=="additive" | trueModel=="add")==TRUE))  {
      
       
 
 
       ################ (2) Conversion from probit.retro (case-control version of probit) to true probit or true logistic ###########
       
-      if(cohort==F & ((trueModel=="LT" | trueModel=="probit")==T))  {
+      if(cohort==FALSE & ((trueModel=="LT" | trueModel=="probit")==TRUE))  {
       
       
                     if(outputModel=="probit" | outputModel=="LT"){
@@ -2955,7 +2955,7 @@ convertParams3=function(b0,b2,trueModel,outputModel,cohort=F,prev){
                    }#end of  if(outputModel=="LT.price"){    
 
       
-      }# end of if(cohort==F & ((trueModel=="LT" | trueModel=="probit")==T))  {
+      }# end of if(cohort==F & ((trueModel=="LT" | trueModel=="probit")==TRUE))  {
 
 
       c(BETA0=BETA0, BETA2=BETA2)
@@ -3133,7 +3133,7 @@ myExpectedGenotype2 = function(x1, x.st, strDat=NULL){     ### ghis create  a ve
 
         #### make dummy variables for each strata
 
-        if (is.null(strDat)) strDat <- myDummyVar3(x.st,refer=T,SORT=F)
+        if (is.null(strDat)) strDat <- myDummyVar3(x.st,refer=TRUE,SORT=FALSE)
 
         #> strDat[1:10,]
         #      x.1 x.2 x.3
@@ -3146,7 +3146,7 @@ myExpectedGenotype2 = function(x1, x.st, strDat=NULL){     ### ghis create  a ve
         # [7,]   1   0   0
         
 
-        if(is.matrix(strDat)==F) dim(strDat)=c(length(strDat),1)
+        if(is.matrix(strDat)==FALSE) dim(strDat)=c(length(strDat),1)
 
         for(j in 1:ncol(strDat)){
 
@@ -3169,7 +3169,7 @@ myExpectedGenotype2 = function(x1, x.st, strDat=NULL){     ### ghis create  a ve
         # [7,] 0.986    1
         # [8,] 1.050    2
 
-        #cbind(E.G=f,E.G2=f2,N=NN)
+        #cbind(E.G=FALSE,E.G2=f2,N=NN)
         ret[, 1] <- f
         ret[, 2] <- f2
         ret[, 3] <- NN
@@ -3185,7 +3185,7 @@ myExpectedGenotype2 = function(x1, x.st, strDat=NULL){     ### ghis create  a ve
 ###### 1/28/2012: call.names is defined internally using grep("X",..): so no covariate should have "X"
 ####### Apr 12 2011: extend it to three levels for X2 #######################3333
 
-myStrat.inter.OR.CI4=function(X1,X2,COVS,doSubset=F){    #this create OR and 95% CI for association effect in each strata of X2
+myStrat.inter.OR.CI4=function(X1,X2,COVS,doSubset=FALSE){    #this create OR and 95% CI for association effect in each strata of X2
                                                         # this only does 2 by 2 table model
 
            ans=NULL
@@ -3197,13 +3197,13 @@ myStrat.inter.OR.CI4=function(X1,X2,COVS,doSubset=F){    #this create OR and 95%
                   
           ############[1.1] Run the model ###########################################################
 
-          if(is.null(COVS)==F) lm.full=glm(Y~X1+X2+X1*X2+.,family=binomial(link='logit'),data=data.frame(COVS))
-          if(is.null(COVS)==T) lm.full=glm(Y~X1+X2+X1*X2,family=binomial(link='logit'))
+          if(is.null(COVS)==FALSE) lm.full=glm(Y~X1+X2+X1*X2+.,family=binomial(link='logit'),data=data.frame(COVS))
+          if(is.null(COVS)==TRUE) lm.full=glm(Y~X1+X2+X1*X2,family=binomial(link='logit'))
           
         #lm.full=glm(Y~X1+X2+.,family=binomial(link='logit'),data=data.frame(COVS))
           
           lm.full.a=summary(lm.full)
-          lm.full2 = myOR.CI3(xx=summary(lm.full)$coef,bName="Estimate",sName="Std. Error",pName="Pr(>|z|)",pval=T)
+          lm.full2 = myOR.CI3(xx=summary(lm.full)$coef,bName="Estimate",sName="Std. Error",pName="Pr(>|z|)",pval=TRUE)
           row.names(lm.full2) = row.names(summary(lm.full)$coef)
           lm.full2
           #> lm.full2
@@ -3248,7 +3248,7 @@ myStrat.inter.OR.CI4=function(X1,X2,COVS,doSubset=F){    #this create OR and 95%
           #X1:X22             1.1962010 0.90462672 1.5817540  0.17915074 0.14254266 2.088181e-01
 
           ############[1.2] Get the covariance matrix ###########################################################
-          call.names=grep("X",row.names(lm.full2),value=T)#[1] "X1"     "X22"    "X23"    "X24"    "X1:X22" "X1:X23" "X1:X24"
+          call.names=grep("X",row.names(lm.full2),value=TRUE)#[1] "X1"     "X22"    "X23"    "X24"    "X1:X22" "X1:X23" "X1:X24"
           call.names
           vc0=vcov(lm.full)
           #call.names = c("X1","X2","X1:X2")
@@ -3285,7 +3285,7 @@ myStrat.inter.OR.CI4=function(X1,X2,COVS,doSubset=F){    #this create OR and 95%
               #[1] 0.03000787
               #> vc[1,1]+vc[2,2]+2*vc[1,2]
               #[1] 0.03000787
-              nums.all=matrix(c(c(1,1),c(1,3)),byrow=T,ncol=2)
+              nums.all=matrix(c(c(1,1),c(1,3)),byrow=TRUE,ncol=2)
               nums.all
               #>       nums.all
               #     [,1] [,2]
@@ -3311,7 +3311,7 @@ myStrat.inter.OR.CI4=function(X1,X2,COVS,doSubset=F){    #this create OR and 95%
               #[1] 0.03000787
               #> vc[1,1]+vc[2,2]+2*vc[1,2]
               #[1] 0.03000787
-              nums.all=matrix(c(c(1,1),c(1,4),c(1,5)),byrow=T,ncol=2)
+              nums.all=matrix(c(c(1,1),c(1,4),c(1,5)),byrow=TRUE,ncol=2)
               nums.all
               #> nums.all
               #     [,1] [,2]
@@ -3325,7 +3325,7 @@ myStrat.inter.OR.CI4=function(X1,X2,COVS,doSubset=F){    #this create OR and 95%
           if(k2==4){ # if smoking is NEVER/FORMER/CURRENT
 
               
-              nums.all=matrix(c(c(1,1),c(1,5),c(1,6),c(1,7)),byrow=T,ncol=2)
+              nums.all=matrix(c(c(1,1),c(1,5),c(1,6),c(1,7)),byrow=TRUE,ncol=2)
               nums.all
           }
 
@@ -3337,7 +3337,7 @@ myStrat.inter.OR.CI4=function(X1,X2,COVS,doSubset=F){    #this create OR and 95%
               #      X1:X24 
               #-0.123195673 
               
-              nums.all=matrix(c(c(1,1),c(1,6),c(1,7),c(1,8),c(1,9)),byrow=T,ncol=2)
+              nums.all=matrix(c(c(1,1),c(1,6),c(1,7),c(1,8),c(1,9)),byrow=TRUE,ncol=2)
               nums.all
               #>               nums.all
               #     [,1] [,2]
@@ -3353,13 +3353,13 @@ myStrat.inter.OR.CI4=function(X1,X2,COVS,doSubset=F){    #this create OR and 95%
           if(k2==6){ # if smoking is NEVER/FORMER/CURRENT
 
               
-              nums.all=matrix(c(c(1,1),c(1,7),c(1,8),c(1,9),c(1,10),c(1,11)),byrow=T,ncol=2)
+              nums.all=matrix(c(c(1,1),c(1,7),c(1,8),c(1,9),c(1,10),c(1,11)),byrow=TRUE,ncol=2)
               nums.all
           }
           if(k2==7){ # if smoking is NEVER/FORMER/CURRENT
 
               
-              nums.all=matrix(c(c(1,1),c(1,8),c(1,9),c(1,10),c(1,11),c(1,12),c(1,13)),byrow=T,ncol=2)
+              nums.all=matrix(c(c(1,1),c(1,8),c(1,9),c(1,10),c(1,11),c(1,12),c(1,13)),byrow=TRUE,ncol=2)
               nums.all
           }
 
@@ -3416,7 +3416,7 @@ myStrat.inter.OR.CI4=function(X1,X2,COVS,doSubset=F){    #this create OR and 95%
           
           #doSubset=T      ##this is not joint model, it's stratified analysis #######
           ans2=NULL
-          if(doSubset==T){
+          if(doSubset==TRUE){
 
                 #> table(X2)
                 #X2
@@ -3435,7 +3435,7 @@ myStrat.inter.OR.CI4=function(X1,X2,COVS,doSubset=F){    #this create OR and 95%
       
                       lm.full=glm(Y~X1+.,family=binomial(link='logit'),data=data.frame(COVS),subset=indic)
                       lm.full.a=summary(lm.full)
-                      lm.full2 = myOR.CI3(xx=summary(lm.full)$coef,bName="Estimate",sName="Std. Error",pName="Pr(>|z|)",pval=T)
+                      lm.full2 = myOR.CI3(xx=summary(lm.full)$coef,bName="Estimate",sName="Std. Error",pName="Pr(>|z|)",pval=TRUE)
                       row.names(lm.full2) = row.names(summary(lm.full)$coef)
                       lm.full2
                       #                           OR       CI1       CI2        beta         sd        pval2
@@ -3525,7 +3525,7 @@ myStrat.inter.OR.CI4=function(X1,X2,COVS,doSubset=F){    #this create OR and 95%
   #sdName="Std. Error"
   #pName="Pr(>|z|)"
   
-  myOR.CI3=function(xx,bName="Estimate",sName="Std. Error",pName="Pr(>|z|)",pval=F){
+  myOR.CI3=function(xx,bName="Estimate",sName="Std. Error",pName="Pr(>|z|)",pval=FALSE){
 
         #> xx=full$coef
         #> xx
@@ -3585,7 +3585,7 @@ myStrat.inter.OR.CI4=function(X1,X2,COVS,doSubset=F){    #this create OR and 95%
         ans=cbind(OR=OR,CI1=CI[,1],CI2=CI[,2],beta=tm1,sd=tm2)
         
         
-        if(pval==T){
+        if(pval==TRUE){
         ans=cbind(OR=OR,CI1=CI[,1],CI2=CI[,2],beta=tm1,sd=tm2,pval2=tm3)
         
         }
@@ -3845,8 +3845,8 @@ myInteractMatrix2=function(mat,cols){    # given genotype matrix, this gives a d
  
  
 
-            doThis=F
-            if(doThis==T){
+            doThis=FALSE
+            if(doThis==TRUE){
             
 					#glm(Y~E,family=binomial(link='logit'))
 					#Coefficients:
@@ -3931,7 +3931,7 @@ powerCount=function(xx,sig){
     #> sig
     #[1] 1e-02 1e-03 1e-04
 
-    if(is.null(dim(xx))==T) dim(xx)=c(length(xx),1)
+    if(is.null(dim(xx))==TRUE) dim(xx)=c(length(xx),1)
 
     for(j in 1:length(sig)){
 

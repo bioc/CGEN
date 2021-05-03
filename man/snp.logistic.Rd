@@ -19,7 +19,7 @@ principal compoenets of population stratification. \bold{(iii) Empirical-Bayes:}
 }
 \usage{
 snp.logistic(data, response.var, snp.var, main.vars=NULL, int.vars=NULL,
-             strata.var=NULL, op=NULL)
+             strata.var=NULL, op=NULL, additive.trend=FALSE)
 }
 \arguments{
   \item{data}{Data frame containing all the data. No default. }
@@ -43,8 +43,8 @@ snp.logistic(data, response.var, snp.var, main.vars=NULL, int.vars=NULL,
   %\item{ProbG1.var}{Name of the variable corresponding to Prob(G = 1). This option is for imputed genotypes only.
   %                  The default is NULL. }
   \item{op}{ A list with names \code{genetic.model}, \code{reltol}, \code{maxiter}, and
-          \code{optimizer} (see details). The default is NULL.
-  }
+          \code{optimizer} (see details). The default is NULL.}
+  \item{additive.trend}{ Logical, FALSE by default. No need to set. It is used by additive.test() function for additive trend implementation. }
 }
 \value{
    A list containing sublists with names UML (unconstrained maximum likelihood),
