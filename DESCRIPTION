@@ -9,7 +9,8 @@ Authors@R: c(
 	person("Minsun", "Song", role = c("aut")),
 	person("William", "Wheeler", role = c("aut")),
 	person("Matthieu", "de Rochemonteix", role = c("aut")),
-	person("Nilotpal", "Sanyal", role = c("aut","cre"), email = "nsanyal@stanford.edu")
+	person("Nilotpal", "Sanyal", role = c("aut")),
+	person("Justin", "Lee", role = c("cre"), email = "jhylee@stanford.edu")
 	)
 Description: This is a package for analysis of case-control data in genetic epidemiology. 
 	It provides a set of statistical methods for evaluating gene-environment (or gene-genes) 
