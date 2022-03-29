@@ -30,7 +30,7 @@ typedef struct CUR_DATA
 	} CDAT ;
 
 /*********** In utils.c *******/
-int *h_done ;
+int *h_done_ccl ;
 
 typedef struct Tnode
 	{
@@ -80,12 +80,12 @@ void ccl_optim(double *beta, int *maxit, double *tol, int *xnsub, int *D, double
 	root = (tnode *) R_Calloc(1 , tnode) ;
 	root -> g = 0 ; root -> h = 0 ;
 	root -> next = NULL ;
-	h_done = (int *) R_Calloc(S , int) ;
+	h_done_ccl = (int *) R_Calloc(S , int) ;
 	
 	/* Create Tree of Maximal matched-set size */
-	for(j = 0 ; j < S ; j++) h_done[j] = 0 ;
+	for(j = 0 ; j < S ; j++) h_done_ccl[j] = 0 ;
 	tree_create(root , S) ;
-	R_Free(h_done) ;
+	R_Free(h_done_ccl) ;
 	
 	/* Allocate memory */
 	p = rda -> p_snp + rda -> p_main + rda -> p_snp * rda -> p_int ;
@@ -407,14 +407,14 @@ static void tree_create(tnode *node, int S)
 	{
 		for(k = S ; k >= 1 ; k--)
 		{
-			if(h_done[k - 1] == 1) continue ;
+			if(h_done_ccl[k - 1] == 1) continue ;
 			
 			tnode *new = (tnode *) R_Calloc(1 , tnode) ;
 			new -> g = j ; new -> h = k ;
 			
-			h_done[k - 1] = 1 ;
+			h_done_ccl[k - 1] = 1 ;
 			tree_create(new, S) ;
-			h_done[k - 1] = 0 ;
+			h_done_ccl[k - 1] = 0 ;
 			if(lastChild == 1) { new -> next = NULL ; lastChild = 0 ; }
 			else new -> next = lastSib ;
 			lastSib = new ;
