@@ -1,6 +1,6 @@
 Package: CGEN
 Title: An R package for analysis of case-control studies in genetic epidemiology
-Version: 3.40.0
+Version: 3.41.0
 Date: 2012-10-10
 Authors@R: c( 
 	person("Samsiddhi", "Bhattacharjee", role = c("aut")),
